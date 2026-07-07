@@ -84,7 +84,7 @@ const QuickAccess = () => {
         {actions.map((item) => (
           <Grid
             key={item.title}
-            size={6}
+            size={2}
           >
             <Paper
               elevation={0}
@@ -92,7 +92,7 @@ const QuickAccess = () => {
                 bgcolor: '#0F172A',
                 border: '1px solid rgba(255,255,255,.06)',
                 borderRadius: 3,
-                p: 2,
+                p: 1.5,
                 cursor: 'pointer',
                 transition: '.2s',
 
@@ -110,8 +110,8 @@ const QuickAccess = () => {
               >
                 <Box
                   sx={{
-                    width: 54,
-                    height: 54,
+                    width: 24,
+                    height: 24,
                     borderRadius: 2,
                     bgcolor: `${item.color}20`,
                     color: item.color,
@@ -127,7 +127,7 @@ const QuickAccess = () => {
                   sx={{
                     color: '#E2E8F0',
                     fontWeight: 600,
-                    fontSize: 13,
+                    fontSize: 10,
                     textAlign: 'center',
                   }}
                 >
