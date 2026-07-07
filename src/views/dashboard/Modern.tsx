@@ -13,6 +13,7 @@ import ActiveAlarmSites from 'src/components/dashboards/alarm/ActiveAlarmSites';
 import FloorPlan from 'src/components/dashboards/alarm/FloorPlan';
 import RecentEvents from 'src/components/dashboards/alarm/RecentEvents';
 import SystemHealth from 'src/components/dashboards/alarm/SystemHealth';
+import QuickActions from 'src/components/dashboards/alarm/QuickActions';
 // import QuickActions from 'src/components/dashboards/alarm/QuickActions';
 
 const Modern = () => {
@@ -36,7 +37,7 @@ const Modern = () => {
             size={{
               xs: 12,
               md: 12,
-              lg: 3.5
+              lg: 2.5
             }}>
             <ActiveAlarms region={region} />
           </Grid>
@@ -49,17 +50,15 @@ const Modern = () => {
             }}>
             <SiteMap region={region} />
           </Grid>
-          {/* Status + Trend */}
+
+          {/* FloorPlan */}
           <Grid
             size={{
               xs: 12,
               md: 12,
-              lg: 3.5
+              lg: 4.5
             }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <DeviceStatus region={region} />
-              <AlarmTrend region={region} />
-            </Box>
+            <FloorPlan />
           </Grid>
         </Grid>
 
@@ -70,25 +69,29 @@ const Modern = () => {
             size={{
               xs: 12,
               md: 12,
-              lg: 4.5
+              lg: 4
             }}>
             <ActiveAlarmSites region={region} />
           </Grid>
-          {/* FloorPlan */}
+          {/* Status + Trend */}
           <Grid
             size={{
               xs: 12,
               md: 12,
-              lg: 4
+              lg: 5
             }}>
-            <FloorPlan />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <DeviceStatus region={region} />
+              <AlarmTrend region={region} />
+            </Box>
           </Grid>
+
           {/* Recent Events */}
           <Grid
             size={{
               xs: 12,
               md: 12,
-              lg: 3.5
+              lg: 3
             }}>
             <RecentEvents region={region} />
           </Grid>
@@ -99,17 +102,17 @@ const Modern = () => {
           <Grid
             size={{
               xs: 12,
-              lg: 8.5
+              lg: 5.5
             }}>
             <SystemHealth />
           </Grid>
-          {/* <Grid
+          <Grid
             size={{
               xs: 12,
-              lg: 3.5
+              lg: 6.5
             }}>
             <QuickActions />
-          </Grid> */}
+          </Grid>
         </Grid>
       </Box>
     </PageContainer>

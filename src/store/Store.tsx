@@ -5,16 +5,16 @@ import localForage from 'localforage';
 // import storage from 'redux-persist/lib/storage';
 import CustomizerReducer from './customizer/CustomizerSlice';
 import SettingsReducer from "./customizer/SettingsSlice";
-// import EcommerceReducer from './apps/eCommerce/ECommerceSlice';
-// import ChatsReducer from './apps/chat/ChatSlice';
-// import NotesReducer from './apps/notes/NotesSlice';
-// import EmailReducer from './apps/email/EmailSlice';
-// import TicketReducer from './apps/tickets/TicketSlice';
-// import ContactsReducer from './apps/contacts/ContactSlice';
-// import UserProfileReducer from './apps/userProfile/UserProfileSlice';
+import EcommerceReducer from './apps/eCommerce/ECommerceSlice';
+import ChatsReducer from './apps/chat/ChatSlice';
+import NotesReducer from './apps/notes/NotesSlice';
+import EmailReducer from './apps/email/EmailSlice';
+import TicketReducer from './apps/tickets/TicketSlice';
+import ContactsReducer from './apps/contacts/ContactSlice';
+import UserProfileReducer from './apps/userProfile/UserProfileSlice';
 // import GatesReducer from './apps/tracking/GatesSlice';
 // import FloorplanReducer2 from './apps/tracking/FloorPlanSlice';
-// import BlogReducer from './apps/blog/BlogSlice';
+import BlogReducer from './apps/blog/BlogSlice';
 import applicationReducer from './apps/crud/application';
 import integrationReducer from './apps/crud/integration';
 import CCTVReducer from './apps/crud/accessCCTV';
@@ -39,15 +39,15 @@ import CardReducer from './apps/crud/card';
 import VisitorCardReducer from './apps/crud/visitorCard';
 import CardRecordReducer from './apps/crud/cardRecord';
 import TrxVisitorReducer from './apps/crud/trxVisitor';
-import layoutReducer from './apps/monitoring/layout';
+// import layoutReducer from './apps/monitoring/layout';
 // import BleNodeReducer from './apps/crud/bleNode';
-import RulesNodeReducer from './apps/rules/RulesNodes';
-import RulesConnectorReducer from './apps/rules/RulesConnectors';
-import BeaconReducer from './apps/tracking/Beacon';
-import AlarmActiveReducer from './apps/tracking/Alarm';
-import AlarmUIReducer from './apps/monitoring/AlarmUI';
-import TimeGroupReducer from './apps/crud/timeGroup';
-import NotifyReducer from './apps/monitoring/NotifySlice';
+// import RulesNodeReducer from './apps/rules/RulesNodes';
+// import RulesConnectorReducer from './apps/rules/RulesConnectors';
+// import BeaconReducer from './apps/tracking/Beacon';
+// import AlarmActiveReducer from './apps/tracking/Alarm';
+// import AlarmUIReducer from './apps/monitoring/AlarmUI';
+// import TimeGroupReducer from './apps/crud/timeGroup';
+// import NotifyReducer from './apps/monitoring/NotifySlice';
 import UserReducer from './apps/crud/users';
 import CardAccessReducer from './apps/crud/cardAccess';
 import CardGroupReducer from './apps/crud/cardGroup';
@@ -57,17 +57,17 @@ import OverPopulatingReducer from './apps/alarmsetting/overpopulating';
 import StayOnAreaReducer from './apps/alarmsetting/stayonarea';
 import BoundaryReducer from './apps/alarmsetting/boundary';
 import EngineReducer from './apps/crud/engine';
-import DashboardReducer from './apps/dashboard/Dashboard';
+// import DashboardReducer from './apps/dashboard/Dashboard';
 import VisitorFilterPresetReducer from './apps/crud/visitorFilterPreset';
 import VisitorSessionReducer from './apps/crud/visitorSession';
 import InvestigateReducer from './apps/crud/investigate';
 import PatrolAreaReducer from './apps/crud/patrolArea';
 import PatrolRouteReducer from './apps/crud/patrolRoute';
 import PatrolSessionReducer from './apps/crud/patrolSession';
-import ReaderHealthReducer from './apps/tracking/ReaderHealth';
-import EventLogReducer from './apps/tracking/Event';
-import SessionReducer from './apps/session';
-import EvacuationReducer from './apps/tracking/Evacuation';
+// import ReaderHealthReducer from './apps/tracking/ReaderHealth';
+// import EventLogReducer from './apps/tracking/Event';
+// import SessionReducer from './apps/session';
+// import EvacuationReducer from './apps/tracking/Evacuation';
 import {
   useDispatch as useAppDispatch,
   useSelector as useAppSelector,
@@ -77,14 +77,14 @@ import {
 const rootReducer = combineReducers({
   customizer: CustomizerReducer,
   settings: SettingsReducer,
-  // ecommerceReducer: EcommerceReducer,
-  // chatReducer: ChatsReducer,
-  // emailReducer: EmailReducer,
-  // notesReducer: NotesReducer,
-  // contactsReducer: ContactsReducer,
-  // ticketReducer: TicketReducer,
-  // userpostsReducer: UserProfileReducer,
-  // blogReducer: BlogReducer,
+  ecommerceReducer: EcommerceReducer,
+  chatReducer: ChatsReducer,
+  emailReducer: EmailReducer,
+  notesReducer: NotesReducer,
+  contactsReducer: ContactsReducer,
+  ticketReducer: TicketReducer,
+  userpostsReducer: UserProfileReducer,
+  blogReducer: BlogReducer,
   // gateReducer: GatesReducer,
   // floorplanReducer2: FloorplanReducer2,
   applicationReducer: applicationReducer,
@@ -106,7 +106,7 @@ const rootReducer = combineReducers({
   alarmTriggerReducer: alarmTriggerReducer,
   buildingReducer: buildingReducer,
   floorplanDeviceReducer: FloorplanDeviceReducer,
-  layoutReducer: layoutReducer,
+  // layoutReducer: layoutReducer,
   floorplanReducer: FloorplanReducer,
   CardReducer: CardReducer,
   EngineReducer: EngineReducer,
@@ -114,15 +114,15 @@ const rootReducer = combineReducers({
   CardRecordReducer: CardRecordReducer,
   TrxVisitorReducer: TrxVisitorReducer,
   // bleNodeReducer: BleNodeReducer,
-  RulesNodeReducer: RulesNodeReducer,
-  RulesConnectorReducer: RulesConnectorReducer,
-  BeaconReducer: BeaconReducer,
-  AlarmActiveReducer: AlarmActiveReducer,
-  AlarmUIReducer: AlarmUIReducer,
-  TimeGroupReducer: TimeGroupReducer,
-  NotifyReducer: NotifyReducer,
+  // RulesNodeReducer: RulesNodeReducer,
+  // RulesConnectorReducer: RulesConnectorReducer,
+  // BeaconReducer: BeaconReducer,
+  // AlarmActiveReducer: AlarmActiveReducer,
+  // AlarmUIReducer: AlarmUIReducer,
+  // TimeGroupReducer: TimeGroupReducer,
+  // NotifyReducer: NotifyReducer,
   userReducer: UserReducer,
-  sessionReducer: SessionReducer,
+  // sessionReducer: SessionReducer,
   CardAccessReducer: CardAccessReducer,
   CardGroupReducer: CardGroupReducer,
   AlarmSettingReducer: AlarmSettingReducer,
@@ -130,16 +130,16 @@ const rootReducer = combineReducers({
   OverPopulatingReducer: OverPopulatingReducer,
   StayOnAreaReducer: StayOnAreaReducer,
   BoundaryReducer: BoundaryReducer,
-  DashboardReducer: DashboardReducer,
+  // DashboardReducer: DashboardReducer,
   VisitorFilterPresetReducer: VisitorFilterPresetReducer,
   VisitorSessionReducer: VisitorSessionReducer,
   PatrolAreaReducer: PatrolAreaReducer,
   PatrolRouteReducer: PatrolRouteReducer,
   PatrolSessionReducer: PatrolSessionReducer,
-  ReaderHealthReducer: ReaderHealthReducer,
+  // ReaderHealthReducer: ReaderHealthReducer,
   InvestigateReducer: InvestigateReducer,
-  EventLogReducer: EventLogReducer,
-  evacuationReducer: EvacuationReducer,
+  // EventLogReducer: EventLogReducer,
+  // evacuationReducer: EvacuationReducer,
 });
 
 const storage = localForage.createInstance({
@@ -204,6 +204,19 @@ export const store = configureStore({
 //     sessionReducer: SessionReducer,
 //   },
 // });
+// const appRootReducer = combineReducers({
+//   customizer: CustomizerReducer,
+//   ecommerceReducer: EcommerceReducer,
+//   chatReducer: ChatsReducer,
+//   emailReducer: EmailReducer,
+//   notesReducer: NotesReducer,
+//   contactsReducer: ContactsReducer,
+//   ticketReducer: TicketReducer,
+//   userpostsReducer: UserProfileReducer,
+//   blogReducer: BlogReducer,
+// });
+
+// export type AppState = ReturnType<typeof appRootReducer>;
 
 export const persistor = persistStore(store);
 

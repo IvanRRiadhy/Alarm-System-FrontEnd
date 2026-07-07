@@ -7,13 +7,13 @@ import { Box, List, Theme, useMediaQuery } from '@mui/material';
 import { useSelector } from 'src/store/Store';
 import NavItem from '../NavItem/NavItem';
 import NavCollapse from '../NavCollapse/NavCollapse';
-import { AppState } from 'src/store/Store';
+import { RootState } from 'src/store/Store';
 
 const NavListing = () => {
   const { pathname } = useLocation();
   const pathDirect = pathname;
   const pathWithoutLastPart = pathname.slice(0, pathname.lastIndexOf('/'));
-  const customizer = useSelector((state: AppState) => state.customizer);
+  const customizer = useSelector((state: RootState) => state.customizer);
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
   const hideMenu = lgUp ? customizer.isCollapse && !customizer.isSidebarHover : '';
 
@@ -29,7 +29,7 @@ const NavListing = () => {
                 hideMenu={hideMenu}
                 pathWithoutLastPart={pathWithoutLastPart}
                 level={1}
-                key={item.id} onClick={undefined}              />
+                key={item.id} onClick={undefined} />
             );
 
             // {/********If Sub No Menu**********/}
@@ -37,7 +37,7 @@ const NavListing = () => {
             return (
               <NavItem item={item} key={item.id} pathDirect={pathDirect} hideMenu={hideMenu} onClick={function (): void {
                 throw new Error('Function not implemented.');
-              } } />
+              }} />
             );
           }
         })}

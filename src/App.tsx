@@ -7,6 +7,7 @@ import { RouterProvider } from 'react-router';
 import router from './routes/Router';
 import { RootState } from './store/Store';
 import usePreventWindowClose from './hooks/usePreventWindowClose';
+import "leaflet/dist/leaflet.css";
 
 
 function App() {

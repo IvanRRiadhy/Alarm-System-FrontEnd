@@ -1,30 +1,179 @@
 import React from 'react';
-import { Box, Typography, Paper, List, ListItem, ListItemText } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Divider,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Paper,
+  Typography,
+} from '@mui/material';
+
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import DoorFrontRoundedIcon from '@mui/icons-material/DoorFrontRounded';
+import SensorsRoundedIcon from '@mui/icons-material/SensorsRounded';
+import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
 
 type RecentEventsProps = {
   region: string;
 };
 
-const RecentEvents: React.FC<RecentEventsProps> = ({ region }) => {
-  const events = [
-    { time: '10:15', description: 'Door opened at Site A' },
-    { time: '09:42', description: 'Motion detected at Site B' },
-    { time: '08:30', description: 'Camera offline at Site C' },
-  ];
+const events = [
+  {
+    time: '10:28',
+    title: 'Pintu Utama Terbuka',
+    site: 'KCP Surabaya Diponegoro',
+    color: '#EF4444',
+    icon: <DoorFrontRoundedIcon fontSize="small" />,
+  },
+  {
+    time: '10:12',
+    title: 'Motion Terdeteksi',
+    site: 'KCP Bandung Asia Afrika',
+    color: '#F59E0B',
+    icon: <SensorsRoundedIcon fontSize="small" />,
+  },
+  {
+    time: '09:54',
+    title: 'Camera Offline',
+    site: 'KCP Medan Iskandar Muda',
+    color: '#EF4444',
+    icon: <CameraAltRoundedIcon fontSize="small" />,
+  },
+  {
+    time: '09:31',
+    title: 'Alarm Intrusion',
+    site: 'KCP Semarang Pandanaran',
+    color: '#EF4444',
+    icon: <WarningAmberRoundedIcon fontSize="small" />,
+  },
+  {
+    time: '09:02',
+    title: 'Motion Terdeteksi',
+    site: 'KCP Makassar Ratulangi',
+    color: '#22C55E',
+    icon: <SensorsRoundedIcon fontSize="small" />,
+  },
+];
 
+const RecentEvents: React.FC<RecentEventsProps> = () => {
   return (
     <Paper
-      elevation={3}
-      sx={{ p: 2, borderRadius: '12px', background: 'linear-gradient(135deg, #0d1117, #1e293b)', color: '#fff' }}
+      sx={{
+        bgcolor: '#111827',
+        borderRadius: 3,
+        border: '1px solid rgba(255,255,255,.08)',
+        overflow: 'hidden',
+        height: '100%',
+      }}
     >
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        Recent Events – {region}
-      </Typography>
-      <List>
-        {events.map((e, idx) => (
-          <ListItem key={idx} sx={{ color: '#fff' }}>
-            <ListItemText primary={e.time} secondary={e.description} />
-          </ListItem>
+      <Box
+        sx={{
+          px: 2,
+          py: 2,
+          borderBottom: '1px solid rgba(255,255,255,.08)',
+        }}
+      >
+        <Typography
+          sx={{
+            color: 'white',
+            fontWeight: 700,
+            fontSize: 16,
+          }}
+        >
+          RECENT EVENTS
+        </Typography>
+      </Box>
+
+      <List
+        sx={{
+          p: 0,
+          maxHeight: "85%",
+          overflowY: 'auto',
+
+          '&::-webkit-scrollbar': {
+            width: 6,
+          },
+
+          '&::-webkit-scrollbar-thumb': {
+            background: '#334155',
+            borderRadius: 10,
+          },
+        }}
+      >
+        {events.map((event, index) => (
+          <React.Fragment key={index}>
+            <ListItem
+              sx={{
+                py: 1.5,
+                px: 2,
+                transition: '.2s',
+
+                '&:hover': {
+                  bgcolor: '#1E293B',
+                },
+              }}
+            >
+              <ListItemAvatar>
+                <Avatar
+                  sx={{
+                    bgcolor: `${event.color}22`,
+                    color: event.color,
+                    width: 38,
+                    height: 38,
+                  }}
+                >
+                  {event.icon}
+                </Avatar>
+              </ListItemAvatar>
+
+              <ListItemText
+                primary={
+                  <>
+                    <Typography
+                      sx={{
+                        color: '#94A3B8',
+                        fontSize: 11,
+                        mb: .2,
+                      }}
+                    >
+                      {event.time}
+                    </Typography>
+
+                    <Typography
+                      sx={{
+                        color: '#F8FAFC',
+                        fontWeight: 600,
+                        fontSize: 14,
+                      }}
+                    >
+                      {event.title}
+                    </Typography>
+                  </>
+                }
+                secondary={
+                  <Typography
+                    sx={{
+                      color: '#94A3B8',
+                      fontSize: 12,
+                    }}
+                  >
+                    {event.site}
+                  </Typography>
+                }
+              />
+            </ListItem>
+
+            {index !== events.length - 1 && (
+              <Divider
+                sx={{
+                  borderColor: 'rgba(255,255,255,.05)',
+                }}
+              />
+            )}
+          </React.Fragment>
         ))}
       </List>
     </Paper>

@@ -24,7 +24,7 @@ import {
   setBorderRadius,
   setCardShadow,
 } from 'src/store/customizer/CustomizerSlice';
-import { AppState } from 'src/store/Store';
+import { RootState } from 'src/store/Store';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
 import WbSunnyTwoToneIcon from '@mui/icons-material/WbSunnyTwoTone';
 import DarkModeTwoToneIcon from '@mui/icons-material/DarkModeTwoTone';
@@ -44,7 +44,7 @@ interface colors {
 }
 const Customizer: FC = () => {
   const [showDrawer, setShowDrawer] = useState(false);
-  const customizer = useSelector((state: AppState) => state.customizer);
+  const customizer = useSelector((state: RootState) => state.customizer);
 
   const dispatch = useDispatch();
 

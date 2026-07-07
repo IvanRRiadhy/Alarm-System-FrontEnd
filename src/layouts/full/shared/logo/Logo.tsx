@@ -14,10 +14,10 @@ import { ReactComponent as LogoLight } from 'src/assets/images/logos/light-logo.
 // @ts-ignore
 import { ReactComponent as LogoLightRTL } from 'src/assets/images/logos/light-logo-rtl.svg';
 import { styled } from '@mui/material';
-import { AppState } from 'src/store/Store';
+import { RootState } from 'src/store/Store';
 
 const Logo: FC = () => {
-  const customizer = useSelector((state: AppState) => state.customizer);
+  const customizer = useSelector((state: RootState) => state.customizer);
   const LinkStyled = styled(Link)(() => ({
     height: customizer.TopbarHeight,
     width: customizer.isCollapse ? '40px' : '180px',

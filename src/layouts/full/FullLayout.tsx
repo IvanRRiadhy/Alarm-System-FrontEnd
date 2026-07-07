@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { styled, Container, Box, useTheme } from '@mui/material';
 import { useSelector } from 'src/store/Store';
 import { Outlet } from 'react-router';
-import { AppState } from 'src/store/Store';
+import { RootState, AppDispatch } from 'src/store/Store';
 import Header from './vertical/header/Header';
 import Sidebar from './vertical/sidebar/Sidebar';
 import Customizer from './shared/customizer/Customizer';
@@ -28,7 +28,7 @@ const PageWrapper = styled('div')(() => ({
 }));
 
 const FullLayout: FC = () => {
-  const customizer = useSelector((state: AppState) => state.customizer);
+  const customizer = useSelector((state: RootState) => state.customizer);
 
   const theme = useTheme();
 

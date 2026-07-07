@@ -1,91 +1,142 @@
-import { IconButton, Box, AppBar, useMediaQuery, Toolbar, styled, Stack } from '@mui/material';
+import React, { useState } from 'react';
 
-import { useSelector, useDispatch } from 'src/store/Store';
 import {
-  toggleSidebar,
+  AppBar,
+  Toolbar,
+  Box,
+  IconButton,
+  Stack,
+  styled,
+  useMediaQuery,
+} from '@mui/material';
+
+import { IconMenu2 } from '@tabler/icons-react';
+
+import { useDispatch, useSelector } from 'src/store/Store';
+import {
   toggleMobileSidebar,
-  setDarkMode,
+  toggleSidebar,
 } from 'src/store/customizer/CustomizerSlice';
-import { IconMenu2, IconMoon, IconSun } from '@tabler/icons-react';
+
+import { RootState } from 'src/store/Store';
+
 import Notifications from './Notification';
 import Profile from './Profile';
-import Cart from './Cart';
-import Search from './Search';
-import Language from './Language';
-import { AppState } from 'src/store/Store';
-import Navigation from './Navigation';
 import MobileRightSidebar from './MobileRightSidebar';
 
-const Header = () => {
-  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up('lg'));
-  const lgDown = useMediaQuery((theme: any) => theme.breakpoints.down('lg'));
+import HeaderLogo from './components/HeaderLogo';
+import HeaderClock from './components/HeaderClock';
+import HeaderSummary from './components/HeaderSummary';
+import HeaderStatus from './components/HeaderStatus';
+import HeaderRegion from './components/HeaderRegion';
 
-  // drawer
-  const customizer = useSelector((state: AppState) => state.customizer);
+const Header = () => {
+  const lgUp = useMediaQuery((theme: any) =>
+    theme.breakpoints.up('lg')
+  );
+
+  const lgDown = useMediaQuery((theme: any) =>
+    theme.breakpoints.down('lg')
+  );
+
   const dispatch = useDispatch();
 
+  const customizer = useSelector(
+    (state: RootState) => state.customizer
+  );
+
+  const [region, setRegion] = useState('Semua Region');
+
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
+    background: '#111827',
     boxShadow: 'none',
-    background: theme.palette.background.paper,
-    justifyContent: 'center',
-    backdropFilter: 'blur(4px)',
+    borderBottom: '1px solid rgba(255,255,255,.08)',
+    backdropFilter: 'blur(10px)',
+
     [theme.breakpoints.up('lg')]: {
       minHeight: customizer.TopbarHeight,
     },
   }));
-  const ToolbarStyled = styled(Toolbar)(({ theme }) => ({
-    width: '100%',
-    color: theme.palette.text.secondary,
+
+  const ToolbarStyled = styled(Toolbar)(() => ({
+    minHeight: 82,
+    paddingLeft: 20,
+    paddingRight: 20,
   }));
 
   return (
-    <AppBarStyled position="sticky" color="default">
+    <AppBarStyled
+      position="sticky"
+      color="transparent"
+    >
       <ToolbarStyled>
-        {/* ------------------------------------------- */}
-        {/* Toggle Button Sidebar */}
-        {/* ------------------------------------------- */}
+
+        {/* Sidebar */}
+
         <IconButton
           color="inherit"
-          aria-label="menu"
-          onClick={lgUp ? () => dispatch(toggleSidebar()) : () => dispatch(toggleMobileSidebar())}
+          sx={{
+            color: 'white',
+            mr: 2,
+          }}
+          onClick={
+            lgUp
+              ? () => dispatch(toggleSidebar())
+              : () => dispatch(toggleMobileSidebar())
+          }
         >
-          <IconMenu2 size="20" />
+          <IconMenu2 size={24} />
         </IconButton>
 
-        {/* ------------------------------------------- */}
-        {/* Search Dropdown */}
-        {/* ------------------------------------------- */}
-        <Search />
-        {lgUp ? (
-          <>
-            <Navigation />
-          </>
-        ) : null}
+        {/* Logo */}
 
-        <Box flexGrow={1} />
-        <Stack spacing={1} direction="row" alignItems="center">
-          <Language />
-          {/* ------------------------------------------- */}
-          {/* Ecommerce Dropdown */}
-          {/* ------------------------------------------- */}
-          <Cart />
-          {/* ------------------------------------------- */}
-          {/* End Ecommerce Dropdown */}
-          {/* ------------------------------------------- */}
-          <IconButton size="large" color="inherit">
-            {customizer.activeMode === 'light' ? (
-              <IconMoon size="21" stroke="1.5" onClick={() => dispatch(setDarkMode('dark'))} />
-            ) : (
-              <IconSun size="21" stroke="1.5" onClick={() => dispatch(setDarkMode('light'))} />
-            )}
-          </IconButton>
-          <Notifications />
-          {/* ------------------------------------------- */}
-          {/* Toggle Right Sidebar for mobile */}
-          {/* ------------------------------------------- */}
-          {lgDown ? <MobileRightSidebar /> : null}
-          <Profile />
-        </Stack>
+        <HeaderLogo />
+
+        {/* Desktop */}
+
+        {lgUp && (
+          <>
+            <Box flex={1} />
+
+            <HeaderSummary />
+
+            <Box width={40} />
+
+            <HeaderClock />
+
+            <Box width={30} />
+
+            <HeaderRegion
+              region={region}
+              onChange={setRegion}
+            />
+
+            <Box width={20} />
+
+            <HeaderStatus />
+
+            <Box width={16} />
+
+            <Notifications />
+
+            <Profile />
+          </>
+        )}
+
+        {/* Mobile */}
+
+        {lgDown && (
+          <>
+            <Box flex={1} />
+
+            <Notifications />
+
+            <MobileRightSidebar />
+
+            <Profile />
+          </>
+        )}
+
       </ToolbarStyled>
     </AppBarStyled>
   );

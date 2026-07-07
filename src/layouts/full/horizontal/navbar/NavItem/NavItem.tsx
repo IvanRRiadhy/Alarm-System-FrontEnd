@@ -6,7 +6,7 @@ import { NavLink } from 'react-router';
 // mui imports
 import { ListItemIcon, List, styled, ListItemText, useTheme, ListItemButton } from '@mui/material';
 import { useSelector } from 'src/store/Store';
-import { AppState } from 'src/store/Store';
+import { RootState } from 'src/store/Store';
 
 type NavGroup = {
   [x: string]: any;
@@ -33,7 +33,7 @@ interface ItemType {
 }
 
 const NavItem = ({ item, level, pathDirect, onClick }: ItemType) => {
-  const customizer = useSelector((state: AppState) => state.customizer);
+  const customizer = useSelector((state: RootState) => state.customizer);
   const Icon = item.icon;
   const theme = useTheme();
   const itemIcon =
