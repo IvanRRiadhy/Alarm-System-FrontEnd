@@ -1,131 +1,118 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Grid2 as Grid } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
-
-import TopCards from 'src/components/dashboards/modern/TopCards';
-import RevenueUpdates from 'src/components/dashboards/modern/RevenueUpdates';
-import YearlyBreakup from 'src/components/dashboards/modern/YearlyBreakup';
-import MonthlyEarnings from 'src/components/dashboards/modern/MonthlyEarnings';
-import EmployeeSalary from 'src/components/dashboards/modern/EmployeeSalary';
-import Customers from 'src/components/dashboards/modern/Customers';
-import Projects from 'src/components/dashboards/modern/Projects';
-import Social from 'src/components/dashboards/modern/Social';
-import SellingProducts from 'src/components/dashboards/modern/SellingProducts';
-import WeeklyStats from 'src/components/dashboards/modern/WeeklyStats';
-import TopPerformers from 'src/components/dashboards/modern/TopPerformers';
-import Welcome from 'src/layouts/full/shared/welcome/Welcome';
+import AlarmHeader from 'src/components/dashboards/alarm/AlarmHeader';
+import AlarmTopCards from 'src/components/dashboards/alarm/AlarmTopCards';
+import ActiveAlarms from 'src/components/dashboards/alarm/ActiveAlarms';
+import SiteMap from 'src/components/dashboards/alarm/SiteMap';
+import DeviceStatus from 'src/components/dashboards/alarm/DeviceStatus';
+import AlarmTrend from 'src/components/dashboards/alarm/AlarmTrend';
+import ActiveAlarmSites from 'src/components/dashboards/alarm/ActiveAlarmSites';
+import FloorPlan from 'src/components/dashboards/alarm/FloorPlan';
+import RecentEvents from 'src/components/dashboards/alarm/RecentEvents';
+import SystemHealth from 'src/components/dashboards/alarm/SystemHealth';
+// import QuickActions from 'src/components/dashboards/alarm/QuickActions';
 
 const Modern = () => {
+  const [region, setRegion] = useState<string>('Semua Region');
+
   return (
-    (<PageContainer title="Modern Dashboard" description="this is Modern Dashboard page">
-      <Box>
-        <Grid container spacing={3}>
-          {/* column */}
+    <PageContainer title="SOC Dashboard" description="Security Operations Center Dashboard">
+      <Box sx={{ backgroundColor: '#0b0f19', p: 3, borderRadius: '16px', minHeight: '100%' }}>
+        {/* Header */}
+        {/* <AlarmHeader region={region} setRegion={setRegion} /> */}
+
+        {/* Top Cards row */}
+        <Box sx={{ mb: 3 }}>
+          <AlarmTopCards />
+        </Box>
+
+        {/* Middle row: ActiveAlarms, SiteMap, DeviceStatus/AlarmTrend */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {/* Active Alarms */}
           <Grid
             size={{
               xs: 12,
-              lg: 12
+              md: 12,
+              lg: 3.5
             }}>
-            <TopCards />
+            <ActiveAlarms region={region} />
           </Grid>
-          {/* column */}
+          {/* Map */}
           <Grid
             size={{
               xs: 12,
-              lg: 8
+              md: 12,
+              lg: 5
             }}>
-            <RevenueUpdates />
+            <SiteMap region={region} />
           </Grid>
-          {/* column */}
+          {/* Status + Trend */}
           <Grid
             size={{
               xs: 12,
-              lg: 4
+              md: 12,
+              lg: 3.5
             }}>
-            <Grid container spacing={3}>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  lg: 12
-                }}>
-                <YearlyBreakup />
-              </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  lg: 12
-                }}>
-                <MonthlyEarnings />
-              </Grid>
-            </Grid>
-          </Grid>
-          {/* column */}
-          <Grid
-            size={{
-              xs: 12,
-              lg: 4
-            }}>
-            <EmployeeSalary />
-          </Grid>
-          {/* column */}
-          <Grid
-            size={{
-              xs: 12,
-              lg: 4
-            }}>
-            <Grid container spacing={3}>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6
-                }}>
-                <Customers />
-              </Grid>
-              <Grid
-                size={{
-                  xs: 12,
-                  sm: 6
-                }}>
-                <Projects />
-              </Grid>
-              <Grid size={12}>
-                <Social />
-              </Grid>
-            </Grid>
-          </Grid>
-          {/* column */}
-          <Grid
-            size={{
-              xs: 12,
-              lg: 4
-            }}>
-            <SellingProducts />
-          </Grid>
-          {/* column */}
-          <Grid
-            size={{
-              xs: 12,
-              lg: 4
-            }}>
-            <WeeklyStats />
-          </Grid>
-          {/* column */}
-          <Grid
-            size={{
-              xs: 12,
-              lg: 8
-            }}>
-            <TopPerformers />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <DeviceStatus region={region} />
+              <AlarmTrend region={region} />
+            </Box>
           </Grid>
         </Grid>
-        {/* column */}
-        <Welcome />
+
+        {/* Bottom row: ActiveAlarmSites, FloorPlan, RecentEvents */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          {/* Active Alarm Sites Table */}
+          <Grid
+            size={{
+              xs: 12,
+              md: 12,
+              lg: 4.5
+            }}>
+            <ActiveAlarmSites region={region} />
+          </Grid>
+          {/* FloorPlan */}
+          <Grid
+            size={{
+              xs: 12,
+              md: 12,
+              lg: 4
+            }}>
+            <FloorPlan />
+          </Grid>
+          {/* Recent Events */}
+          <Grid
+            size={{
+              xs: 12,
+              md: 12,
+              lg: 3.5
+            }}>
+            <RecentEvents region={region} />
+          </Grid>
+        </Grid>
+
+        {/* Footer row: SystemHealth, QuickActions */}
+        <Grid container spacing={3}>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 8.5
+            }}>
+            <SystemHealth />
+          </Grid>
+          {/* <Grid
+            size={{
+              xs: 12,
+              lg: 3.5
+            }}>
+            <QuickActions />
+          </Grid> */}
+        </Grid>
       </Box>
-    </PageContainer>)
+    </PageContainer>
   );
 };
 
