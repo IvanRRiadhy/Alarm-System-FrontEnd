@@ -29,7 +29,7 @@ export function initializeAxiosBaseURL() {
   const instances = [axiosServices, axiosCdn, axiosEngine];
   instances.forEach((instance) => {
     instance.defaults.baseURL = instance === axiosServices ? BASE_URL : (instance === axiosCdn ? CDN_URL : API_ENGINE_URL);
-    instance.defaults.headers.common['X-BIOPEOPLETRACKING-API-KEY'] = config.API_KEY;
+    // instance.defaults.headers.common['X-BIOPEOPLETRACKING-API-KEY'] = config.API_KEY;
   });
 }
 
@@ -60,42 +60,42 @@ function createAxiosService({ getBaseUrl }: AxiosServiceOptions): AxiosInstance 
   instance.interceptors.request.use(request => {
     const config = getConfig();
     request.baseURL = getBaseUrl();
-    request.headers['X-BIOPEOPLETRACKING-API-KEY'] = config.API_KEY;
+    // request.headers['X-BIOPEOPLETRACKING-API-KEY'] = config.API_KEY;
     
-    let ApplicationId: string | null = null;
-    const levelPriority = localStorage.getItem('levelPriority');
-    if(levelPriority !== 'System') {
-      ApplicationId = localStorage.getItem('applicationId');
-    }
+    // let ApplicationId: string | null = null;
+    // const levelPriority = localStorage.getItem('levelPriority');
+    // if(levelPriority !== 'System') {
+    //   ApplicationId = localStorage.getItem('applicationId');
+    // }
     const accessToken = localStorage.getItem('token');
 
     if (accessToken) {
       request.headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    if (request.method === 'post' && levelPriority === 'System') {
-      if (request.data instanceof FormData) {
-        if (ApplicationId){ 
-          console.log("Appending ApplicationId to FormData: ", ApplicationId, levelPriority);
-          request.data.append('ApplicationId', ApplicationId)};
-      } else if (
-        request.headers['Content-Type'] === 'application/json' &&
-        typeof request.data === 'string'
-      ) {
-        const dataObj = JSON.parse(request.data);
-        if(ApplicationId){
-        console.log("Appending ApplicationId to JSON string data: ", ApplicationId, levelPriority);
+    // if (request.method === 'post' && levelPriority === 'System') {
+    //   if (request.data instanceof FormData) {
+    //     if (ApplicationId){ 
+    //       console.log("Appending ApplicationId to FormData: ", ApplicationId, levelPriority);
+    //       request.data.append('ApplicationId', ApplicationId)};
+    //   } else if (
+    //     request.headers['Content-Type'] === 'application/json' &&
+    //     typeof request.data === 'string'
+    //   ) {
+    //     const dataObj = JSON.parse(request.data);
+    //     if(ApplicationId){
+    //     console.log("Appending ApplicationId to JSON string data: ", ApplicationId, levelPriority);
         
-        dataObj.ApplicationId = ApplicationId;
-        }
-        request.data = JSON.stringify(dataObj);
-      } else if (typeof request.data === 'object' && request.data !== null) {
-        if(ApplicationId) {
-        console.log("Appending ApplicationId to request.data: ", ApplicationId, levelPriority);
-        request.data.ApplicationId = ApplicationId;
-        }
-      }
-    }
+    //     dataObj.ApplicationId = ApplicationId;
+    //     }
+    //     request.data = JSON.stringify(dataObj);
+    //   } else if (typeof request.data === 'object' && request.data !== null) {
+    //     if(ApplicationId) {
+    //     console.log("Appending ApplicationId to request.data: ", ApplicationId, levelPriority);
+    //     request.data.ApplicationId = ApplicationId;
+    //     }
+    //   }
+    // }
 
     return request;
   });

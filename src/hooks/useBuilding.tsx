@@ -1,30 +1,52 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
-import { BuildingType, GetFilter } from '../store/apps/crud/building';
-import { RootState, useSelector } from 'src/store/Store';
+import { BuildingType, GetFilter, UpdateBuildingMeta } from '../store/apps/crud/building';
+import { RootState, useDispatch, useSelector } from 'src/store/Store';
 
-const Building_API_URL = '/api/MstBuilding/';
-const Building_DT_URL = '/api/MstBuilding/filter/';
+const Building_API_URL = '/api/buildings/';
+const Building_DT_URL = '/api/buildings/filter/';
 const Config_URL = '/api/config-exchange/';
+
+type metaData = {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean
+}
 
 interface PaginatedResponse<T> {
   data: T[];
-  draw: number;
-  recordsTotal: number;
-  recordsFiltered: number;
+  msg: string;
+  meta: metaData;
+  totalCount: number;
+  
 }
 
-export function useBuildingList(filter: GetFilter) {
+export function useBuildingList(filter?: GetFilter) {
+    const dispatch = useDispatch();
     return useQuery({
         queryKey: ['building-list', filter],
         queryFn: async () => {
-            const response = await axiosServices.post(Building_DT_URL, filter);
-            const collection = response.data.collection;
+            const response = await axiosServices.get<PaginatedResponse<BuildingType>>(Building_API_URL, {
+                params: filter,
+            });
+            // console.log('Building list fetched successfully: ', response.data);
+            // const collection = response.data;
+            dispatch(UpdateBuildingMeta(response.data?.meta))
             return {
-                data: collection.data as BuildingType[],
-                draw: collection.draw,
-                recordsTotal: collection.recordsTotal,
-                recordsFiltered: collection.recordsFiltered,
+                data: response.data.data as BuildingType[],
+                msg: response.data.msg,
+                meta: {
+                    page: response.data.meta.page,
+                    limit: response.data.meta.limit,
+                    totalItems: response.data.meta.totalItems,
+                    totalPages: response.data.meta.totalPages,
+                    hasNextPage: response.data.meta.hasNextPage,
+                    hasPreviousPage: response.data.meta.hasPreviousPage
+                },
+                totalCount: response.data.totalCount,
             } satisfies PaginatedResponse<BuildingType>;
         },
         placeholderData: keepPreviousData, // ✅ TanStack v5 way
@@ -49,9 +71,8 @@ export function useAddBuilding(){
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (formData: FormData) => {
-            const response = await axiosServices.post(Building_API_URL, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            formData.delete("id")
+            const response = await axiosServices.post(Building_API_URL, formData);
             // console.log('Building added successfully: ', response.data);
             return response.data;
         },
@@ -67,9 +88,7 @@ export function useEditBuilding(){
     return useMutation({
         mutationFn: async (formData: FormData) => {
             const id = formData.get('id');
-            const res = await axiosServices.put(`${Building_API_URL}${id}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
+            const res = await axiosServices.put(`${Building_API_URL}${id}`, formData);
             return res.data;
         },
         onSuccess: () => {
@@ -101,7 +120,7 @@ export function useBuildingStatus(){
         isLoading: query.isLoading,
         isFetching: query.isFetching,
         hasLoaded: query.isFetched, // ✅ substitusi untuk redux.hasLoaded
-        totalCount: query.data?.recordsFiltered || 0,
+        totalCount: query.data?.meta.totalItems || 0,
     }
 }
 

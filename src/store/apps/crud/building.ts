@@ -6,6 +6,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { defaultBuildingFilter } from "../defaultForm";
 import toast from "react-hot-toast";
 import { ensureMinLatency, retryUntilSuccess } from "src/utils/retry";
+import { metaData } from "./site";
 
 const API_URL = '/api/MstBuilding/';
 const API_DT_URL = '/api/MstBuilding/filter/';
@@ -13,12 +14,12 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 
 export type GetFilter = {
-        Draw: number,
-    Start: number,
-    Length: number,
-    SortColumn: string,
-    SortDir: 'asc' | 'desc',
-    SearchValue: string,
+    page: number;
+    limit: number;
+    // search: string;
+    sortBy: string;
+    sortOrder: 'asc' | "desc";
+    siteId: string | null;
 }
 
 
@@ -40,14 +41,17 @@ export type GetBuildingResponse = {
 
 export interface BuildingType {
     id: string;
-    tag: string;
+    // tag: string;
+    siteId: string;
+    siteName: string;
+    description: string;
     name: string;
-    image: string;
-    applicationId: string;
-    createdBy: string;
-    createdAt: string;
-    updatedBy: string;
-    updatedAt: string;
+    imageUrl: string;
+    // applicationId: string;
+    // createdBy: string;
+    // createdAt: string;
+    // updatedBy: string;
+    // updatedAt: string;
 }
 
 interface StateType {
@@ -59,6 +63,7 @@ interface StateType {
     buildingFilteredCount: number;
     buildingFilter: GetFilter;
     lastFilter?: GetFilter;
+    buildingMeta: metaData;
 isLoading: boolean;
 hasLoaded: boolean;
 }
@@ -71,6 +76,14 @@ const initialState: StateType = {
     buildingTotalCount: 0,
     buildingFilteredCount: 0,
     buildingFilter: defaultBuildingFilter,
+    buildingMeta: {
+        page: 1,
+        limit: 10,
+        totalItems: 0,
+        totalPages: 0,
+        hasPreviousPage: false,
+        hasNextPage: false,
+    },
     isLoading: false,
     hasLoaded: false,
 };
@@ -95,7 +108,10 @@ export const BuildingSlice = createSlice({
         },
         UpdateFilter: (state: StateType, action: PayloadAction<Partial<GetFilter>>) => {
           state.buildingFilter = { ...state.buildingFilter, ...action.payload };
-        }
+        },
+        UpdateBuildingMeta: (state, action: PayloadAction<Partial<metaData>>) => {
+            state.buildingMeta = {...state.buildingMeta, ...action.payload};
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -120,19 +136,19 @@ export const BuildingSlice = createSlice({
                             
                                         // Detect only sorting change
                                         const onlySortingChanged =
-                                            prevFilter.SortColumn !== newFilter.SortColumn ||
-                                            prevFilter.SortDir !== newFilter.SortDir;
+                                            prevFilter.sortBy !== newFilter.sortBy ||
+                                            prevFilter.sortOrder !== newFilter.sortOrder;
                             
                                         const filtersUnchanged =
                                             JSON.stringify({
                                             ...prevFilter,
-                                            SortColumn: undefined,
-                                            SortDir: undefined,
+                                            sortBy: undefined,
+                                            sortOrder: undefined,
                                             }) ===
                                             JSON.stringify({
                                             ...newFilter,
-                                            SortColumn: undefined,
-                                            SortDir: undefined,
+                                            sortBy: undefined,
+                                            sortOrder: undefined,
                                             });
                             
                                         const isOnlySortChange = onlySortingChanged && filtersUnchanged;
@@ -202,7 +218,8 @@ export const {
     GetAllBuildings,
     SelectBuilding,
     SearchBuilding,
-    UpdateFilter
+    UpdateFilter,
+    UpdateBuildingMeta
 } = BuildingSlice.actions;
 
 export const fetchBuildings = () => async (dispatch: AppDispatch) => {

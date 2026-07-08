@@ -33,6 +33,7 @@ import blacklistReducer from './apps/crud/blacklist';
 import alarmReducer from './apps/crud/alarmRecordTracking';
 import alarmTriggerReducer from './apps/crud/alarmTrigger';
 import buildingReducer from './apps/crud/building';
+import siteReducer from './apps/crud/site';
 import FloorplanDeviceReducer from './apps/crud/floorplanDevice';
 import FloorplanReducer from './apps/crud/floorplan';
 import CardReducer from './apps/crud/card';
@@ -105,6 +106,7 @@ const rootReducer = combineReducers({
   alarmReducer: alarmReducer,
   alarmTriggerReducer: alarmTriggerReducer,
   buildingReducer: buildingReducer,
+  siteReducer: siteReducer,
   floorplanDeviceReducer: FloorplanDeviceReducer,
   // layoutReducer: layoutReducer,
   floorplanReducer: FloorplanReducer,

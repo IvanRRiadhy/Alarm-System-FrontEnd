@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { IconPencil, IconPlus } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
-import React, { useEffect } from 'react';
+import React from 'react';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
 import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
 import { AppDispatch, RootState, useDispatch, useSelector } from 'src/store/Store';
@@ -30,27 +30,37 @@ import {
 } from 'src/store/apps/crud/building';
 import { defaultBuildingForm } from 'src/store/apps/defaultForm';
 import { useAddBuilding, useEditBuilding } from 'src/hooks/useBuilding';
+import { useSiteList } from 'src/hooks/useSite';
+import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
+import { useUploadCDN } from 'src/hooks/useCDN';
 
 interface FormType {
   type?: string;
   building?: BuildingType;
 }
 
+const getCdnUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https://ble-cdn.tunnel.piranticerdasindonesia.com/${url}`;
+};
+
 const AddEditBuilding = ({ type, building }: FormType) => {
   const [open, setOpen] = React.useState(false);
-  const [error, setError] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
   const [image, setImage] = React.useState<File | null>(null);
-  const [preview, setPreview] = React.useState<string | null>(building?.image || null);
+  const [preview, setPreview] = React.useState<string | null>(building?.imageUrl || null);
   const [fromLocal, setFromLocal] = React.useState(false);
   const [formData, setFormData] = React.useState({
     ...defaultBuildingForm,
     ...building,
   });
+  const {data: siteResponse} = useSiteList();
+  const siteData = siteResponse?.data || [];
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
-      const addMutation = useAddBuilding();
-    const editMutation = useEditBuilding();
-
-    const isSaving = addMutation.isPending || editMutation.isPending;
+  const addMutation = useAddBuilding();
+  const editMutation = useEditBuilding();
+  const uploadMutation = useUploadCDN();
 
   const buildingFilter = useSelector((state: RootState) => state.buildingReducer.buildingFilter);
   const dispatch: AppDispatch = useDispatch();
@@ -64,7 +74,7 @@ const AddEditBuilding = ({ type, building }: FormType) => {
       }
       setFormData({ ...defaultBuildingForm, ...building });
       
-      setPreview(building?.image || null);
+      setPreview(building?.imageUrl || null);
     } else {
       setFormData({ ...defaultBuildingForm });
       setImage(null);
@@ -79,31 +89,10 @@ const AddEditBuilding = ({ type, building }: FormType) => {
 
   const handleClose = () => {
     setOpen(false);
-    setPreview(building?.image || null);
+    setImage(null);
+    setPreview(building?.imageUrl || null);
     setFromLocal(false);
   };
-  useEffect(() => {
-    // Only run for edit mode and if floorImage is a string path
-    if (type === 'edit' && open && building?.image && typeof building.image === 'string') {
-      // Fetch the image from the server
-      fetch(`${BASE_URL}${building.image}`)
-        .then((res) => res.blob())
-        .then((blob) => {
-          // Create a File object from the Blob
-          const file = new File([blob], building.image.split('/').pop() || 'floorplan.jpg', {
-            type: blob.type,
-          });
-          setImage(file);
-          // Optionally set preview as well
-          setPreview(URL.createObjectURL(file));
-        })
-        .catch((err) => {
-          console.error('Failed to fetch floor image:', err);
-        });
-      // console.log('Image URL:', preview);
-    }
-    // eslint-disable-next-line
-  }, [open]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement> | SelectChangeEvent<string>,
@@ -138,25 +127,59 @@ const AddEditBuilding = ({ type, building }: FormType) => {
     const errors: Record<string, string> = {};
 
     if (!formData.name?.trim()) errors.name = 'Building name is required';
-    if (!image) errors.image = 'Building Image is required';
+    if (!formData.siteId?.trim()) errors.siteId = 'Site is required';
+    if (!image && !formData.imageUrl) errors.image = 'Building Image is required';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-const handleSave = async () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       toast.error('Please fill in all required fields.');
       return;
     }
 
+    setIsSaving(true);
+
+    let finalImageUrl = formData.imageUrl;
+
+    // If there is a new image selected, upload to CDN first
+    if (image) {
+      const uploadData = new FormData();
+      uploadData.append('file', image);
+
+      try {
+        const uploadRes = await uploadMutation.mutateAsync(uploadData);
+        const uploaded = uploadRes?.collection?.data?.[0];
+        if (!uploaded || !uploaded.fileUrl) {
+          throw new Error('Invalid response from CDN upload');
+        }
+        finalImageUrl = uploaded.fileUrl;
+      } catch (err) {
+        console.error('CDN upload failed:', err);
+        toast.error('Failed to upload image.');
+        setIsSaving(false);
+        return; // Aborts saving, keeps dialog open
+      }
+    }
+
+    // Construct FormData using the CDN URL string
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
-      if (!['image', 'createdBy', 'createdAt', 'updatedBy', 'updatedAt'].includes(key)) {
-        data.append(key, value?.toString() ?? '');
+      if (['image', 'createdBy', 'createdAt', 'updatedBy', 'updatedAt', 'siteName'].includes(key)) {
+        return;
+      }
+
+      if (key === 'imageUrl') {
+        data.append('imageUrl', finalImageUrl || '');
+        return;
+      }
+
+      if (value !== null && value !== undefined) {
+        data.append(key, value.toString());
       }
     });
-    if (image) data.append('image', image);
 
     try {
       if (type === 'add') {
@@ -170,6 +193,8 @@ const handleSave = async () => {
     } catch (error) {
       console.error('Error saving building:', error);
       toast.error('Failed to save building.');
+    } finally {
+      setIsSaving(false);
     }
   };
   return (
@@ -203,7 +228,7 @@ const handleSave = async () => {
           <DialogContent>
             <Grid container spacing={5} mb={3}>
               <Grid size={{ lg: 6, md: 12, sm: 12 }}>
-                <CustomFormLabel htmlFor="department-Name">Building Name</CustomFormLabel>
+                <CustomFormLabel htmlFor="building-Name">Building Name</CustomFormLabel>
                 <CustomTextField
                   id="name"
                   value={formData.name}
@@ -217,22 +242,22 @@ const handleSave = async () => {
                 />
               </Grid>
               <Grid size={{ lg: 6, md: 12, sm: 12 }}>
-                <CustomFormLabel htmlFor="department-Name">Building Tag</CustomFormLabel>
-                <CustomTextField
-                  id="tag"
-                  value={formData.tag}
-                  onChange={handleInputChange}
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Enter Building Tag"
-                  error={!!formErrors.tag}
-                  helperText={formErrors.tag}
+                <CustomFormLabel htmlFor="site-select">Site</CustomFormLabel>
+                <CustomAutocomplete
+                  label="Select Site"
+                  options={siteData}
+                  value={siteData.find((s) => s.id === formData.siteId) || null}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, siteId: val?.id ?? '', siteName: val?.name ?? '' }))}
+                  getOptionLabel={(o) => o.name}
+                  isOptionEqualToValue={(a, b) => a.id === b.id}
+                  error={!!formErrors.siteId}
+                  helperText={formErrors.siteId}
                   required
                 />
               </Grid>
             </Grid>
             <Grid container spacing={5} mb={3}>
-              <Grid size={6}>
+              <Grid size={{ lg: 6, md: 12, sm: 12 }}>
                 <CustomFormLabel
                   htmlFor="building-image"
                   sx={formErrors.image ? { color: 'error.main' } : undefined}
@@ -256,12 +281,26 @@ const handleSave = async () => {
                 {formErrors.image && <FormHelperText error>{formErrors.image}</FormHelperText>}
                 {preview && (
                   <img
-                    // src={fromLocal ? `${preview}` : image ? `${BASE_URL}${building?.image}` : `${BASE_URL}/${preview}`}
-                    src={preview?.startsWith('blob:') ? preview : `${BASE_URL}${preview}`}
+                    src={preview?.startsWith('blob:') ? preview : getCdnUrl(preview)}
                     alt="Building Preview"
                     style={{ width: '100%', marginTop: '10px', borderRadius: '5px' }}
                   />
                 )}
+              </Grid>
+              <Grid size={{ lg: 6, md: 12, sm: 12 }}>
+                <CustomFormLabel htmlFor="description">Description</CustomFormLabel>
+                <CustomTextField
+                  id="description"
+                  value={formData.description || ''}
+                  onChange={handleInputChange}
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter Building Description"
+                  multiline
+                  rows={4}
+                  error={!!formErrors.description}
+                  helperText={formErrors.description}
+                />
               </Grid>
             </Grid>
           </DialogContent>
@@ -283,7 +322,7 @@ const handleSave = async () => {
             </Button>
           </DialogActions>
         </Dialog>
-      {/* {isLoading && (
+      {isSaving && (
         <Dialog open={open} fullWidth maxWidth="sm">
           <DialogContent sx={{ textAlign: 'center', py: 10 }}>
             <Typography variant="h1" mb={5}>
@@ -292,7 +331,7 @@ const handleSave = async () => {
             <CircularProgress size={50} color="primary" />
           </DialogContent>
         </Dialog>
-      )} */}
+      )}
     </>
   );
 };

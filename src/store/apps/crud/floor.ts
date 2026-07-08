@@ -12,15 +12,12 @@ const API_DT_URL = "/api/MstFloor/filter/";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-        Draw: number,
-    Start: number,
-    Length: number,
-    SortColumn: string,
-    SortDir: 'asc' | 'desc',
-    SearchValue: string,
-    filters: {
-        BuildingId: string[],
-    }
+    page: number;
+    limit: number;
+    // search: string;
+    sortBy: string;
+    sortOrder: "asc" | "desc";
+    buildingId: string | null;
 }
 
 
@@ -44,13 +41,16 @@ export interface floorType {
     id: string,
     buildingId: string,
     name: string,
-    
+    buildingName: string,
+    siteId: string,
+    siteName: string,
+    level: number,
 
-    createdBy: string,
-    createdAt: string,
-    updatedBy: string,
-    updatedAt: string,
-        building?: BuildingType,
+    // createdBy: string,
+    // createdAt: string,
+    // updatedBy: string,
+    // updatedAt: string,
+        // building?: BuildingType,
 }
 
 interface StateType {
@@ -160,19 +160,19 @@ export const FloorSlice = createSlice({
             
                         // Detect only sorting change
                         const onlySortingChanged =
-                            prevFilter.SortColumn !== newFilter.SortColumn ||
-                            prevFilter.SortDir !== newFilter.SortDir;
+                            prevFilter.sortBy !== newFilter.sortBy ||
+                            prevFilter.sortOrder !== newFilter.sortOrder;
             
                         const filtersUnchanged =
                             JSON.stringify({
                             ...prevFilter,
-                            SortColumn: undefined,
-                            SortDir: undefined,
+                            sortBy: undefined,
+                            sortOrder: undefined,
                             }) ===
                             JSON.stringify({
                             ...newFilter,
-                            SortColumn: undefined,
-                            SortDir: undefined,
+                            sortBy: undefined,
+                            sortOrder: undefined,
                             });
             
                         const isOnlySortChange = onlySortingChanged && filtersUnchanged;

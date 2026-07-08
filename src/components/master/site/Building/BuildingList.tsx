@@ -26,10 +26,10 @@ import {
   Tooltip,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
-import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload } from '@tabler/icons-react';
+import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink } from '@tabler/icons-react';
 import { useNavigate, useLocation } from 'react-router';
 import { floorType, SetSelectedFloor, UpdateFilter as UpdateFloorFilter } from 'src/store/apps/crud/floor';
-import AddEditFloor from 'src/components/master/CRUD/floor/AddEditFloor';
+import AddEditFloor from 'src/components/master/site/Floor/AddEditFloor';
 import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Store';
 import {
   BuildingType,
@@ -40,7 +40,7 @@ import {
 import AddEditBuilding from './AddEditBuilding';
 import { defaultBuildingFilter } from 'src/store/apps/defaultForm';
 import toast from 'react-hot-toast';
-import { useBuildingList, useDeleteBuilding, useExportBuildingConfig } from 'src/hooks/useBuilding';
+import { useBuildingList, useDeleteBuilding } from 'src/hooks/useBuilding';
 import { useAllFloors, useFloorList, useDeleteFloor } from 'src/hooks/useFloor';
 
 const columns = [
@@ -48,6 +48,12 @@ const columns = [
   { label: 'Building Tag', field: 'tag', sortAble: false },
   { label: 'Building Image', field: '', sortAble: false },
 ];
+
+const getCdnUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https://ble-cdn.tunnel.piranticerdasindonesia.com/${url}`;
+};
 
 const SKELETON_ROWS = 5;
 
@@ -169,15 +175,17 @@ const BuildingList = () => {
   }, [dispatch, location.state?.buildingName]);
 
   const { data, isLoading: queryLoading } = useBuildingList(buildingFilter);
+  console.log("Dataaa", data)
   const { data: floorData, isLoading: floorLoading } = useAllFloors();
   const buildingData = data?.data || [];
-  const buildingTotalCount = data?.recordsTotal || 0;
-  const buildingFilteredCount = data?.recordsFiltered || 0;
+  const buildingTotalCount = data?.meta?.totalItems || 0;
+  const buildingFilteredCount = data?.meta?.totalItems || 0;
   // Pagination State
-  const page = Math.floor(buildingFilter.Start / buildingFilter.Length);
-  const rowsPerPage = buildingFilter.Length;
-  const orderBy = buildingFilter.SortColumn;
-  const order = buildingFilter.SortDir;
+  const {buildingMeta} = useSelector((state: RootState) => state.buildingReducer)
+  const page = buildingFilter.page - 1;
+  const rowsPerPage = buildingFilter.limit;
+  const orderBy = buildingFilter.sortBy;
+  const order = buildingFilter.sortOrder;
 
   const [expandedBuildingId, setExpandedBuildingId] = useState<string | null>(null);
 
@@ -214,30 +222,30 @@ const BuildingList = () => {
   };
 
   const handleChangePage = (_: unknown, newPage: number) => {
-    dispatch(UpdateFilter({ Start: newPage * buildingFilter.Length }));
+    dispatch(UpdateFilter({page: newPage}));
   };
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newLength = parseInt(event.target.value, 10);
-    dispatch(UpdateFilter({ Length: newLength, Start: 0 }));
+    dispatch(UpdateFilter({ limit: newLength, page: 1 }));
   };
   const handleSort = (column: string) => {
-    const isAsc = buildingFilter.SortColumn === column && buildingFilter.SortDir === 'asc';
-    const isDesc = buildingFilter.SortColumn === column && buildingFilter.SortDir === 'desc';
+    const isAsc = buildingFilter.sortBy === column && buildingFilter.sortOrder === 'asc';
+    const isDesc = buildingFilter.sortBy === column && buildingFilter.sortOrder === 'desc';
 
     if (isDesc) {
       dispatch(
         UpdateFilter({
-          SortColumn: 'UpdatedAt',
-          SortDir: 'desc',
-          Start: 0,
+          sortBy: 'UpdatedAt',
+          sortOrder: 'desc',
+          page: 1,
         }),
       );
     } else {
       dispatch(
         UpdateFilter({
-          SortColumn: column,
-          SortDir: isAsc ? 'desc' : 'asc',
-          Start: 0,
+          sortBy: column,
+          sortOrder: isAsc ? 'desc' : 'asc',
+          page: 1,
         }),
       );
     }
@@ -259,29 +267,6 @@ const BuildingList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingType | null>(null);
   const deleteMutation = useDeleteBuilding();
-  const exportMutation = useExportBuildingConfig();
-  const [exportingId, setExportingId] = useState<string | null>(null);
-
-  const handleExport = async (building: BuildingType) => {
-    setExportingId(building.id);
-    try {
-      const blob = await exportMutation.mutateAsync(building.id);
-      const url = window.URL.createObjectURL(blob);
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.href = url;
-      downloadAnchor.download = `building_${building.id.toLowerCase()}.bcp`;
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success('Configuration exported successfully');
-    } catch (error) {
-      toast.error('Failed to export configuration');
-      console.error(error);
-    } finally {
-      setExportingId(null);
-    }
-  };
   // Open delete confirmation dialog
   const handleOpenDeleteDialog = (building: BuildingType) => {
     setSelectedBuilding(building);
@@ -297,16 +282,6 @@ const BuildingList = () => {
   // Confirm delete action
   const handleConfirmDelete = async () => {
     if (selectedBuilding) {
-      // try {
-      //   const result = await dispatch(deleteBuilding(selectedBuilding.id));
-      //   if (result && result.type && result.type.endsWith('/fulfilled')) {
-      //     await dispatch(fetchBuildingDT(buildingFilter));
-      //     toast.success('Data Deleted');
-      //   }
-      // } catch (error) {
-      //   toast.error('Delete Data Unsuccessful');
-      //   console.error('Error deleting Building:', error);
-      // }
       try {
         await deleteMutation.mutateAsync(selectedBuilding.id);
         toast.success('Data Deleted');
@@ -436,6 +411,8 @@ const BuildingList = () => {
                         const buildingFloors = (floorData || []).filter(
                           (f) => f.buildingId === building.id,
                         );
+                        console.log("Image", getCdnUrl(building.imageUrl), building)
+                        // console.log("BUilding", building)
                         return (
                           <React.Fragment key={building.id || index}>
                             <TableRow hover>
@@ -455,11 +432,11 @@ const BuildingList = () => {
                                 {index + 1 + page * rowsPerPage}
                               </TableCell>
                               <TableCell>{building.name}</TableCell>
-                              <TableCell>{building.tag}</TableCell>
+                              <TableCell>{building.siteName}</TableCell>
                               <TableCell>
-                                {building.image ? (
+                                {building.imageUrl ? (
                                   <img
-                                    src={`${BASE_URL}${building.image}`}
+                                    src={getCdnUrl(building.imageUrl)}
                                     alt="Building"
                                     style={{ width: 80, height: 80, objectFit: 'cover' }}
                                   />
@@ -487,20 +464,7 @@ const BuildingList = () => {
                                   >
                                     <IconTrash size={20} />
                                   </IconButton>
-                                  <Tooltip title="Export Configuration" arrow>
-                                    <IconButton
-                                      color="primary"
-                                      size="small"
-                                      onClick={() => handleExport(building)}
-                                      disabled={exportingId !== null}
-                                    >
-                                      {exportingId === building.id ? (
-                                        <CircularProgress size={20} color="inherit" />
-                                      ) : (
-                                        <IconDownload size={20} />
-                                      )}
-                                    </IconButton>
-                                  </Tooltip>
+
                                   {isChildShown && (
                                       <Tooltip title={isOpen ? 'Hide Floors' : 'Show Floors'} arrow>
                                           <IconButton size="small" onClick={() => toggleExpand(building.id)}>
@@ -537,7 +501,7 @@ const BuildingList = () => {
             <TablePagination
               component="div"
               count={buildingFilteredCount}
-              page={page}
+              page={page-1}
               rowsPerPage={rowsPerPage}
               onPageChange={handleChangePage}
               rowsPerPageOptions={[5, 10, 25]}

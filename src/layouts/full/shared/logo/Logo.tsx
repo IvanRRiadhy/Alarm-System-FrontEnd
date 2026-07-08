@@ -1,18 +1,10 @@
 import { FC } from 'react';
 import { useSelector } from 'src/store/Store';
 import { Link } from 'react-router';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import { ReactComponent as LogoDark } from 'src/assets/images/logos/dark-logo.svg';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import { ReactComponent as LogoDarkRTL } from 'src/assets/images/logos/dark-rtl-logo.svg';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import { ReactComponent as LogoLight } from 'src/assets/images/logos/light-logo.svg';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import { ReactComponent as LogoLightRTL } from 'src/assets/images/logos/light-logo-rtl.svg';
+import LogoDark from 'src/assets/images/logos/dark-logo.svg?react';
+import LogoDarkRTL from 'src/assets/images/logos/dark-rtl-logo.svg?react';
+import LogoLight from 'src/assets/images/logos/light-logo.svg?react';
+import LogoLightRTL from 'src/assets/images/logos/light-logo-rtl.svg?react';
 import { styled } from '@mui/material';
 import { RootState } from 'src/store/Store';
 

@@ -4,29 +4,31 @@ import axiosServices from 'src/utils/axios';
 import { floorType, GetFilter } from 'src/store/apps/crud/floor';
 import { useSelector } from 'react-redux';
 import { RootState } from 'src/store/Store';
+import { metaData } from 'src/store/apps/crud/site';
 
-const FLOOR_API_URL = '/api/MstFloor/';
-const FLOOR_DT_URL = '/api/MstFloor/filter/';
+const FLOOR_API_URL = '/api/floors/';
+const FLOOR_DT_URL = '/api/floors/filter/';
 
 interface PaginatedResponse<T> {
   data: T[];
-  draw: number;
-  recordsTotal: number;
-  recordsFiltered: number;
+  msg: string;
+  meta: metaData;
+  status: number;
 }
 
 // ✅ Get list of floors (supports filters, pagination, sorting)
-export function useFloorList(filter: GetFilter) {
+export function useFloorList(filter?: GetFilter) {
   return useQuery({
     queryKey: ['floor-list', filter],
     queryFn: async () => {
-      const response = await axiosServices.post(FLOOR_DT_URL, filter);
-      const collection = response.data.collection;
+      const response = await axiosServices.get(FLOOR_API_URL, { params: filter });
+      const collection = response.data;
+
       return {
         data: collection.data as floorType[],
-        draw: collection.draw,
-        recordsTotal: collection.recordsTotal,
-        recordsFiltered: collection.recordsFiltered,
+        msg: response.data.msg,
+        meta: response.data.meta,
+        status: response.data.status,
       } satisfies PaginatedResponse<floorType>;
     },
     placeholderData: keepPreviousData,
@@ -153,6 +155,6 @@ export function useFloorStatus() {
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     hasLoaded: query.isFetched,
-    totalCount: query.data?.recordsFiltered || 0,
+    totalCount: query.data?.meta?.totalItems || 0,
   };
 }

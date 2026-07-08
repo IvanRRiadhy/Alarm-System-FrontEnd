@@ -14,15 +14,12 @@ const Floorplan_DT_URL = '/api/MstFloorplan/filter/';
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-        Draw: number,
-    Start: number,
-    Length: number,
-    SortColumn: string,
-    SortDir: 'asc' | 'desc',
-    SearchValue: string,
-    filters: {
-        FloorId: string[],
-    }
+    page: number;
+    limit: number;
+    // search: string;
+    sortBy: string;
+    sortOrder: "asc" | "desc";
+    floorId: string | null;
 }
 
 
@@ -46,24 +43,28 @@ export interface FloorplanType {
     id: string,
     name: string,
     floorId: string,
-    applicationId: string,
-    floorplanImage: string,
+    floorName: string,
+    buildingId: string,
+    buildingName: string,
+    siteId: string,
+    siteName: string,
+    imageUrl: string,
     pixelX: number,
     pixelY: number,
     floorX: number,
     floorY: number,
     meterPerPx: number,
         // engineId: string,
-    floor?: floorType,
-    createdBy: string,
-    createdAt: string,
-    updatedBy: string,
-    updatedAt: string,
-    devices?: FloorplanDeviceType[],
-    deviceCount?: number,
-    maskedAreas?: MaskedAreaType[],
-    maskedAreaCount?: number
-    engine?: EngineType;
+    // floor?: floorType,
+    // createdBy: string,
+    // createdAt: string,
+    // updatedBy: string,
+    // updatedAt: string,
+    // devices?: FloorplanDeviceType[],
+    // deviceCount?: number,
+    // maskedAreas?: MaskedAreaType[],
+    // maskedAreaCount?: number
+    // engine?: EngineType;
 }
 
 interface StateType {
@@ -130,19 +131,19 @@ export const FloorplanSlice = createSlice({
             
                         // Detect only sorting change
                         const onlySortingChanged =
-                            prevFilter.SortColumn !== newFilter.SortColumn ||
-                            prevFilter.SortDir !== newFilter.SortDir;
+                            prevFilter.sortBy !== newFilter.sortBy ||
+                            prevFilter.sortOrder !== newFilter.sortOrder;
             
                         const filtersUnchanged =
                             JSON.stringify({
                             ...prevFilter,
-                            SortColumn: undefined,
-                            SortDir: undefined,
+                            sortBy: undefined,
+                            sortOrder: undefined,
                             }) ===
                             JSON.stringify({
                             ...newFilter,
-                            SortColumn: undefined,
-                            SortDir: undefined,
+                            sortBy: undefined,
+                            sortOrder: undefined,
                             });
             
                         const isOnlySortChange = onlySortingChanged && filtersUnchanged;

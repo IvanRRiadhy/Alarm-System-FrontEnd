@@ -34,14 +34,15 @@ import toast from 'react-hot-toast';
 import { useDeleteFloor, useFloorList } from 'src/hooks/useFloor';
 import { useAllFloorplans, useDeleteFloorplan } from 'src/hooks/useFloorplan';
 import { FloorplanType, SelectFloorplan } from 'src/store/apps/crud/floorplan';
-import AddEditFloorplan from 'src/components/master/CRUD/floorplan/AddEditFloorplan';
+import AddEditFloorplan from 'src/components/master/site/Floorplan/AddEditFloorplan';
 import { Collapse, Paper } from '@mui/material';
 // import { useTranslation } from 'react-i18next';
 
 const columns = [
-    { label: 'Floor Name', field: 'Name', sortAble: true },
-  { label: 'Building Name', field: 'Building.Name', sortAble: true },
-
+  { label: 'Floor Name', field: 'name', sortAble: true },
+  { label: 'Building Name', field: 'buildingName', sortAble: true },
+  { label: 'Site Name', field: 'siteName', sortAble: true },
+  { label: 'Level', field: 'level', sortAble: true },
 ];
 
 const SKELETON_ROWS = 5;
@@ -165,9 +166,8 @@ const FloorList = () => {
   const { data, isLoading: queryLoading } = useFloorList(floorFilter);
   const { data: floorplanData, isLoading: floorplanLoading} = useAllFloorplans();
   const floorData = data?.data || [];
-  const floorTotalCount = data?.recordsTotal || 0;
-  const floorFilteredCount = data?.recordsFiltered || 0;
-
+  const floorFilteredCount = data?.meta?.totalItems || 0;
+  console.log("FLoor", data, queryLoading)
   const location = useLocation();
   const [expandedFloorId, setExpandedFloorId] = useState<string | null>(location.state?.expandFloorId || null);
 
@@ -209,76 +209,77 @@ const FloorList = () => {
   const isLoading = useSelector((state: RootState) => state.floorReducer.isLoading);
   const hasLoaded = useSelector((state: RootState) => state.floorReducer.hasLoaded);
   // Pagination State
-  const page = Math.floor(floorFilter.Start / floorFilter.Length);
-  const rowsPerPage = floorFilter.Length;
-  const orderBy = floorFilter.SortColumn;
-  const order = floorFilter.SortDir;
+  const page = floorFilter.page;
+  const start = floorFilter.page * floorFilter.limit - 1;
+  const rowsPerPage = floorFilter.limit;
+  const orderBy = floorFilter.sortBy;
+  const order = floorFilter.sortOrder;
 
   const handleChangePage = (_: unknown, newPage: number) => {
-    dispatch(UpdateFilter({ Start: newPage * floorFilter.Length }));
+    dispatch(UpdateFilter({ page: newPage + 1 }));
   };
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newLength = parseInt(event.target.value, 10);
-    dispatch(UpdateFilter({ Length: newLength, Start: 0 }));
+    dispatch(UpdateFilter({ limit: newLength, page: 1 }));
   };
   const handleSort = (column: string) => {
-    const isAsc = floorFilter.SortColumn === column && floorFilter.SortDir === 'asc';
-    const isDesc = floorFilter.SortColumn === column && floorFilter.SortDir === 'desc';
+    const isAsc = floorFilter.sortBy === column && floorFilter.sortOrder === 'asc';
+    const isDesc = floorFilter.sortBy === column && floorFilter.sortOrder === 'desc';
 
     if (isDesc) {
       dispatch(
         UpdateFilter({
-          SortColumn: 'UpdatedAt',
-          SortDir: 'desc',
-          Start: 0,
+          sortBy: 'UpdatedAt',
+          sortOrder: 'desc',
+          page: 1,
         }),
       );
     } else {
       dispatch(
         UpdateFilter({
-          SortColumn: column,
-          SortDir: isAsc ? 'desc' : 'asc',
-          Start: 0,
+          sortBy: column,
+          sortOrder: isAsc ? 'desc' : 'asc',
+          page: 1,
         }),
       );
     }
   };
 
-  useEffect(() => {
-    dispatch(fetchBuildings());
+  // useEffect(() => {
+  //   dispatch(fetchBuildings());
     
-    const initialFilter = location.state?.floorName 
-      ? { ...defaultFloorFilter, SearchValue: location.state.floorName }
-      : defaultFloorFilter;
+  //   const initialFilter = location.state?.floorName 
+  //     ? { ...defaultFloorFilter, SearchValue: location.state.floorName }
+  //     : defaultFloorFilter;
       
-    dispatch(UpdateFilter(initialFilter));
-    try {
-      setLoading(true);
-      dispatch(fetchFloorDT(initialFilter));
-    } catch (error) {
-      console.log(error);
-    }
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
-  }, [dispatch, location.state?.floorName]);
+  //   dispatch(UpdateFilter(initialFilter));
+  //   try {
+  //     setLoading(true);
+  //     dispatch(fetchFloorDT(initialFilter));
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  //   setTimeout(() => {
+  //     setLoading(false);
+  //   }, 500);
+  // }, [dispatch, location.state?.floorName]);
 
-  useEffect(() => {
-    const prevFilter = prevFilterRef.current;
-    const isStartOrLengthChanged =
-      prevFilter.Start !== floorFilter.Start || prevFilter.Length !== floorFilter.Length;
-    if (isStartOrLengthChanged) {
-      setLoading(true);
-    }
-    dispatch(fetchFloorDT(floorFilter)).finally(() => {
-      if (isStartOrLengthChanged) {
-        setTimeout(() => {
-          setLoading(false);
-        }, 500);
-      }
-    });
-    prevFilterRef.current = floorFilter;
-  }, [floorFilter, dispatch]);
+  // useEffect(() => {
+  //   const prevFilter = prevFilterRef.current;
+  //   const isStartOrLengthChanged =
+  //     prevFilter.page !== floorFilter.page || prevFilter.limit !== floorFilter.limit;
+  //   if (isStartOrLengthChanged) {
+  //     setLoading(true);
+  //   }
+  //   dispatch(fetchFloorDT(floorFilter)).finally(() => {
+  //     if (isStartOrLengthChanged) {
+  //       setTimeout(() => {
+  //         setLoading(false);
+  //       }, 500);
+  //     }
+  //   });
+  //   prevFilterRef.current = floorFilter;
+  // }, [floorFilter, dispatch]);
 
   const buildingData: BuildingType[] = useSelector(
     (state: RootState) => state.buildingReducer.buildingAll,
@@ -347,10 +348,16 @@ const FloorList = () => {
             <Skeleton variant="text" width={18} />
           </TableCell>
           <TableCell>
-            <Skeleton variant="text" width={180} height={22} />
+            <Skeleton variant="text" width={120} height={22} />
           </TableCell>
           <TableCell>
-            <Skeleton variant="text" width={160} height={22} />
+            <Skeleton variant="text" width={120} height={22} />
+          </TableCell>
+          <TableCell>
+            <Skeleton variant="text" width={120} height={22} />
+          </TableCell>
+          <TableCell>
+            <Skeleton variant="text" width={80} height={22} />
           </TableCell>
           {/* right actions */}
           <TableCell
@@ -440,7 +447,6 @@ const FloorList = () => {
                         const floorFloorplans = (floorplanData || []).filter(
                           (fp: any) => fp.floorId === floor.id
                         );
-                        const building = floor.building;
                         return (
                           <React.Fragment key={floor.id}>
                             <TableRow>
@@ -457,15 +463,15 @@ const FloorList = () => {
                                   justifyContent: 'center',
                                 }}
                               >
-                                {index + 1 + page * rowsPerPage}
+                                {index + 1 + (page - 1) * rowsPerPage}
                               </TableCell>
                               <TableCell>{floor.name}</TableCell>
                               <TableCell>
-                                {building ? (
+                                {floor.buildingName ? (
                                   <Tooltip title="View Building" arrow>
                                     <Box
                                     component="span"
-                                    onClick={() => navigate('/master/building', { state: { buildingName: building.name } })}
+                                    onClick={() => navigate('/master/building', { state: { buildingName: floor.buildingName } })}
                                     sx={{
                                       cursor: 'pointer',
                                       display: 'inline-flex',
@@ -481,13 +487,15 @@ const FloorList = () => {
                                     }}
                                   >
                                     <IconExternalLink size={14} style={{ flexShrink: 0 }} />
-                                    <span>{building.name}</span>
+                                    <span>{floor.buildingName}</span>
                                   </Box>
                                   </Tooltip>
                                 ) : (
                                   '-'
                                 )}
                               </TableCell>
+                              <TableCell>{floor.siteName || '-'}</TableCell>
+                              <TableCell>{floor.level ?? '-'}</TableCell>
                               
                               <TableCell
                                 sx={{
@@ -525,7 +533,7 @@ const FloorList = () => {
                             {/* ACCORDION ROW */}
                             {isChildShown && (
                               <TableRow>
-                                <TableCell colSpan={4} sx={{ p: 0, borderBottom: 0 }}>
+                                <TableCell colSpan={6} sx={{ p: 0, borderBottom: 0 }}>
                                   <Collapse in={isOpen} timeout="auto" unmountOnExit>
                                     <Box pl={6} pr={2} pb={2}>
                                       <FloorAccordionContent
@@ -549,7 +557,7 @@ const FloorList = () => {
               component="div"
               count={floorFilteredCount}
               rowsPerPage={rowsPerPage}
-              page={page}
+              page={page - 1}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
             />

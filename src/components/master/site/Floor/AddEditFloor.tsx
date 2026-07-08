@@ -22,9 +22,9 @@ import toast from 'react-hot-toast';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
 import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
 import { defaultFloorForm } from 'src/store/apps/defaultForm';
-import AddEditBuilding from '../building/AddEditBuilding';
+import AddEditBuilding from '../Building/AddEditBuilding';
 import { useAddFloor, useEditFloor } from 'src/hooks/useFloor';
-import { useAllBuilding } from 'src/hooks/useBuilding'; // ✅ Your React Query building hook
+import { useAllBuilding, useBuildingList } from 'src/hooks/useBuilding'; // ✅ Your React Query building hook
 import type { floorType } from 'src/store/apps/crud/floor';
 import { BuildingType } from 'src/store/apps/crud/building';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
@@ -48,7 +48,8 @@ const AddEditFloor = ({ type, floor, fixedBuildingId, trigger }: FormType) => {
   // ✅ Hooks
   const addMutation = useAddFloor();
   const editMutation = useEditFloor();
-  const { data: buildingData = [], isLoading: buildingLoading } = useAllBuilding();
+  const { data: buildingResponse , isLoading: buildingLoading } = useBuildingList();
+  const buildingData = buildingResponse?.data || []
 
   // 🧭 Open/close dialog
   const handleClickOpen = () => {
@@ -71,6 +72,9 @@ const AddEditFloor = ({ type, floor, fixedBuildingId, trigger }: FormType) => {
     const errors: Record<string, string> = {};
     if (!formData.name?.trim()) errors.name = 'Floor name is required';
     if (!formData.buildingId) errors.buildingId = 'Building is required';
+    if (formData.level === undefined || formData.level === null || isNaN(Number(formData.level))) {
+      errors.level = 'Floor level is required';
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -89,6 +93,7 @@ const AddEditFloor = ({ type, floor, fixedBuildingId, trigger }: FormType) => {
         id: formData.id,
         name: formData.name,
         buildingId: formData.buildingId,
+        level: Number(formData.level) || 0,
       };
 
       if (type === 'add') {
@@ -199,6 +204,22 @@ const AddEditFloor = ({ type, floor, fixedBuildingId, trigger }: FormType) => {
                 variant="outlined"
                 error={!!formErrors.name}
                 helperText={formErrors.name}
+              />
+
+              {/* Floor Level */}
+              <CustomFormLabel htmlFor="floor-level">Level</CustomFormLabel>
+              <CustomTextField
+                id="level"
+                type="number"
+                value={formData.level ?? ''}
+                onChange={(e: any) => {
+                  const val = e.target.value === '' ? '' : Number(e.target.value);
+                  setFormData((prev) => ({ ...prev, level: val as any }));
+                }}
+                fullWidth
+                variant="outlined"
+                error={!!formErrors.level}
+                helperText={formErrors.level}
               />
             </Stack>
           </Box>

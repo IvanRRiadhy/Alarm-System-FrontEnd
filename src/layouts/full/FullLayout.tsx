@@ -10,6 +10,7 @@ import Navigation from '../full/horizontal/navbar/Navigation';
 import HorizontalHeader from '../full/horizontal/header/Header';
 import ScrollToTop from '../../components/shared/ScrollToTop';
 import LoadingBar from '../../LoadingBar';
+import { Toaster } from 'react-hot-toast';
 
 const MainWrapper = styled('div')(() => ({
   display: 'flex',
@@ -20,7 +21,7 @@ const MainWrapper = styled('div')(() => ({
 const PageWrapper = styled('div')(() => ({
   display: 'flex',
   flexGrow: 1,
-  paddingBottom: '60px',
+  paddingBottom: '0px',
   flexDirection: 'column',
   zIndex: 1,
   width: '100%',
@@ -60,7 +61,7 @@ const FullLayout: FC = () => {
           {customizer.isHorizontal ? <Navigation /> : ''}
           <Container
             sx={{
-              pt: '30px',
+              pt: '0px',
               maxWidth: customizer.isLayout === 'boxed' ? 'lg' : '100%!important',
             }}
           >
@@ -81,6 +82,28 @@ const FullLayout: FC = () => {
           <Customizer />
         </PageWrapper>
       </MainWrapper>
+            <Toaster
+        position="top-center"
+        containerStyle={{
+          fontSize: '1.15rem',
+          padding: '16px 24px',
+          minWidth: '500px',
+        }}
+        toastOptions={{
+          success: {
+            style: {
+              background: 'darkgreen',
+              color: '#fff',
+            },
+          },
+          error: {
+            style: {
+              background: 'darkred',
+              color: '#fff',
+            },
+          },
+        }}
+      />
     </>
 
   );

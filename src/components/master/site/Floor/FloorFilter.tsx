@@ -13,7 +13,7 @@ import { fetchBuildings } from 'src/store/apps/crud/building';
 import { UpdateFilter } from 'src/store/apps/crud/floor';
 import { defaultFloorFilter } from 'src/store/apps/defaultForm';
 import { RootState, useDispatch, useSelector } from 'src/store/Store';
-import AutocompleteFilter from 'src/layouts/full/horizontal/navbar/AutocompleteFilter';
+import AutocompleteFilter from 'src/components/shared/AutocompleteFilter';
 
 const FloorFilter = () => {
   const dispatch = useDispatch();

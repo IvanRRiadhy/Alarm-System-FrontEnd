@@ -11,6 +11,7 @@ const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')))
 /* ****Pages***** */
 const ModernDash = Loadable(lazy(() => import('../views/dashboard/Modern')));
 const EcommerceDash = Loadable(lazy(() => import('../views/dashboard/Ecommerce')));
+const MonitoringDash = Loadable(lazy(() => import('../views/dashboard/Monitoring')));
 
 /* ****Apps***** */
 // const Blog = Loadable(lazy(() => import('../views/apps/blog/Blog')));
@@ -167,6 +168,12 @@ const PagePricing = Loadable(lazy(() => import('../views/pages/frontend-pages/Pr
 const BlogPage = Loadable(lazy(() => import('../views/pages/frontend-pages/Blog')));
 const BlogPost = Loadable(lazy(() => import('../views/pages/frontend-pages/BlogPost')));
 
+//Site
+const Site = Loadable(lazy(() => import('../views/master/crud/Site')));
+const Building = Loadable(lazy(() => import('../views/master/crud/Building')));
+const Floor = Loadable(lazy(() => import('../views/master/crud/Floor')));
+const Floorplan = Loadable(lazy(() => import('../views/master/crud/Floorplan')));
+
 
 
 const Router = [
@@ -177,6 +184,7 @@ const Router = [
       { path: '/', element: <Navigate to="/dashboards/modern" /> },
       { path: '/dashboards/modern', exact: true, element: <ModernDash /> },
       { path: '/dashboards/ecommerce', exact: true, element: <EcommerceDash /> },
+      { path: '/dashboards/monitoring', exact: true, element: <MonitoringDash /> },
       { path: '/apps/contacts', element: <Contacts /> },
       // { path: '/apps/blog/posts', element: <Blog /> },
       // { path: '/frontend-pages/blog/detail/:id', element: <BlogDetail /> },
@@ -273,6 +281,12 @@ const Router = [
       { path: '/mui-trees/simpletree/simpletree-focus', element: <SimpletreeFocus /> },
       { path: '/mui-trees/simpletree/simpletree-items', element: <SimpletreeItems /> },
       { path: '/mui-trees/simpletree/simpletree-selection', element: <SimpletreeSelection /> },
+
+      {/* Site */},
+      {path: '/master/site/site', element: <Site/>},
+      {path: '/master/site/building', element: <Building/>},
+      {path: '/master/site/floor', element: <Floor/>},
+      {path: '/master/site/floorplan', element: <Floorplan/>},
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],

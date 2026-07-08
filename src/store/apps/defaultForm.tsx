@@ -41,6 +41,8 @@ import { PatrolCaseType, GetFilter as PatrolCaseFilter, CaseUploadType } from '.
 import {GetFilter as UserFilter} from './crud/users';
 import {GetFilter as PatrolReportFilter} from './crud/patrolReport';
 import { EventFilter} from 'src/hooks/useEvents';
+import { SiteType } from './crud/site';
+import { GetFilter as SiteFilter } from './crud/site';
 
 //#region AccessCCTV
 export const defaultAccessCCTVForm: CCTVType = {
@@ -199,23 +201,47 @@ export const defaultBrandFilter: BrandFilter = {
 //#region Building
 export const defaultBuildingForm: BuildingType = {
   id: '',
+  siteId: '',
+  siteName: '',
   name: '',
-  tag: '',
-  image: '',
-  applicationId: localStorage.getItem('applicationId') || '',
-  createdBy: '',
-  createdAt: '',
-  updatedBy: '',
-  updatedAt: '',
+  description: '',
+  // tag: '',
+  imageUrl:  '',
+  // applicationId: localStorage.getItem('applicationId') || '',
+  // createdBy: '',
+  // createdAt: '',
+  // updatedBy: '',
+  // updatedAt: '',
 };
 
 export const defaultBuildingFilter: BuildingFilter = {
-  Draw: 1,
-  Start: 0,
-  Length: 5,
-  SortColumn: 'UpdatedAt',
-  SortDir: 'desc',
-  SearchValue: '',
+  page: 1,
+  limit: 5,
+  // search: '',
+  sortBy: '',
+  sortOrder: 'desc',
+  siteId: null,
+};
+//#endregion
+
+//#region Site
+export const defaultSiteForm: SiteType = {
+  id: '',
+  code: '',
+  name: '',
+  address: '',
+  phone: '',
+  timezone: 'Asia/Jakarta',
+  region: '',
+  latitude: 0,
+  longitude: 0,
+};
+export const defaultSiteFilter: SiteFilter = {
+  page: 1,
+  limit: 5,
+  // search: '',
+  sortBy: '',
+  sortOrder: 'desc',
 };
 //#endregion
 
@@ -269,21 +295,18 @@ export const defaultFloorForm: floorType = {
   id: '',
   buildingId: '',
   name: '',
-  createdBy: '',
-  createdAt: '',
-  updatedBy: '',
-  updatedAt: '',
+  buildingName: '',
+  siteId: '',
+  siteName: '',
+  level: 0,
 };
 export const defaultFloorFilter: FloorFilter = {
-  Draw: 1,
-  Start: 0,
-  Length: 5,
-  SortColumn: 'UpdatedAt',
-  SortDir: 'desc',
-  SearchValue: '',
-  filters: {
-    BuildingId: [],
-  },
+  page: 1,
+  limit: 5,
+  // search: '',
+  sortBy: '',
+  sortOrder: 'desc',
+  buildingId: null,
 };
 //#endregion
 
@@ -292,30 +315,26 @@ export const defaultFloorplanForm: FloorplanType = {
   id: '',
   name: '',
   floorId: '',
-  floorplanImage: '',
+  floorName: '',
+  buildingId: '',
+  buildingName: '',
+  siteId: '',
+  siteName: '',
+  imageUrl: '',
   pixelX: 0,
   pixelY: 0,
   floorX: 0,
   floorY: 0,
   meterPerPx: 0,
-  // engineId: '',
-  applicationId: localStorage.getItem('applicationId') || '',
-  createdBy: '',
-  createdAt: '',
-  updatedBy: '',
-  updatedAt: '',
 };
 
 export const defaultFloorplanFilter: FloorplanFilter = {
-  Draw: 1,
-  Start: 0,
-  Length: 5,
-  SortColumn: 'UpdatedAt',
-  SortDir: 'desc',
-  SearchValue: '',
-  filters: {
-    FloorId: [],
-  },
+  page: 1,
+  limit: 5,
+  // search: '',
+  sortBy: '',
+  sortOrder: 'desc',
+  floorId: null,
 };
 //#endregion
 

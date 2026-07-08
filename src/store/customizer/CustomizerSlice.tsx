@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 interface StateType {
+  isChildShown?:boolean;
   activeDir?: string | any;
   activeMode?: string; // This can be light or dark
   activeTheme?: string; // BLUE_THEME, GREEN_THEME, BLACK_THEME, PURPLE_THEME, ORANGE_THEME
@@ -18,6 +19,7 @@ interface StateType {
 }
 
 const initialState: StateType = {
+  isChildShown: true,
   activeDir: 'ltr',
   activeMode: 'dark', // This can be light or dark
   activeTheme: 'BLUE_THEME', // BLUE_THEME, GREEN_THEME, BLACK_THEME, PURPLE_THEME, ORANGE_THEME

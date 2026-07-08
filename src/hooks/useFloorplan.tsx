@@ -3,8 +3,8 @@ import axiosServices from 'src/utils/axios';
 import { FloorplanType, GetFilter } from '../store/apps/crud/floorplan';
 import { RootState, useSelector } from 'src/store/Store';
 
-const FLOORPLAN_API_URL = '/api/MstFloorplan/';
-const FLOORPLAN_DT_URL = '/api/MstFloorplan/filter/';
+const FLOORPLAN_API_URL = '/api/floorplans/';
+const FLOORPLAN_DT_URL = '/api/floorplans/filter/';
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -14,11 +14,11 @@ interface PaginatedResponse<T> {
 }
 
 // Fetch list with caching
-export function useFloorplanList(filter: GetFilter) {
+export function useFloorplanList(filter?: GetFilter) {
   return useQuery({
     queryKey: ['floorplan-list', filter],
     queryFn: async () => {
-      const response = await axiosServices.post(FLOORPLAN_DT_URL, filter);
+      const response = await axiosServices.get(FLOORPLAN_DT_URL, {params: filter});
       const collection = response.data.collection;
 
       // shape it into a typed object
@@ -51,10 +51,9 @@ export function useAllFloorplans() {
 export function useAddFloorplan() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const res = await axiosServices.post(FLOORPLAN_API_URL, formData, {
-        // headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    mutationFn: async (payload: Partial<FloorplanType>) => {
+      const { id, ...filteredPayload } = payload;
+      const res = await axiosServices.post(FLOORPLAN_API_URL, filteredPayload);
       return res.data;
     },
     onSuccess: () => {
@@ -69,11 +68,10 @@ export function useAddFloorplan() {
 export function useEditFloorplan() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const id = formData.get('id');
-      const res = await axiosServices.put(`${FLOORPLAN_API_URL}${id}`, formData, {
-        // headers: { 'Content-Type': 'multipart/form-data' },
-      });
+    mutationFn: async (payload: Partial<FloorplanType>) => {
+      if (!payload.id) throw new Error('Missing floorplan id');
+      const { id, ...filteredPayload } = payload;
+      const res = await axiosServices.put(`${FLOORPLAN_API_URL}${id}`, filteredPayload);
       return res.data;
     },
     onSuccess: () => {

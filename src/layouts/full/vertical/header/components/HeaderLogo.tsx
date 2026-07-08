@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
-import Logo from '/public/Logo Bionics.png';
+import Logo from '/Logo Bionics.png';
 
 const HeaderLogo = () => {
   return (
