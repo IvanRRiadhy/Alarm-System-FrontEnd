@@ -43,6 +43,7 @@ const columns = [
   { label: 'Floorplan Name', field: 'name', sortAble: true },
   { label: 'Floor Name', field: 'floorName', sortAble: true },
   { label: 'Building Name', field: 'buildingName', sortAble: true },
+  { label: 'Site Name', field: 'siteName', sortAble: true },
   { label: 'Floorplan Image', field: '', sortAble: false },
   { label: 'Floorplan Dimension (meter)', field: '', sortAble: false },
 ];
@@ -79,42 +80,42 @@ const FloorplanList = () => {
 
   const { data, isLoading: queryLoading } = useFloorplanList(floorplanFilter);
   const floorplanData = data?.data || [];
-  const floorplanTotalCount = data?.recordsTotal || 0;  
+  const floorplanTotalCount = data?.recordsTotal || 0;
   const floorplanFilteredCount = data?.recordsFiltered || 0;
   // const { t } = useTranslation();
   const isLoading = useSelector((state: RootState) => state.floorplanReducer.isLoading);
   const hasLoaded = useSelector((state: RootState) => state.floorplanReducer.hasLoaded);
   // Pagination State
-  const page = Math.floor(floorplanFilter.Start / floorplanFilter.Length);
-  const rowsPerPage = floorplanFilter.Length;
-  const orderBy = floorplanFilter.SortColumn;
-  const order = floorplanFilter.SortDir;
+  const page = floorplanFilter.page
+  const rowsPerPage = floorplanFilter.limit;
+  const orderBy = floorplanFilter.sortBy;
+  const order = floorplanFilter.sortOrder;
 
   const handleChangePage = (_: unknown, newPage: number) => {
-    dispatch(UpdateFilter({ Start: newPage * floorplanFilter.Length }));
+    dispatch(UpdateFilter({ page: newPage }));
   };
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newLength = parseInt(event.target.value, 10);
-    dispatch(UpdateFilter({ Length: newLength, Start: 0 }));
+    dispatch(UpdateFilter({ limit: newLength, page: 1 }));
   };
   const handleSort = (column: string) => {
-    const isAsc = floorplanFilter.SortColumn === column && floorplanFilter.SortDir === 'asc';
-    const isDesc = floorplanFilter.SortColumn === column && floorplanFilter.SortDir === 'desc';
+    const isAsc = floorplanFilter.sortBy === column && floorplanFilter.sortOrder === 'asc';
+    const isDesc = floorplanFilter.sortBy === column && floorplanFilter.sortOrder === 'desc';
 
     if (isDesc) {
       dispatch(
         UpdateFilter({
-          SortColumn: 'UpdatedAt',
-          SortDir: 'desc',
-          Start: 0,
+          sortBy: 'UpdatedAt',
+          sortOrder: 'desc',
+          page: 1,
         }),
       );
     } else {
       dispatch(
         UpdateFilter({
-          SortColumn: column,
-          SortDir: isAsc ? 'desc' : 'asc',
-          Start: 0,
+          sortBy: column,
+          sortOrder: isAsc ? 'desc' : 'asc',
+          page: 1,
         }),
       );
     }
@@ -161,7 +162,7 @@ const FloorplanList = () => {
   // useEffect(() => {
   //   const prevFilter = prevFilterRef.current;
   //   const isStartorLengthChanged =
-  //     prevFilter.Start !== floorplanFilter.Start || prevFilter.Length !== floorplanFilter.Length;
+  //     prevFilter.Start !== floorplanFilter.Start || prevFilter.limit !== floorplanFilter.limit;
   //   if (isStartorLengthChanged) {
   //     setLoading(true);
   //   }
@@ -369,7 +370,7 @@ const FloorplanList = () => {
                           {floorplan.floorName ? (
                             <Box
                               component="span"
-                              onClick={() => navigate('/master/floor', { state: { floorName: floorplan.floorName } })}
+                              onClick={() => navigate('/master/site/floor', { state: { floorName: floorplan.floorName } })}
                               sx={{
                                 cursor: 'pointer',
                                 display: 'inline-flex',
@@ -395,7 +396,7 @@ const FloorplanList = () => {
                           {floorplan.buildingName ? (
                             <Box
                               component="span"
-                              onClick={() => navigate('/master/building', { state: { buildingName: floorplan.buildingName } })}
+                              onClick={() => navigate('/master/site/building', { state: { buildingName: floorplan.buildingName } })}
                               sx={{
                                 cursor: 'pointer',
                                 display: 'inline-flex',
@@ -412,6 +413,32 @@ const FloorplanList = () => {
                             >
                               <IconExternalLink size={14} style={{ flexShrink: 0 }} />
                               <span>{floorplan.buildingName}</span>
+                            </Box>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {floorplan.siteName ? (
+                            <Box
+                              component="span"
+                              onClick={() => navigate('/master/site/site', { state: { siteName: floorplan.siteName } })}
+                              sx={{
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                color: 'primary.main',
+                                fontWeight: 500,
+                                position: 'relative',
+                                '&:hover': {
+                                  textDecoration: 'underline',
+                                  color: 'primary.dark',
+                                },
+                              }}
+                            >
+                              <IconExternalLink size={14} style={{ flexShrink: 0 }} />
+                              <span>{floorplan.siteName}</span>
                             </Box>
                           ) : (
                             '-'
@@ -471,7 +498,7 @@ const FloorplanList = () => {
               component="div"
               count={floorplanFilteredCount}
               rowsPerPage={rowsPerPage}
-              page={page}
+              page={page - 1}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
             />

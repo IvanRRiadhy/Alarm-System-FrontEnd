@@ -58,61 +58,61 @@ const FloorplanTable = ({
   const navigate = useNavigate();
 
   return (
-  <Table size="small">
-    <TableHead>
-      <TableRow>
-        <TableCell sx={{ fontWeight: 600, width: 80 }}>No</TableCell>
-        <TableCell sx={{ fontWeight: 600 }}>Floorplan Name</TableCell>
-        <TableCell sx={{ fontWeight: 600 }}>Floorplan Dimension (meter)</TableCell>
-        <TableCell align="right" sx={{ fontWeight: 600, width: 120 }}>Actions</TableCell>
-      </TableRow>
-    </TableHead>
-    <TableBody>
-      {floorplans.length === 0 ? (
+    <Table size="small">
+      <TableHead>
         <TableRow>
-          <TableCell colSpan={3}>
-            <Typography variant="body2" color="text.secondary">
-              No floorplans registered for this floor.
-            </Typography>
-          </TableCell>
+          <TableCell sx={{ fontWeight: 600, width: 80 }}>No</TableCell>
+          <TableCell sx={{ fontWeight: 600 }}>Floorplan Name</TableCell>
+          <TableCell sx={{ fontWeight: 600 }}>Floorplan Dimension (meter)</TableCell>
+          <TableCell align="right" sx={{ fontWeight: 600, width: 120 }}>Actions</TableCell>
         </TableRow>
-      ) : (
-        floorplans.map((floorplan, i) => (
-          <TableRow key={floorplan.id}>
-            <TableCell>{i + 1}</TableCell>
-            <TableCell>{floorplan.name}</TableCell>
-            <TableCell>{`(${floorplan.floorX}, ${floorplan.floorY})`}</TableCell>
-            <TableCell align="right">
-              <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1}>
-                <AddEditFloorplan type="edit" floorplan={floorplan} fixedFloorId={floorplan.floorId} />
-                <Tooltip title="View Floorplan" arrow>
-                  <IconButton
-                    color="primary"
-                    size="small"
-                    onClick={() => {
-                      dispatch(SelectFloorplan(floorplan));
-                      navigate('/master/floorplan', { state: { expandFloorplanId: floorplan.id, floorplanName: floorplan.name } });
-                    }}
-                  >
-                    <IconExternalLink size={18} />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete Floorplan" arrow>
-                  <IconButton
-                    color="error"
-                    size="small"
-                    onClick={() => onDeleteClick(floorplan)}
-                  >
-                    <IconTrash size={18} />
-                  </IconButton>
-                </Tooltip>  
-              </Box>
+      </TableHead>
+      <TableBody>
+        {floorplans.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={3}>
+              <Typography variant="body2" color="text.secondary">
+                No floorplans registered for this floor.
+              </Typography>
             </TableCell>
           </TableRow>
-        ))
-      )}
-    </TableBody>
-  </Table>
+        ) : (
+          floorplans.map((floorplan, i) => (
+            <TableRow key={floorplan.id}>
+              <TableCell>{i + 1}</TableCell>
+              <TableCell>{floorplan.name}</TableCell>
+              <TableCell>{`(${floorplan.floorX}, ${floorplan.floorY})`}</TableCell>
+              <TableCell align="right">
+                <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1}>
+                  <AddEditFloorplan type="edit" floorplan={floorplan} fixedFloorId={floorplan.floorId} />
+                  <Tooltip title="View Floorplan" arrow>
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      onClick={() => {
+                        dispatch(SelectFloorplan(floorplan));
+                        navigate('/master/floorplan', { state: { expandFloorplanId: floorplan.id, floorplanName: floorplan.name } });
+                      }}
+                    >
+                      <IconExternalLink size={18} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Floorplan" arrow>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      onClick={() => onDeleteClick(floorplan)}
+                    >
+                      <IconTrash size={18} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
   );
 };
 
@@ -164,7 +164,7 @@ const FloorList = () => {
   const floorFilter = useSelector((state: RootState) => state.floorReducer.floorFilter);
   // const { data: floorData = [], isLoading: queryLoading, isFetching } = useFloorList(floorFilter);
   const { data, isLoading: queryLoading } = useFloorList(floorFilter);
-  const { data: floorplanData, isLoading: floorplanLoading} = useAllFloorplans();
+  const { data: floorplanData, isLoading: floorplanLoading } = useAllFloorplans();
   const floorData = data?.data || [];
   const floorFilteredCount = data?.meta?.totalItems || 0;
   console.log("FLoor", data, queryLoading)
@@ -247,11 +247,11 @@ const FloorList = () => {
 
   // useEffect(() => {
   //   dispatch(fetchBuildings());
-    
+
   //   const initialFilter = location.state?.floorName 
   //     ? { ...defaultFloorFilter, SearchValue: location.state.floorName }
   //     : defaultFloorFilter;
-      
+
   //   dispatch(UpdateFilter(initialFilter));
   //   try {
   //     setLoading(true);
@@ -387,7 +387,7 @@ const FloorList = () => {
       <Grid size={12}>
         <Box sx={{ overflow: 'auto', maxWidth: '100%' }}>
           <BlankCard>
-            <TableContainer  sx={{
+            <TableContainer sx={{
               maxHeight: '55vh',
             }}>
               <Table stickyHeader aria-label="simple table" sx={{ whiteSpace: 'nowrap' }}>
@@ -442,36 +442,36 @@ const FloorList = () => {
                 <TableBody>
                   {queryLoading
                     ? renderSkeletonRows(rowsPerPage || SKELETON_ROWS)
-                      : floorData.map((floor: floorType, index: number) => {
-                        const isOpen = expandedFloorId === floor.id;
-                        const floorFloorplans = (floorplanData || []).filter(
-                          (fp: any) => fp.floorId === floor.id
-                        );
-                        return (
-                          <React.Fragment key={floor.id}>
-                            <TableRow>
-                              <TableCell
-                                sx={{
-                                  position: 'sticky',
-                                  left: 0,
-                                  backgroundColor: 'background.paper',
-                                  zIndex: 1,
-                                  width: 35, // Fixed width
-                                  minWidth: 35,
-                                  maxWidth: 35,
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                }}
-                              >
-                                {index + 1 + (page - 1) * rowsPerPage}
-                              </TableCell>
-                              <TableCell>{floor.name}</TableCell>
-                              <TableCell>
-                                {floor.buildingName ? (
-                                  <Tooltip title="View Building" arrow>
-                                    <Box
+                    : floorData.map((floor: floorType, index: number) => {
+                      const isOpen = expandedFloorId === floor.id;
+                      const floorFloorplans = (floorplanData || []).filter(
+                        (fp: any) => fp.floorId === floor.id
+                      );
+                      return (
+                        <React.Fragment key={floor.id}>
+                          <TableRow>
+                            <TableCell
+                              sx={{
+                                position: 'sticky',
+                                left: 0,
+                                backgroundColor: 'background.paper',
+                                zIndex: 1,
+                                width: 35, // Fixed width
+                                minWidth: 35,
+                                maxWidth: 35,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              {index + 1 + (page - 1) * rowsPerPage}
+                            </TableCell>
+                            <TableCell>{floor.name}</TableCell>
+                            <TableCell>
+                              {floor.buildingName ? (
+                                <Tooltip title="View Building" arrow>
+                                  <Box
                                     component="span"
-                                    onClick={() => navigate('/master/building', { state: { buildingName: floor.buildingName } })}
+                                    onClick={() => navigate('/master/site/building', { state: { buildingName: floor.buildingName } })}
                                     sx={{
                                       cursor: 'pointer',
                                       display: 'inline-flex',
@@ -489,66 +489,93 @@ const FloorList = () => {
                                     <IconExternalLink size={14} style={{ flexShrink: 0 }} />
                                     <span>{floor.buildingName}</span>
                                   </Box>
-                                  </Tooltip>
-                                ) : (
-                                  '-'
-                                )}
-                              </TableCell>
-                              <TableCell>{floor.siteName || '-'}</TableCell>
-                              <TableCell>{floor.level ?? '-'}</TableCell>
-                              
-                              <TableCell
-                                sx={{
-                                  position: 'sticky',
-                                  right: 0,
-                                  backgroundColor: 'background.paper',
-                                  zIndex: 1,
-                                  gap: 1,
-                                  alignItems: 'center',
-                                  width: 150, // Fixed width
-                                  minWidth: 150,
-                                  maxWidth: 150,
-                                }}
-                              >
-                                <AddEditFloor type="edit" floor={floor} />
-                                 
-                                <Tooltip title="Delete Floor" arrow>
-                                  <IconButton
-                                    color="error"
-                                    size="small"
-                                    onClick={() => handleOpenDeleteDialog(floor)}
+                                </Tooltip>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {floor.siteName ? (
+                                <Tooltip title="View Site" arrow>
+                                  <Box
+                                    component="span"
+                                    onClick={() => navigate('/master/site/site', { state: { siteName: floor.siteName } })}
+                                    sx={{
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 0.5,
+                                      color: 'primary.main',
+                                      fontWeight: 500,
+                                      position: 'relative',
+                                      '&:hover': {
+                                        textDecoration: 'underline',
+                                        color: 'primary.dark',
+                                      },
+                                    }}
                                   >
-                                    <IconTrash size={20} />
+                                    <IconExternalLink size={14} style={{ flexShrink: 0 }} />
+                                    <span>{floor.siteName}</span>
+                                  </Box>
+                                </Tooltip>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell>{floor.level ?? '-'}</TableCell>
+
+                            <TableCell
+                              sx={{
+                                position: 'sticky',
+                                right: 0,
+                                backgroundColor: 'background.paper',
+                                zIndex: 1,
+                                gap: 1,
+                                alignItems: 'center',
+                                width: 150, // Fixed width
+                                minWidth: 150,
+                                maxWidth: 150,
+                              }}
+                            >
+                              <AddEditFloor type="edit" floor={floor} />
+
+                              <Tooltip title="Delete Floor" arrow>
+                                <IconButton
+                                  color="error"
+                                  size="small"
+                                  onClick={() => handleOpenDeleteDialog(floor)}
+                                >
+                                  <IconTrash size={20} />
+                                </IconButton>
+                              </Tooltip>
+                              {isChildShown && (
+                                <Tooltip title={isOpen ? 'Hide Floorplans' : 'Show Floorplans'} arrow>
+                                  <IconButton size="small" onClick={() => toggleExpand(floor.id)}>
+                                    {isOpen ? <IconChevronDown size={20} /> : <IconChevronRight size={20} />}
                                   </IconButton>
                                 </Tooltip>
-                                {isChildShown && (
-                                  <Tooltip title={isOpen ? 'Hide Floorplans' : 'Show Floorplans'} arrow>
-                                    <IconButton size="small" onClick={() => toggleExpand(floor.id)}>
-                                      {isOpen ? <IconChevronDown size={20} /> : <IconChevronRight size={20} />}
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {/* ACCORDION ROW */}
+                          {isChildShown && (
+                            <TableRow>
+                              <TableCell colSpan={6} sx={{ p: 0, borderBottom: 0 }}>
+                                <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                                  <Box pl={6} pr={2} pb={2}>
+                                    <FloorAccordionContent
+                                      floorplans={floorFloorplans}
+                                      floorId={floor.id}
+                                      onDeleteClick={handleOpenDeleteFloorplanDialog}
+                                    />
+                                  </Box>
+                                </Collapse>
                               </TableCell>
                             </TableRow>
-                            {/* ACCORDION ROW */}
-                            {isChildShown && (
-                              <TableRow>
-                                <TableCell colSpan={6} sx={{ p: 0, borderBottom: 0 }}>
-                                  <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                                    <Box pl={6} pr={2} pb={2}>
-                                      <FloorAccordionContent
-                                        floorplans={floorFloorplans}
-                                        floorId={floor.id}
-                                        onDeleteClick={handleOpenDeleteFloorplanDialog}
-                                      />
-                                    </Box>
-                                  </Collapse>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                 </TableBody>
               </Table>
             </TableContainer>
