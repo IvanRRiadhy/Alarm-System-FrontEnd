@@ -313,20 +313,20 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
                             <CustomFormLabel htmlFor="alarmMode">Alarm Mode</CustomFormLabel>
                             <CustomTextField
                                 id="alarmMode"
+                                name="alarmMode"
                                 value={formData.alarmMode}
                                 onChange={handleInputChange}
                                 fullWidth
                                 variant="outlined"
-                                placeholder="Enter Firmware Version"
+                                // placeholder="Enter Alarm Mode"
                                 select
                                 error={!!formErrors.alarmMode}
                                 helperText={formErrors.alarmMode}
                                 required
                             >
                                 <MenuItem value={"Disarmed"}>Disarmed</MenuItem>
-                                <MenuItem value={"ArmedStay"}>Armed Stay</MenuItem>
-                                <MenuItem value={"ArmedAway"}>Armed Away</MenuItem>
-                                <MenuItem value={"Acknowledge"}>Acknowledge</MenuItem>
+                                <MenuItem value={"ArmedScheduled"}>Armed Scheduled</MenuItem>
+                                <MenuItem value={"ArmedManual"}>Armed Manual</MenuItem>
                             </CustomTextField>
                         </Grid>
                     </Grid>

@@ -369,7 +369,7 @@ export const defaultControllerForm: controllerType = {
     channelCount:0,
     macAddress: '',
     firmwareVersion: '',
-    alarmMode: '',
+    alarmMode: 'Disarmed',
     status: '',
     lastSeen: '',
 };
