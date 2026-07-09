@@ -89,6 +89,7 @@ export function useEditBuilding(){
         mutationFn: async (formData: FormData) => {
             const id = formData.get('id');
             formData.delete('id');
+            formData.delete('siteId');
             const res = await axiosServices.put(`${Building_API_URL}${id}`, formData);
             return res.data;
         },

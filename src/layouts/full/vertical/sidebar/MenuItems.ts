@@ -185,6 +185,28 @@ const Menuitems: MenuitemsType[] = [
       },
     ]
   },
+    {
+    id: uniqueId(),
+    title: 'Device',
+    icon: IconBuildingSkyscraper,
+    // chip: '2',
+    // chipColor: 'secondary',
+    href: '/master/device',
+    children: [
+      {
+        id: uniqueId(),
+        title: 'Devices',
+        icon: IconBuildingSkyscraper,
+        href: '/master/device/devices',
+      },
+      {
+        id: uniqueId(),
+        title: 'Controller',
+        icon: IconBuilding,
+        href: '/master/device/controller',
+      },
+    ]
+  },
 
   // {
   //   id: uniqueId(),

@@ -74,7 +74,7 @@ export function useEditFloor() {
   return useMutation({
     mutationFn: async (payload: Partial<floorType>) => {
       if (!payload.id) throw new Error('Missing floor id');
-      const { id, ...filteredPayload } = payload;
+      const { id, buildingId, ...filteredPayload } = payload;
       const res = await axiosServices.put(`${FLOOR_API_URL}${id}`, filteredPayload);
       return res.data;
     },

@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import React, { useState } from 'react';
 import { Box, Grid2 as Grid } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
@@ -14,10 +12,14 @@ import FloorPlan from 'src/components/dashboards/alarm/FloorPlan';
 import RecentEvents from 'src/components/dashboards/alarm/RecentEvents';
 import SystemHealth from 'src/components/dashboards/alarm/SystemHealth';
 import QuickActions from 'src/components/dashboards/alarm/QuickActions';
-// import QuickActions from 'src/components/dashboards/alarm/QuickActions';
+import { useDashboardSummary } from 'src/hooks/useDashboard';
 
 const Modern = () => {
   const [region, setRegion] = useState<string>('Semua Region');
+  const filter = region !== 'Semua Region' ? { region } : {};
+  const { data: summaryResponse, isLoading } = useDashboardSummary(filter);
+  const dashboardData = summaryResponse?.data;
+
 
   return (
     <PageContainer title="SOC Dashboard" description="Security Operations Center Dashboard">
@@ -27,7 +29,7 @@ const Modern = () => {
 
         {/* Top Cards row */}
         <Box sx={{ mb: 3 }}>
-          <AlarmTopCards />
+          <AlarmTopCards data={dashboardData} />
         </Box>
 
         {/* Middle row: ActiveAlarms, SiteMap, DeviceStatus/AlarmTrend */}
@@ -39,7 +41,7 @@ const Modern = () => {
               md: 12,
               lg: 2.5
             }}>
-            <ActiveAlarms region={region} />
+            <ActiveAlarms region={region} recentActiveAlarms={dashboardData?.recentActiveAlarms} />
           </Grid>
           {/* Map */}
           <Grid
@@ -71,7 +73,7 @@ const Modern = () => {
               md: 12,
               lg: 4
             }}>
-            <ActiveAlarmSites region={region} />
+            <ActiveAlarmSites activeAlarmsBySite={dashboardData?.activeAlarmsBySite} />
           </Grid>
           {/* Status + Trend */}
           <Grid
@@ -81,8 +83,12 @@ const Modern = () => {
               lg: 5
             }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <DeviceStatus region={region} />
-              <AlarmTrend region={region} />
+              <DeviceStatus
+                deviceOnline={dashboardData?.deviceOnline}
+                deviceOffline={dashboardData?.deviceOffline}
+                totalTrouble={dashboardData?.totalTrouble}
+              />
+              <AlarmTrend alarmTrends={dashboardData?.alarmTrends} />
             </Box>
           </Grid>
 
@@ -93,7 +99,7 @@ const Modern = () => {
               md: 12,
               lg: 3
             }}>
-            <RecentEvents region={region} />
+            <RecentEvents recentEvents={dashboardData?.recentEvents} />
           </Grid>
         </Grid>
 
@@ -104,7 +110,7 @@ const Modern = () => {
               xs: 12,
               lg: 5.5
             }}>
-            <SystemHealth />
+            <SystemHealth systemHealth={dashboardData?.systemHealth} />
           </Grid>
           <Grid
             size={{

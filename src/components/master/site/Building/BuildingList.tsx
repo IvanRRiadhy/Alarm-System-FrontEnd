@@ -182,7 +182,7 @@ const BuildingList = () => {
   const buildingFilteredCount = data?.meta?.totalItems || 0;
   // Pagination State
   const {buildingMeta} = useSelector((state: RootState) => state.buildingReducer)
-  const page = buildingFilter.page - 1;
+  const page = buildingFilter.page;
   const rowsPerPage = buildingFilter.limit;
   const orderBy = buildingFilter.sortBy;
   const order = buildingFilter.sortOrder;
@@ -222,7 +222,7 @@ const BuildingList = () => {
   };
 
   const handleChangePage = (_: unknown, newPage: number) => {
-    dispatch(UpdateFilter({page: newPage}));
+    dispatch(UpdateFilter({page: newPage + 1}));
   };
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newLength = parseInt(event.target.value, 10);
@@ -429,7 +429,7 @@ const BuildingList = () => {
                                   justifyContent: 'center',
                                 }}
                               >
-                                {index + 1 + page * rowsPerPage}
+                                {index + 1 + (page - 1) * rowsPerPage}
                               </TableCell>
                               <TableCell>{building.name}</TableCell>
                               <TableCell>{building.siteName}</TableCell>
@@ -501,7 +501,7 @@ const BuildingList = () => {
             <TablePagination
               component="div"
               count={buildingFilteredCount}
-              page={page-1}
+              page={page - 1}
               rowsPerPage={rowsPerPage}
               onPageChange={handleChangePage}
               rowsPerPageOptions={[5, 10, 25]}

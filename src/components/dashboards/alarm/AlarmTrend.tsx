@@ -4,10 +4,13 @@ import { Box, Typography } from '@mui/material';
 import { ApexOptions } from 'apexcharts';
 
 type AlarmTrendProps = {
-  region: string;
+  alarmTrends?: { label: string; count: number }[];
 };
 
-const AlarmTrend: React.FC<AlarmTrendProps> = () => {
+const AlarmTrend: React.FC<AlarmTrendProps> = ({ alarmTrends = [] }) => {
+  const categories = alarmTrends.map((t) => t.label);
+  const data = alarmTrends.map((t) => t.count);
+
   const options: ApexOptions = {
     chart: {
       toolbar: {
@@ -36,15 +39,7 @@ const AlarmTrend: React.FC<AlarmTrendProps> = () => {
     },
 
     xaxis: {
-      categories: [
-        '30 Apr',
-        '1 Mei',
-        '2 Mei',
-        '3 Mei',
-        '4 Mei',
-        '5 Mei',
-        '6 Mei',
-      ],
+      categories: categories,
       labels: {
         style: {
           colors: '#94a3b8',
@@ -75,7 +70,7 @@ const AlarmTrend: React.FC<AlarmTrendProps> = () => {
   const series = [
     {
       name: 'Alarm',
-      data: [12, 30, 22, 27, 14, 17, 11],
+      data: data,
     },
   ];
 

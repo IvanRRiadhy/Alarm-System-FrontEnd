@@ -8,11 +8,17 @@ import Chart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 
 type DeviceStatusProps = {
-  region: string;
+  deviceOnline?: number;
+  deviceOffline?: number;
+  totalTrouble?: number;
 };
 
-const DeviceStatus: React.FC<DeviceStatusProps> = () => {
-  const series = [1432, 286, 114];
+const DeviceStatus: React.FC<DeviceStatusProps> = ({
+  deviceOnline = 0,
+  deviceOffline = 0,
+  totalTrouble = 0,
+}) => {
+  const series = [deviceOnline, deviceOffline, totalTrouble];
 
   const total = series.reduce((a, b) => a + b, 0);
 
@@ -78,17 +84,17 @@ const DeviceStatus: React.FC<DeviceStatusProps> = () => {
     {
       color: '#22c55e',
       label: 'Online',
-      value: 1432,
+      value: deviceOnline,
     },
     {
       color: '#f59e0b',
       label: 'Offline',
-      value: 286,
+      value: deviceOffline,
     },
     {
       color: '#ef4444',
       label: 'Trouble',
-      value: 114,
+      value: totalTrouble,
     },
   ];
 
@@ -127,7 +133,7 @@ const DeviceStatus: React.FC<DeviceStatusProps> = () => {
 
         <Stack spacing={2} flex={1}>
           {items.map((item) => {
-            const percent = Math.round((item.value / total) * 100);
+            const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
 
             return (
               <Box

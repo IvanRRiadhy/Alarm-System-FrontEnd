@@ -5,7 +5,6 @@ import { RootState, useDispatch, useSelector } from 'src/store/Store';
 import { metaData } from '../store/apps/crud/site';
 
 const Site_API_URL = '/api/sites/';
-const Site_DT_URL = '/api/sites/filter/';
 
 
 

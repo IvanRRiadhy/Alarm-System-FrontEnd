@@ -92,7 +92,7 @@ const FloorplanList = () => {
   const order = floorplanFilter.sortOrder;
 
   const handleChangePage = (_: unknown, newPage: number) => {
-    dispatch(UpdateFilter({ page: newPage }));
+    dispatch(UpdateFilter({ page: newPage + 1 }));
   };
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newLength = parseInt(event.target.value, 10);
@@ -227,7 +227,7 @@ const FloorplanList = () => {
 
   const handleOverviewClick = (floorplanToEdit: FloorplanType) => {
     dispatch(SelectFloorplan(floorplanToEdit));
-    navigate('/master/floorplan/overview');
+    navigate('/master/site/floorplan/device-mapping');
   };
 
   const renderSkeletonRows = (rows: number) => (
@@ -363,7 +363,7 @@ const FloorplanList = () => {
                             justifyContent: 'center',
                           }}
                         >
-                          {index + 1 + page * rowsPerPage}
+                          {index + 1 + (page - 1) * rowsPerPage}
                         </TableCell>
                         <TableCell>{floorplan.name}</TableCell>
                         <TableCell>

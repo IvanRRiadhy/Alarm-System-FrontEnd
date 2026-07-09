@@ -209,7 +209,7 @@ const FloorList = () => {
   const isLoading = useSelector((state: RootState) => state.floorReducer.isLoading);
   const hasLoaded = useSelector((state: RootState) => state.floorReducer.hasLoaded);
   // Pagination State
-  const page = floorFilter.page;
+  const page = floorFilter.page - 1 ;
   const start = floorFilter.page * floorFilter.limit - 1;
   const rowsPerPage = floorFilter.limit;
   const orderBy = floorFilter.sortBy;
@@ -463,7 +463,7 @@ const FloorList = () => {
                                 justifyContent: 'center',
                               }}
                             >
-                              {index + 1 + (page - 1) * rowsPerPage}
+                              {index + 1 + page * rowsPerPage}
                             </TableCell>
                             <TableCell>{floor.name}</TableCell>
                             <TableCell>
@@ -584,7 +584,7 @@ const FloorList = () => {
               component="div"
               count={floorFilteredCount}
               rowsPerPage={rowsPerPage}
-              page={page - 1}
+              page={page}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
             />

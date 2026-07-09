@@ -12,40 +12,56 @@ import WifiRoundedIcon from '@mui/icons-material/WifiRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import CloudDoneRoundedIcon from '@mui/icons-material/CloudDoneRounded';
 
-const systems = [
-  {
-    title: 'Server',
-    status: 'Online',
-    color: '#22C55E',
-    icon: <DnsRoundedIcon />,
-  },
-  {
-    title: 'Database',
-    status: 'Online',
-    color: '#22C55E',
-    icon: <StorageRoundedIcon />,
-  },
-  {
-    title: 'Storage',
-    status: '78%',
-    color: '#F59E0B',
-    icon: <CloudDoneRoundedIcon />,
-  },
-  {
-    title: 'Network',
-    status: 'Normal',
-    color: '#22C55E',
-    icon: <WifiRoundedIcon />,
-  },
-  {
-    title: 'NTP',
-    status: 'Sync',
-    color: '#22C55E',
-    icon: <AccessTimeRoundedIcon />,
-  },
-];
+interface SystemHealthProps {
+  systemHealth?: {
+    server?: string;
+    database?: string;
+    storage?: number;
+    network?: string;
+    ntp?: string;
+  };
+}
 
-const SystemHealth = () => {
+const SystemHealth: React.FC<SystemHealthProps> = ({ systemHealth }) => {
+  const serverStatus = systemHealth?.server || 'Offline';
+  const dbStatus = systemHealth?.database || 'Offline';
+  const storageVal = systemHealth?.storage ?? 0;
+  const netStatus = systemHealth?.network || 'Offline';
+  const ntpStatus = systemHealth?.ntp || 'Unsync';
+
+  const systems = [
+    {
+      title: 'Server',
+      status: serverStatus,
+      color: serverStatus.toLowerCase() === 'online' ? '#22C55E' : '#EF4444',
+      icon: <DnsRoundedIcon />,
+    },
+    {
+      title: 'Database',
+      status: dbStatus,
+      color: dbStatus.toLowerCase() === 'online' ? '#22C55E' : '#EF4444',
+      icon: <StorageRoundedIcon />,
+    },
+    {
+      title: 'Storage',
+      status: `${storageVal}%`,
+      color: storageVal > 85 ? '#EF4444' : storageVal > 70 ? '#F59E0B' : '#22C55E',
+      icon: <CloudDoneRoundedIcon />,
+    },
+    {
+      title: 'Network',
+      status: netStatus,
+      color: netStatus.toLowerCase() === 'normal' ? '#22C55E' : '#EF4444',
+      icon: <WifiRoundedIcon />,
+    },
+    {
+      title: 'NTP',
+      status: ntpStatus,
+      color: ntpStatus.toLowerCase() === 'sync' ? '#22C55E' : '#F59E0B',
+      icon: <AccessTimeRoundedIcon />,
+    },
+  ];
+
   return (
     <Paper
       sx={{

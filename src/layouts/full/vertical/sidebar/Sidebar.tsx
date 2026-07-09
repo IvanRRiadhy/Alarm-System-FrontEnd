@@ -1,6 +1,5 @@
 import { useMediaQuery, Box, Drawer, useTheme } from '@mui/material';
 import SidebarItems from './SidebarItems';
-import Logo from '../../shared/logo/Logo';
 import { useSelector, useDispatch } from 'src/store/Store';
 import { hoverSidebar, toggleMobileSidebar } from 'src/store/customizer/CustomizerSlice';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
@@ -65,13 +64,7 @@ const Sidebar = () => {
               height: '100%',
             }}
           >
-            {/* ------------------------------------------- */}
-            {/* Logo */}
-            {/* ------------------------------------------- */}
-            <Box px={3}>
-              <Logo />
-            </Box>
-            <Scrollbar sx={{ height: 'calc(100% - 190px)' }}>
+            <Scrollbar sx={{ height: 'calc(100% - 130px)' }}>
               {/* ------------------------------------------- */}
               {/* Sidebar Items */}
               {/* ------------------------------------------- */}
@@ -104,12 +97,6 @@ const Sidebar = () => {
         },
       }}
     >
-      {/* ------------------------------------------- */}
-      {/* Logo */}
-      {/* ------------------------------------------- */}
-      <Box px={2}>
-        <Logo />
-      </Box>
       {/* ------------------------------------------- */}
       {/* Sidebar For Mobile */}
       {/* ------------------------------------------- */}

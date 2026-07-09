@@ -13,48 +13,10 @@ import {
 } from '@mui/material';
 
 type ActiveAlarmSitesProps = {
-  region: string;
+  activeAlarmsBySite?: any[];
 };
 
-const rows = [
-  {
-    site: 'KCP Surabaya Diponegoro',
-    region: 'Jawa Timur',
-    alarm: 3,
-    severity: 'High',
-    status: 'Alarm',
-  },
-  {
-    site: 'KCP Medan Iskandar Muda',
-    region: 'Sumatera Utara',
-    alarm: 2,
-    severity: 'High',
-    status: 'Alarm',
-  },
-  {
-    site: 'KCP Makassar Ratulangi',
-    region: 'Sulawesi Selatan',
-    alarm: 2,
-    severity: 'Medium',
-    status: 'Alarm',
-  },
-  {
-    site: 'KCP Bandung Asia Afrika',
-    region: 'Jawa Barat',
-    alarm: 1,
-    severity: 'Medium',
-    status: 'Alarm',
-  },
-  {
-    site: 'KCP Semarang Pandanaran',
-    region: 'Jawa Tengah',
-    alarm: 1,
-    severity: 'High',
-    status: 'Alarm',
-  },
-];
-
-const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = () => {
+const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite = [] }) => {
   return (
     <Paper
       sx={{
@@ -106,63 +68,68 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = () => {
           </TableHead>
 
           <TableBody>
-            {rows.map((row) => (
-              <TableRow
-                key={row.site}
-                hover
-                sx={{
-                  transition: '.2s',
+            {activeAlarmsBySite.map((row) => {
+              const severityLower = (row.severity || '').toLowerCase();
+              let chipBg = 'rgba(56,189,248,.15)';
+              let chipColor = '#38BDF8';
+              if (severityLower === 'critical' || severityLower === 'high') {
+                chipBg = 'rgba(239,68,68,.15)';
+                chipColor = '#EF4444';
+              } else if (severityLower === 'medium') {
+                chipBg = 'rgba(245,158,11,.15)';
+                chipColor = '#F59E0B';
+              }
 
-                  '&:hover': {
-                    bgcolor: '#1E293B',
-                  },
-
-                  '& td': {
-                    color: '#E2E8F0',
-                    borderBottom: '1px solid rgba(255,255,255,.05)',
-                    fontSize: 13,
-                  },
-                }}
-              >
-                <TableCell>{row.site}</TableCell>
-
-                <TableCell>{row.region}</TableCell>
-
-                <TableCell align="center">
-                  {row.alarm}
-                </TableCell>
-
-                <TableCell align="center">
-                  <Chip
-                    size="small"
-                    label={row.severity}
-                    sx={{
-                      bgcolor:
-                        row.severity === 'High'
-                          ? 'rgba(239,68,68,.15)'
-                          : 'rgba(245,158,11,.15)',
-
-                      color:
-                        row.severity === 'High'
-                          ? '#EF4444'
-                          : '#F59E0B',
-
-                      fontWeight: 600,
-                    }}
-                  />
-                </TableCell>
-
-                <TableCell
-                  align="center"
+              return (
+                <TableRow
+                  key={row.siteId || row.siteName}
+                  hover
                   sx={{
-                    color: '#EF4444 !important',
-                    fontWeight: 600,
+                    transition: '.2s',
+
+                    '&:hover': {
+                      bgcolor: '#1E293B',
+                    },
+
+                    '& td': {
+                      color: '#E2E8F0',
+                      borderBottom: '1px solid rgba(255,255,255,.05)',
+                      fontSize: 13,
+                    },
                   }}
                 >
-                  {row.status}
-                </TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>{row.siteName}</TableCell>
+
+                  <TableCell>{row.region}</TableCell>
+
+                  <TableCell align="center">
+                    {row.totalAlarms}
+                  </TableCell>
+
+                  <TableCell align="center">
+                    <Chip
+                      size="small"
+                      label={row.severity}
+                      sx={{
+                        bgcolor: chipBg,
+                        color: chipColor,
+                        fontWeight: 600,
+                      }}
+                    />
+                  </TableCell>
+
+                  <TableCell
+                    align="center"
+                    sx={{
+                      color: '#EF4444 !important',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {row.status}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

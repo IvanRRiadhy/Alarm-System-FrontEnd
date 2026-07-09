@@ -26,66 +26,65 @@ import {
   Tooltip,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
-import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload } from '@tabler/icons-react';
+import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload, IconExchange } from '@tabler/icons-react';
 import { useNavigate, useLocation } from 'react-router';
 import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Store';
 import toast from 'react-hot-toast';
-import {
-  SiteType,
-  UpdateFilter,
-} from 'src/store/apps/crud/site';
-import { defaultSiteFilter } from 'src/store/apps/defaultForm';
-import { useDeleteSite, useSiteList } from 'src/hooks/useSite';
-import AddEditSite from './AddEditSite';
+import { UpdateFilter } from 'src/store/apps/crud/controller';
+import { defaultControllerFilter } from 'src/store/apps/defaultForm';
+import { useControllerList, useDeleteController } from 'src/hooks/useController';
+import { controllerType } from 'src/store/apps/crud/controller';
+import AddEditController from './AddEditController';
+import ControllerChannel from './ControllerChannel';
 
 const columns = [
-  { label: 'Site Name', field: 'name', sortAble: true },
-  { label: 'Site Code', field: 'code', sortAble: true },
-  { label: 'Site Address', field: 'address', sortAble: false },
-  { label: 'Site Phone Number', field: 'phone', sortAble: false },
+  { label: 'Controller Name', field: 'name', sortAble: true },
+  { label: 'IP Address', field: 'ipAddress', sortAble: true },
+  { label: 'MAC Address', field: 'macAddress', sortAble: true },
+  { label: 'Port', field: 'port', sortAble: true },
+  { label: 'Status', field: 'status', sortAble: true },
 ];
 
 const SKELETON_ROWS = 5;
 
-const SiteList = () => {
+const ControllerList = () => {
     const dispatch: AppDispatch = useDispatch();
       const location = useLocation();
       const isChildShown = useSelector((state: RootState) => state.customizer.isChildShown);
-      const siteFilter = useSelector((state: RootState) => state.siteReducer.siteFilter);
+      const controllerFilter = useSelector((state: RootState) => state.ControllerReducer.controllerFilter);
 
         useEffect(() => {
-          const initialFilter = location.state?.siteName
-            ? { ...defaultSiteFilter, SearchValue: location.state.siteName }
-            : defaultSiteFilter;
+          const initialFilter = location.state?.controllerName
+            ? { ...defaultControllerFilter, SearchValue: location.state.controllerName }
+            : defaultControllerFilter;
       
           dispatch(UpdateFilter(initialFilter));
-        }, [dispatch, location.state?.siteName]);
+        }, [dispatch, location.state?.controllerName]);
 
-        const {data, isLoading, isError} = useSiteList(siteFilter);
-        const siteData = data?.data || [];
-        const siteFilteredCount = data?.meta?.totalItems || 0;
-        const siteTotalCount = data?.meta?.totalItems || 0; 
+        const {data, isLoading, isError} = useControllerList(controllerFilter);
+        const controllerData = data?.data || [];
+        const controllerFilteredCount = data?.meta?.totalItems || 0;
+        const controllerTotalCount = data?.meta?.totalItems || 0; 
 
           // Pagination State
-          const {siteMeta} = useSelector((state: RootState) => state.siteReducer)
-        const page = siteFilter.page;
-        const rowsPerPage = siteFilter.limit;
-        const havePrev = siteMeta.hasPreviousPage;
-        const haveNext = siteMeta.hasNextPage;
-        const orderBy = siteFilter.sortBy;
-        const order = siteFilter.sortOrder;
+          const {controllerMeta} = useSelector((state: RootState) => state.ControllerReducer)
+        const page = controllerMeta.page;
+        const rowsPerPage = controllerMeta.limit;
+        const havePrev = controllerMeta.hasPreviousPage;
+        const haveNext = controllerMeta.hasNextPage;
+        const orderBy = controllerFilter.sortBy;
+        const order = controllerFilter.sortOrder;
 
           const handleChangePage = (_: unknown, newPage: number) => {
-            console.log("New Page : ", newPage);
-            dispatch(UpdateFilter({page: newPage + 1}));
+            dispatch(UpdateFilter({page: newPage}));
           };
           const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
             const newLength = parseInt(event.target.value, 10);
             dispatch(UpdateFilter({ limit: newLength, page: 1 }));
           };
           const handleSort = (column: string) => {
-            const isAsc = siteFilter.sortBy === column && siteFilter.sortOrder === 'asc';
-            const isDesc = siteFilter.sortBy === column && siteFilter.sortOrder === 'desc';
+            const isAsc = controllerFilter.sortBy === column && controllerFilter.sortOrder === 'asc';
+            const isDesc = controllerFilter.sortBy === column && controllerFilter.sortOrder === 'desc';
         
             if (isDesc) {
               dispatch(
@@ -115,28 +114,42 @@ const SiteList = () => {
 
 
  
+  // Channel Assign Dialog State
+  const [channelDialogOpen, setChannelDialogOpen] = useState(false);
+  const [selectedControllerForChannel, setSelectedControllerForChannel] = useState<controllerType | null>(null);
+
+  const handleOpenChannelDialog = (controller: controllerType) => {
+    setSelectedControllerForChannel(controller);
+    setChannelDialogOpen(true);
+  };
+
+  const handleCloseChannelDialog = () => {
+    setChannelDialogOpen(false);
+    setSelectedControllerForChannel(null);
+  };
+
   //Delete Pop-up
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedSite, setSelectedSite] = useState<SiteType | null>(null);
-  const deleteMutation = useDeleteSite();
+  const [selectedController, setSelectedController] = useState<controllerType | null>(null);
+  const deleteMutation = useDeleteController();
 
     // Open delete confirmation dialog
-    const handleOpenDeleteDialog = (site: SiteType) => {
-      setSelectedSite(site);
+    const handleOpenDeleteDialog = (controller: controllerType) => {
+      setSelectedController(controller);
       setDeleteDialogOpen(true);
     };
   
     // Close delete confirmation dialog
     const handleCloseDeleteDialog = () => {
       setDeleteDialogOpen(false);
-      setSelectedSite(null);
+      setSelectedController(null);
     };
   
     // Confirm delete action
     const handleConfirmDelete = async () => {
-      if (selectedSite) {
+      if (selectedController) {
         try {
-          await deleteMutation.mutateAsync(selectedSite.id);
+          await deleteMutation.mutateAsync(selectedController.id);
           toast.success('Data Deleted');
         } catch (error) {
           toast.error('Delete failed');
@@ -264,13 +277,13 @@ const SiteList = () => {
                 <TableBody>
                   {isLoading
                     ? renderSkeletonRows(rowsPerPage || SKELETON_ROWS)
-                    : siteData.map((site, index) => {
-                        const isOpen = expandedSiteId === site.id;
+                    : controllerData.map((controller, index) => {
+                        const isOpen = expandedSiteId === controller.id;
                         // const buildingFloors = (floorData || []).filter(
                         //   (f) => f.buildingId === building.id,
                         // );
                         return (
-                          <React.Fragment key={site.id || index}>
+                          <React.Fragment key={controller.id || index}>
                             <TableRow hover>
                               <TableCell
                                 sx={{
@@ -285,15 +298,18 @@ const SiteList = () => {
                                   justifyContent: 'center',
                                 }}
                               >
-                                {index + 1 + (page - 1) * rowsPerPage}
+                                {index + 1 + page * rowsPerPage}
                               </TableCell>
-                              <TableCell>{site.name}</TableCell>
-                              <TableCell>{site.code}</TableCell>
+                              <TableCell>{controller.name}</TableCell>
+                              <TableCell>{controller.ipAddress}</TableCell>
                               <TableCell>
-                                {site.address}
+                                {controller.macAddress}
                               </TableCell>
                               <TableCell>
-                                {site.phone}
+                                {controller.port}
+                              </TableCell>
+                              <TableCell>
+                                {controller.status}
                               </TableCell>
                               <TableCell
                                 sx={{
@@ -307,22 +323,31 @@ const SiteList = () => {
                                 }}
                               >
                                 <Box display="flex" alignItems="center" gap={1}>
-                                  <AddEditSite type="edit" site={site} />
+                                  <AddEditController type="edit" controller={controller} />
                                   <IconButton
                                     color="error"
                                     size="small"
-                                    onClick={() => handleOpenDeleteDialog(site)}
+                                    onClick={() => handleOpenDeleteDialog(controller)}
                                   >
                                     <IconTrash size={20} />
                                   </IconButton>
+                                  <Tooltip title="Assign Channel" arrow>
+                                    <IconButton
+                                      color="primary"
+                                      size="small"
+                                      onClick={() => handleOpenChannelDialog(controller)}
+                                    >
+                                      <IconExchange />
+                                    </IconButton>
+                                  </Tooltip>
                                   {/* <Tooltip title="Export Configuration" arrow>
                                     <IconButton
                                       color="primary"
                                       size="small"
-                                    //   onClick={() => handleExport(site)}
+                                    //   onClick={() => handleExport(controller)}
                                       disabled={exportingId !== null}
                                     >
-                                      {exportingId === site.id ? (
+                                      {exportingId === controller.id ? (
                                         <CircularProgress size={20} color="inherit" />
                                       ) : (
                                         <IconDownload size={20} />
@@ -331,7 +356,7 @@ const SiteList = () => {
                                   </Tooltip> */}
                                   {isChildShown && (
                                       <Tooltip title={isOpen ? 'Hide Floors' : 'Show Floors'} arrow>
-                                          <IconButton size="small" onClick={() => toggleExpand(site.id)}>
+                                          <IconButton size="small" onClick={() => toggleExpand(controller.id)}>
                                             {isOpen ? <IconChevronDown size={20} /> : <IconChevronRight size={20} />}
                                           </IconButton>
                                         </Tooltip>
@@ -364,8 +389,8 @@ const SiteList = () => {
             {/* Pagination */}
             <TablePagination
               component="div"
-              count={siteFilteredCount}
-              page={page - 1}
+              count={controllerFilteredCount}
+              page={page-1}
               rowsPerPage={rowsPerPage}
               onPageChange={handleChangePage}
               rowsPerPageOptions={[5, 10, 25]}
@@ -379,7 +404,7 @@ const SiteList = () => {
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete the building <strong>{selectedSite?.name}</strong>?
+            Are you sure you want to delete the building <strong>{selectedController?.name}</strong>?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -418,8 +443,13 @@ const SiteList = () => {
           </Button>
         </DialogActions>
       </Dialog> */}
+      <ControllerChannel
+        open={channelDialogOpen}
+        onClose={handleCloseChannelDialog}
+        controller={selectedControllerForChannel}
+      />
     </Grid>
         )
 }
 
-export default SiteList;
+export default ControllerList;

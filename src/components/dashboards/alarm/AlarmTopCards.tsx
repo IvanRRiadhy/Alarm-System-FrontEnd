@@ -31,13 +31,24 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, chartSeries, char
   );
 };
 
-const AlarmTopCards: React.FC = () => {
+interface AlarmTopCardsProps {
+  data?: {
+    totalSite?: number;
+    deviceOnline?: number;
+    totalDevice?: number;
+    totalAlarmActive?: number;
+    totalTrouble?: number;
+    eventsToday?: number;
+  };
+}
+
+const AlarmTopCards: React.FC<AlarmTopCardsProps> = ({ data }) => {
   const cards = [
-    { title: 'TOTAL SITE', value: '128', series: [30, 40, 45, 50, 55, 60, 65], color: '#3b82f6' },
-    { title: 'DEVICE ONLINE', value: '1,432', series: [80, 85, 90, 95, 92, 96, 98], color: '#22c55e' },
-    { title: 'ALARM AKTIF', value: '12', series: [5, 7, 6, 8, 9, 10, 12], color: '#ef4444' },
-    { title: 'TROUBLE', value: '7', series: [2, 3, 4, 5, 4, 6, 7], color: '#f59e0b' },
-    { title: 'EVENT HARI INI', value: '156', series: [120, 130, 140, 150, 155, 156, 158], color: '#3b82f6' },
+    { title: 'TOTAL SITE', value: (data?.totalSite ?? 0).toLocaleString(), series: [30, 40, 45, 50, 55, 60, data?.totalSite ?? 65], color: '#3b82f6' },
+    { title: 'DEVICE ONLINE', value: (data?.deviceOnline ?? 0).toLocaleString(), series: [80, 85, 90, 95, 92, 96, data?.deviceOnline ?? 98], color: '#22c55e' },
+    { title: 'ALARM AKTIF', value: (data?.totalAlarmActive ?? 0).toLocaleString(), series: [5, 7, 6, 8, 9, 10, data?.totalAlarmActive ?? 12], color: '#ef4444' },
+    { title: 'TROUBLE', value: (data?.totalTrouble ?? 0).toLocaleString(), series: [2, 3, 4, 5, 4, 6, data?.totalTrouble ?? 7], color: '#f59e0b' },
+    { title: 'EVENT HARI INI', value: (data?.eventsToday ?? 0).toLocaleString(), series: [120, 130, 140, 150, 155, 156, data?.eventsToday ?? 158], color: '#3b82f6' },
   ];
   return (
     <Grid container spacing={2}>

@@ -8,8 +8,8 @@ import { BuildingType } from "./building";
 import { ensureMinLatency, retryUntilSuccess } from "src/utils/retry";
 import { metaData } from "./site";
 
-const API_URL = "/api/MstFloor/";
-const API_DT_URL = "/api/MstFloor/filter/";
+const API_URL = "/api/floors/";
+const API_DT_URL = "/api/floors/filter/";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {

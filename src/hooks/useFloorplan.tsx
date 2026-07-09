@@ -71,7 +71,7 @@ export function useEditFloorplan() {
   return useMutation({
     mutationFn: async (payload: Partial<FloorplanType>) => {
       if (!payload.id) throw new Error('Missing floorplan id');
-      const { id, ...filteredPayload } = payload;
+      const { id, floorId, ...filteredPayload } = payload;
       console.log("Payload")
       const res = await axiosServices.put(`${FLOORPLAN_API_URL}${id}`, filteredPayload);
       return res.data;

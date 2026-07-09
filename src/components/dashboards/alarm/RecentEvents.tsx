@@ -17,48 +17,60 @@ import SensorsRoundedIcon from '@mui/icons-material/SensorsRounded';
 import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
 
 type RecentEventsProps = {
-  region: string;
+  recentEvents?: any[];
 };
 
-const events = [
-  {
-    time: '10:28',
-    title: 'Pintu Utama Terbuka',
-    site: 'KCP Surabaya Diponegoro',
-    color: '#EF4444',
-    icon: <DoorFrontRoundedIcon fontSize="small" />,
-  },
-  {
-    time: '10:12',
-    title: 'Motion Terdeteksi',
-    site: 'KCP Bandung Asia Afrika',
-    color: '#F59E0B',
-    icon: <SensorsRoundedIcon fontSize="small" />,
-  },
-  {
-    time: '09:54',
-    title: 'Camera Offline',
-    site: 'KCP Medan Iskandar Muda',
-    color: '#EF4444',
-    icon: <CameraAltRoundedIcon fontSize="small" />,
-  },
-  {
-    time: '09:31',
-    title: 'Alarm Intrusion',
-    site: 'KCP Semarang Pandanaran',
-    color: '#EF4444',
-    icon: <WarningAmberRoundedIcon fontSize="small" />,
-  },
-  {
-    time: '09:02',
-    title: 'Motion Terdeteksi',
-    site: 'KCP Makassar Ratulangi',
-    color: '#22C55E',
-    icon: <SensorsRoundedIcon fontSize="small" />,
-  },
-];
+const getEventIconAndColor = (message: string, severity: string) => {
+  const msgLower = (message || '').toLowerCase();
+  const sevLower = (severity || '').toLowerCase();
 
-const RecentEvents: React.FC<RecentEventsProps> = () => {
+  let color = '#38BDF8'; // default blue
+  if (sevLower === 'critical') {
+    color = '#EF4444';
+  } else if (sevLower === 'high') {
+    color = '#F59E0B';
+  } else if (sevLower === 'medium') {
+    color = '#F59E0B';
+  } else if (sevLower === 'low') {
+    color = '#22C55E';
+  }
+
+  let icon = <WarningAmberRoundedIcon fontSize="small" />;
+  if (msgLower.includes('door') || msgLower.includes('pintu')) {
+    icon = <DoorFrontRoundedIcon fontSize="small" />;
+  } else if (msgLower.includes('motion') || msgLower.includes('sensor') || msgLower.includes('gerak')) {
+    icon = <SensorsRoundedIcon fontSize="small" />;
+  } else if (msgLower.includes('camera') || msgLower.includes('kamera') || msgLower.includes('cam')) {
+    icon = <CameraAltRoundedIcon fontSize="small" />;
+  }
+
+  return { color, icon };
+};
+
+const RecentEvents: React.FC<RecentEventsProps> = ({ recentEvents = [] }) => {
+  const mappedEvents = recentEvents.map((e) => {
+    let timeStr = '';
+    try {
+      if (e.timestamp) {
+        const date = new Date(e.timestamp);
+        timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    const { color, icon } = getEventIconAndColor(e.message, e.severity);
+
+    return {
+      id: e.eventId || Math.random().toString(),
+      time: timeStr,
+      title: e.message || '',
+      site: e.siteName || '',
+      color,
+      icon,
+    };
+  });
+
   return (
     <Paper
       sx={{
@@ -103,8 +115,8 @@ const RecentEvents: React.FC<RecentEventsProps> = () => {
           },
         }}
       >
-        {events.map((event, index) => (
-          <React.Fragment key={index}>
+        {mappedEvents.map((event, index) => (
+          <React.Fragment key={event.id}>
             <ListItem
               sx={{
                 py: 1.5,
@@ -166,7 +178,7 @@ const RecentEvents: React.FC<RecentEventsProps> = () => {
               />
             </ListItem>
 
-            {index !== events.length - 1 && (
+            {index !== mappedEvents.length - 1 && (
               <Divider
                 sx={{
                   borderColor: 'rgba(255,255,255,.05)',

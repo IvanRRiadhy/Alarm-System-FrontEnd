@@ -43,6 +43,11 @@ import {GetFilter as PatrolReportFilter} from './crud/patrolReport';
 import { EventFilter} from 'src/hooks/useEvents';
 import { SiteType } from './crud/site';
 import { GetFilter as SiteFilter } from './crud/site';
+import { controllerType } from './crud/controller';
+import { GetFilter as ControllerFilter} from './crud/controller';
+import { deviceType } from './crud/devices';
+import { GetFilter as DeviceFilter } from './crud/devices';
+import { GetFilter as ChannelFilter} from './crud/channel';
 
 //#region AccessCCTV
 export const defaultAccessCCTVForm: CCTVType = {
@@ -350,6 +355,76 @@ export const defaultFloorplanDeviceFilter: FloorplanDeviceFilter = {
     FloorplanId: [],
     FloorplanMaskedAreaId: [],
   },
+};
+//#endregion
+
+//#region Controller
+export const defaultControllerForm: controllerType = {
+    id: '',
+    siteId: '',
+    siteName: '',
+    name: '',
+    ipAddress: '',
+    port: 0,
+    channelCount:0,
+    macAddress: '',
+    firmwareVersion: '',
+    alarmMode: '',
+    status: '',
+    lastSeen: '',
+};
+
+export const defaultControllerFilter: ControllerFilter = {
+  page: 1,
+  limit: 5,
+  // search: '',
+  sortBy: '',
+  sortOrder: 'desc',
+};
+//#endregion
+
+//#region Channel
+export const defaultChannelFilter: ChannelFilter = {
+  page: 1,
+  limit: 100,
+  // search: '',
+  sortBy: '',
+  sortOrder: 'desc',
+  controllerId: null,
+}
+
+//#endregion
+
+//#region Device
+export const defaultDeviceForm: deviceType = {
+    id: '',
+    siteId: '',
+    siteName: '',
+    name: '',
+    channelId: '',
+    hardwareId: '',
+    serialNumber: '',
+    model: '',
+    deviceType: 'Other',
+    AlarmSeverity: 'low',
+    alarmMode: 'Disarmed',
+    isNormalyClose: false,
+    is24H: false,
+    isPanic: false,
+    isEntry: false,
+    deviceIO: 'None',
+    ipAddress: null,
+    port: null,
+    username: null,
+    password: null,
+    rtspUrl: null,
+};
+
+export const defaultDeviceFilter: DeviceFilter = {
+  page: 1,
+  limit: 5,
+  sortBy: '',
+  sortOrder: 'desc',
 };
 //#endregion
 

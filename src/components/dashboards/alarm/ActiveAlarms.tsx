@@ -80,6 +80,11 @@ const alarmsData: ActiveAlarmItem[] = [
   },
 ];
 
+interface ActiveAlarmsProps {
+  region: string;
+  recentActiveAlarms?: any[];
+}
+
 const severityConfig = {
   Critical: {
     color: '#EF4444',
@@ -91,6 +96,11 @@ const severityConfig = {
     bg: 'rgba(245,158,11,.15)',
     border: 'rgba(245,158,11,.35)',
   },
+  Medium: {
+    color: '#3B82F6',
+    bg: 'rgba(59,130,246,.15)',
+    border: 'rgba(59,130,246,.35)',
+  },
   Low: {
     color: '#38BDF8',
     bg: 'rgba(56,189,248,.15)',
@@ -98,31 +108,56 @@ const severityConfig = {
   },
 };
 
-const ActiveAlarms: React.FC<ActiveAlarmsProps> = ({ region }) => {
+const ActiveAlarms: React.FC<ActiveAlarmsProps> = ({ region, recentActiveAlarms = [] }) => {
 
   const [selectedSeverity, setSelectedSeverity] = useState<
-    'All' | 'Critical' | 'High' | 'Low'
+    'All' | 'Critical' | 'High' | 'Medium' | 'Low'
   >('All');
 
-  const regionFiltered = useMemo(() => {
-    return region === 'Semua Region'
-      ? alarmsData
-      : alarmsData.filter((x) => x.region === region);
-  }, [region]);
+  const mappedAlarms = useMemo(() => {
+    return recentActiveAlarms.map((x) => {
+      let timeStr = '';
+      try {
+        if (x.timestamp) {
+          const date = new Date(x.timestamp);
+          timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      // Normalize severity to Capitalized (Critical, High, Medium, Low)
+      let sev = 'Low';
+      if (x.severity) {
+        const s = x.severity.charAt(0).toUpperCase() + x.severity.slice(1).toLowerCase();
+        if (['Critical', 'High', 'Medium', 'Low'].includes(s)) {
+          sev = s;
+        }
+      }
+      return {
+        id: x.deviceId || Math.random().toString(),
+        title: x.message || x.deviceName || 'Alarm',
+        site: x.siteName || '',
+        region: x.region || '',
+        time: timeStr,
+        severity: sev as 'Critical' | 'High' | 'Medium' | 'Low',
+      };
+    });
+  }, [recentActiveAlarms]);
 
   const summary = useMemo(() => ({
-    Critical: regionFiltered.filter(x => x.severity === 'Critical').length,
-    High: regionFiltered.filter(x => x.severity === 'High').length,
-    Low: regionFiltered.filter(x => x.severity === 'Low').length,
-  }), [regionFiltered]);
+    Critical: mappedAlarms.filter(x => x.severity === 'Critical').length,
+    High: mappedAlarms.filter(x => x.severity === 'High').length,
+    Medium: mappedAlarms.filter(x => x.severity === 'Medium').length,
+    Low: mappedAlarms.filter(x => x.severity === 'Low').length,
+  }), [mappedAlarms]);
 
   const displayedAlarms = useMemo(() => {
-    if (selectedSeverity === 'All') return regionFiltered;
+    if (selectedSeverity === 'All') return mappedAlarms;
 
-    return regionFiltered.filter(
+    return mappedAlarms.filter(
       x => x.severity === selectedSeverity
     );
-  }, [selectedSeverity, regionFiltered]);
+  }, [selectedSeverity, mappedAlarms]);
 
   return (
 
@@ -204,7 +239,7 @@ const ActiveAlarms: React.FC<ActiveAlarmsProps> = ({ region }) => {
 
         display="grid"
 
-        gridTemplateColumns="repeat(3,1fr)"
+        gridTemplateColumns="repeat(4,1fr)"
 
         gap={1.2}
 
@@ -216,6 +251,7 @@ const ActiveAlarms: React.FC<ActiveAlarmsProps> = ({ region }) => {
           [
             'Critical',
             'High',
+            'Medium',
             'Low',
           ] as const
         ).map((severity) => {

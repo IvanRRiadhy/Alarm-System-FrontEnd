@@ -1,35 +1,39 @@
 import { Box, Chip, Stack } from '@mui/material';
-
-const data = [
-    {
-        label: 'Device',
-        value: 1832,
-        color: '#2563EB',
-    },
-    {
-        label: 'Alarm',
-        value: 18,
-        color: '#EF4444',
-    },
-    {
-        label: 'Trouble',
-        value: 7,
-        color: '#F59E0B',
-    },
-    {
-        label: 'Offline',
-        value: 4,
-        color: '#64748B',
-    },
-];
+import { useDashboardSummary } from 'src/hooks/useDashboard';
 
 const HeaderSummary = () => {
+    const { data: summaryResponse } = useDashboardSummary(undefined);
+    const dashboardData = summaryResponse?.data;
+
+    const items = [
+        {
+            label: 'Device',
+            value: dashboardData?.totalDevice ?? 0,
+            color: '#2563EB',
+        },
+        {
+            label: 'Alarm',
+            value: dashboardData?.totalAlarmActive ?? 0,
+            color: '#EF4444',
+        },
+        {
+            label: 'Trouble',
+            value: dashboardData?.totalTrouble ?? 0,
+            color: '#F59E0B',
+        },
+        {
+            label: 'Offline',
+            value: dashboardData?.deviceOffline ?? 0,
+            color: '#64748B',
+        },
+    ];
+
     return (
         <Stack
             direction="row"
             spacing={1}
         >
-            {data.map((item) => (
+            {items.map((item) => (
                 <Chip
                     key={item.label}
                     label={`${item.label} : ${item.value}`}

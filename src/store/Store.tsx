@@ -65,6 +65,9 @@ import InvestigateReducer from './apps/crud/investigate';
 import PatrolAreaReducer from './apps/crud/patrolArea';
 import PatrolRouteReducer from './apps/crud/patrolRoute';
 import PatrolSessionReducer from './apps/crud/patrolSession';
+import ControllerReducer from './apps/crud/controller';
+import deviceReducer from './apps/crud/devices';
+import deviceMappingReducer from './apps/crud/deviceMapping';
 // import ReaderHealthReducer from './apps/tracking/ReaderHealth';
 // import EventLogReducer from './apps/tracking/Event';
 // import SessionReducer from './apps/session';
@@ -138,6 +141,9 @@ const rootReducer = combineReducers({
   PatrolAreaReducer: PatrolAreaReducer,
   PatrolRouteReducer: PatrolRouteReducer,
   PatrolSessionReducer: PatrolSessionReducer,
+  ControllerReducer: ControllerReducer,
+  deviceReducer: deviceReducer,
+  deviceMappingReducer: deviceMappingReducer,
   // ReaderHealthReducer: ReaderHealthReducer,
   InvestigateReducer: InvestigateReducer,
   // EventLogReducer: EventLogReducer,

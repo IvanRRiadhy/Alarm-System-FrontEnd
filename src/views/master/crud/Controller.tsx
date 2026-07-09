@@ -14,8 +14,8 @@ import AppCard from 'src/components/shared/AppCard';
 import { RootState, useSelector } from 'src/store/Store';
 import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
-import DevicesList from 'src/components/master/device/Devices/DevicesList';
-import AddEditDevices from 'src/components/master/device/Devices/AddEditDevices';
+import ControllerList from 'src/components/master/device/Controller/ControllerList';
+import AddEditController from 'src/components/master/device/Controller/AddEditController';
 
 interface cardType {
   icon?: string;
@@ -26,24 +26,23 @@ interface cardType {
 
 const drawerWidth = 320;
 
-const Device = () => {
-  const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
+const Controller = () => {
+      const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
   const mdUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
-  const { deviceMeta } = useSelector((state: RootState) => state.deviceReducer);
+  const { controllerMeta } = useSelector((state: RootState) => state.ControllerReducer);
   const { t } = useTranslation();
+    const topCards: cardType[] = [
+      {
+        title: 'Total Controllers',
+        subtitle: controllerMeta.totalItems.toString(),
+        bgcolor: 'success',
+      },
+    ];
 
-  const topCards: cardType[] = [
-    {
-      title: 'Total Devices',
-      subtitle: deviceMeta.totalItems.toString(),
-      bgcolor: 'success',
-    },
-  ];
-
-  return (
-    <PageContainer title="Device Management" description="Device Management">
-      <Grid container spacing={3} mb={3}>
+      return (
+    <PageContainer title="People Tracking System" description="People Tracking System">
+      <Grid container spacing={3} my={3}>
         {topCards.map((topcard, i) => (
           <Grid key={i} size={{ xs: 12, sm: 4, lg: 2 }}>
             <Box bgcolor={topcard.bgcolor + '.light'} textAlign="center">
@@ -57,7 +56,7 @@ const Device = () => {
                 >
                   {t(`${topcard.title}`)}
                 </Typography>
-                {!deviceMeta ? (
+                {!controllerMeta ? (
                   <CircularProgress
                     size={24}
                     style={{ marginTop: 10, color: topcard.bgcolor + '.main' }}
@@ -90,18 +89,15 @@ const Device = () => {
             [`& .MuiDrawer-paper`]: { width: '100%', position: 'relative' },
           }}
         >
-          <ParentCard 
-            title="Device List" 
-            codeModel={[
-              <AddEditDevices type='add' key="add-device-trigger" />
-            ]}
-          >
-            <DevicesList />
+          <ParentCard title="Controller List" codeModel={[
+            <AddEditController type='add' />
+            ]}>
+            <ControllerList />
           </ParentCard>
         </Drawer>
       </AppCard>
     </PageContainer>
   );
-};
+}
 
-export default Device;
+export default Controller;

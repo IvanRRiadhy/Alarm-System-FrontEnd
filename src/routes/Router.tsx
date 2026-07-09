@@ -174,6 +174,11 @@ const Building = Loadable(lazy(() => import('../views/master/crud/Building')));
 const Floor = Loadable(lazy(() => import('../views/master/crud/Floor')));
 const Floorplan = Loadable(lazy(() => import('../views/master/crud/Floorplan')));
 
+//Device
+const Controller = Loadable(lazy(() => import('../views/master/crud/Controller')));
+const Device = Loadable(lazy(() => import('../views/master/crud/Device')));
+const DeviceMappingPage = Loadable(lazy(() => import('../views/master/crud/DeviceMappingPage')));
+
 
 
 const Router = [
@@ -287,6 +292,10 @@ const Router = [
       {path: '/master/site/building', element: <Building/>},
       {path: '/master/site/floor', element: <Floor/>},
       {path: '/master/site/floorplan', element: <Floorplan/>},
+      {path: '/master/site/floorplan/device-mapping', element: <DeviceMappingPage/>},
+      // Device
+      {path: '/master/device/devices', element: <Device/>},
+      {path: '/master/device/controller', element: <Controller/>},
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
