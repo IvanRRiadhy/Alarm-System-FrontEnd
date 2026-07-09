@@ -16,6 +16,7 @@ export type GetFilter = {
     // search: string;
     sortBy: string;
     sortOrder: "asc" | "desc";
+    floorplanId?: string;
 };
 
 export interface deviceType {

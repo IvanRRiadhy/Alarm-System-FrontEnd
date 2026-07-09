@@ -25,7 +25,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
-import { IconTrash, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconTrash, IconChevronDown, IconChevronRight, IconMap } from '@tabler/icons-react';
 import { useLocation } from 'react-router';
 import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Store';
 import toast from 'react-hot-toast';
@@ -34,6 +34,7 @@ import { defaultDeviceFilter } from 'src/store/apps/defaultForm';
 import { useDeviceList, useDeleteDevice } from 'src/hooks/useDevice';
 import { deviceType } from 'src/store/apps/crud/devices';
 import AddEditDevices from './AddEditDevices';
+import MapDeviceDialog from './MapDeviceDialog';
 
 const columns = [
   { label: 'Device Name', field: 'name', sortAble: true },
@@ -111,6 +112,7 @@ const DevicesList = () => {
     // Delete Pop-up
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedDevice, setSelectedDevice] = useState<deviceType | null>(null);
+    const [mappingDevice, setMappingDevice] = useState<deviceType | null>(null);
     const deleteMutation = useDeleteDevice();
 
     // Open delete confirmation dialog
@@ -288,7 +290,16 @@ const DevicesList = () => {
                                     maxWidth: 180,
                                   }}
                                 >
-                                  <Box display="flex" alignItems="center" gap={1}>
+                                   <Box display="flex" alignItems="center" gap={1}>
+                                    <Tooltip title="Map Device" arrow>
+                                      <IconButton
+                                        color="primary"
+                                        size="small"
+                                        onClick={() => setMappingDevice(device)}
+                                      >
+                                        <IconMap size={20} />
+                                      </IconButton>
+                                    </Tooltip>
                                     <AddEditDevices type="edit" device={device} />
                                     <IconButton
                                       color="error"
@@ -297,27 +308,9 @@ const DevicesList = () => {
                                     >
                                       <IconTrash size={20} />
                                     </IconButton>
-                                    {isChildShown && (
-                                        <Tooltip title={isOpen ? 'Hide' : 'Show'} arrow>
-                                            <IconButton size="small" onClick={() => toggleExpand(device.id)}>
-                                              {isOpen ? <IconChevronDown size={20} /> : <IconChevronRight size={20} />}
-                                            </IconButton>
-                                          </Tooltip>
-                                    )}
-                                  </Box>
+                                   </Box>
                                 </TableCell>
                               </TableRow>
-                              {isChildShown && (
-                                <TableRow>
-                                  <TableCell colSpan={7} sx={{ p: 0, borderBottom: 0 }}>
-                                    <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                                      <Box pl={6} pr={2} pb={2}>
-                                        {/* Child content if needed */}
-                                      </Box>
-                                    </Collapse>
-                                  </TableCell>
-                                </TableRow>
-                              )}
                             </React.Fragment>
                           );
                         })}
@@ -359,6 +352,12 @@ const DevicesList = () => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <MapDeviceDialog
+          open={!!mappingDevice}
+          onClose={() => setMappingDevice(null)}
+          device={mappingDevice}
+        />
       </Grid>
     );
 }

@@ -41,6 +41,8 @@ export function useAddDeviceMapping(){
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["device-mapping-list"] })
+            queryClient.invalidateQueries({ queryKey: ["device-lookup"] })
+            queryClient.invalidateQueries({ queryKey: ["device-list"] })
         }
     })
 }
@@ -50,7 +52,7 @@ export function useEditDeviceMapping() {
     return useMutation({
         mutationFn: async (payload: Partial<DeviceMappingType>) => {
             if (!payload.id) throw new Error('Missing device mapping id');
-            const { id, floorplanId, floorplanName, deviceId, deviceName, ...filteredPayload } = payload;
+            const { id, floorplanId, floorplanName, deviceName, ...filteredPayload } = payload;
             const response = await axiosServices.put(`${DEVICE_MAPPING_API_URL}${id}`, filteredPayload)
             return response.data
         },
@@ -70,6 +72,8 @@ export function useDeleteDeviceMapping() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["device-mapping-list"] })
+                        queryClient.invalidateQueries({ queryKey: ["device-lookup"] })
+            queryClient.invalidateQueries({ queryKey: ["device-list"] })
         }
     })
 }

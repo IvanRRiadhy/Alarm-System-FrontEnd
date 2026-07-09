@@ -28,7 +28,7 @@ interface EventItem {
   title: string;
   site: string;
   severity: Severity;
-  zone: string;
+  area: string;
   icon: React.ReactNode;
   iconColor: string;
 }
@@ -40,7 +40,7 @@ const events: EventItem[] = [
     title: 'Pintu Utama Terbuka',
     site: 'KCP Surabaya Diponegoro',
     severity: 'Critical',
-    zone: 'Zona 1',
+    area: 'Zona 1',
     icon: <IconDoor size={18} />,
     iconColor: '#EF4444',
   },
@@ -50,7 +50,7 @@ const events: EventItem[] = [
     title: 'Gerakan Terdeteksi',
     site: 'KCP Medan Iskandar Muda',
     severity: 'High',
-    zone: 'Zona 2',
+    area: 'Zona 2',
     icon: <IconRun size={18} />,
     iconColor: '#F59E0B',
   },
@@ -60,7 +60,7 @@ const events: EventItem[] = [
     title: 'Kaca Pecah Terdeteksi',
     site: 'KCP Makassar Ratulangi',
     severity: 'High',
-    zone: 'Zona 3',
+    area: 'Zona 3',
     icon: <IconGlassFull size={18} />,
     iconColor: '#F59E0B',
   },
@@ -70,7 +70,7 @@ const events: EventItem[] = [
     title: 'Panic Button Ditekan',
     site: 'KCP Bandung Asia Afrika',
     severity: 'Critical',
-    zone: 'Zona 1',
+    area: 'Zona 1',
     icon: <IconHandStop size={18} />,
     iconColor: '#EF4444',
   },
@@ -80,7 +80,7 @@ const events: EventItem[] = [
     title: 'Gerakan Terdeteksi',
     site: 'KCP Palembang Sudirman',
     severity: 'Low',
-    zone: 'Zona 5',
+    area: 'Zona 5',
     icon: <IconRun size={18} />,
     iconColor: '#3B82F6',
   },
@@ -90,7 +90,7 @@ const events: EventItem[] = [
     title: 'Pintu Belakang Terbuka',
     site: 'KCP Makassar Ratulangi',
     severity: 'High',
-    zone: 'Zona 1',
+    area: 'Zona 1',
     icon: <IconDoor size={18} />,
     iconColor: '#F59E0B',
   },
@@ -100,7 +100,7 @@ const events: EventItem[] = [
     title: 'Motion Dihentikan',
     site: 'KCP Surabaya Diponegoro',
     severity: 'Low',
-    zone: 'Zona 4',
+    area: 'Zona 4',
     icon: <IconRun size={18} />,
     iconColor: '#3B82F6',
   },
@@ -110,7 +110,7 @@ const events: EventItem[] = [
     title: 'Kick Alarm',
     site: 'KCP Semarang Pandanaran',
     severity: 'High',
-    zone: 'Zona 2',
+    area: 'Zona 2',
     icon: <IconAlertTriangle size={18} />,
     iconColor: '#F59E0B',
   },
@@ -120,7 +120,7 @@ const events: EventItem[] = [
     title: 'Fire Alarm',
     site: 'KCP Jakarta Thamrin',
     severity: 'Critical',
-    zone: 'Zona 3',
+    area: 'Zona 3',
     icon: <IconFlame size={18} />,
     iconColor: '#EF4444',
   },
@@ -130,7 +130,7 @@ const events: EventItem[] = [
     title: 'Touch Sensor Aktif',
     site: 'KCP Bandung Asia Afrika',
     severity: 'Low',
-    zone: 'Zona 6',
+    area: 'Zona 6',
     icon: <IconFingerprint size={18} />,
     iconColor: '#3B82F6',
   },
@@ -304,7 +304,7 @@ const EventSidebar: React.FC = () => {
                     }}
                   />
                   <Typography sx={{ color: '#64748B', fontSize: 10 }}>
-                    {event.zone}
+                    {event.area}
                   </Typography>
                 </Box>
               </Box>

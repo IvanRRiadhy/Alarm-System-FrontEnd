@@ -32,6 +32,22 @@ export function useDeviceList(filter?: GetFilter) {
     })
 }
 
+export function useDeviceLookup(filter?: GetFilter) {
+    return useQuery({
+        queryKey: ['device-lookup', filter],
+        queryFn: async () => {
+            const response = await axiosServices.get<PaginatedResponse<deviceType>>(`${DEVICE_API_URL}lookup`,{
+                params: filter
+            });
+            console.log("Response", response)
+            return response.data;
+        },
+        placeholderData: keepPreviousData,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes
+    })
+}
+
 export function useAddDevice(){
     const queryClient = useQueryClient();
     return useMutation({

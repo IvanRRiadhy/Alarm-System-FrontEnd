@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -17,64 +17,120 @@ import {
   IconChevronRight,
   IconBuilding,
   IconBuildingSkyscraper,
+  IconStack2,
+  IconMap,
 } from '@tabler/icons-react';
+import { useSiteList } from 'src/hooks/useSite';
+import { useAllBuilding, useBuildingList } from 'src/hooks/useBuilding';
+import { useAllFloors, useFloorList } from 'src/hooks/useFloor';
+import { useAllFloorplans, useFloorplanList } from 'src/hooks/useFloorplan';
+import { FloorplanType } from 'src/store/apps/crud/floorplan';
 
 interface SiteSelectorProps {
   open: boolean;
   onClose: () => void;
-  onSelectFloor?: (site: string, floor: string) => void;
+  onSelectFloorplan?: (floorplan: FloorplanType) => void;
+  selectedFloorplanId?: string;
 }
 
-interface SiteData {
-  name: string;
-  floors: string[];
-}
-
-const sites: SiteData[] = [
-  {
-    name: 'KCP Surabaya Diponegoro',
-    floors: ['Lantai 1', 'Lantai 2', 'Basement'],
-  },
-  {
-    name: 'KCP Medan Iskandar Muda',
-    floors: ['Lantai 1', 'Lantai 2'],
-  },
-  {
-    name: 'KCP Makassar Ratulangi',
-    floors: ['Lantai 1'],
-  },
-  {
-    name: 'KCP Bandung Asia Afrika',
-    floors: ['Lantai 1', 'Lantai 2'],
-  },
-  {
-    name: 'KCP Semarang Pandanaran',
-    floors: ['Lantai 1'],
-  },
-];
-
-const SiteSelector: React.FC<SiteSelectorProps> = ({ open, onClose, onSelectFloor }) => {
-  const [expandedSite, setExpandedSite] = useState<string>('KCP Surabaya Diponegoro');
-  const [selectedFloor, setSelectedFloor] = useState<string>('KCP Surabaya Diponegoro|Lantai 1');
+const SiteSelector: React.FC<SiteSelectorProps> = ({ open, onClose, onSelectFloorplan, selectedFloorplanId }) => {
+  const [expandedSites, setExpandedSites] = useState<Record<string, boolean>>({});
+  const [expandedBuildings, setExpandedBuildings] = useState<Record<string, boolean>>({});
+  const [expandedFloors, setExpandedFloors] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch Data using Hooks
+  const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
+  const sites = siteResponse?.data || [];
+
+  const { data: buildingResponse} = useBuildingList();
+  const buildingData = buildingResponse?.data || [];
+  const { data: floorResponse } = useFloorList();
+  const floorData = floorResponse?.data || [];
+  const { data: floorplanResponse } = useFloorplanList();
+  const floorplanData = floorplanResponse?.data || [];
+
+  // Auto-expand nodes on search query change
+  useEffect(() => {
+    if (searchQuery) {
+      const matchedSites: Record<string, boolean> = {};
+      const matchedBuildings: Record<string, boolean> = {};
+      const matchedFloors: Record<string, boolean> = {};
+
+      sites.forEach((s) => {
+        matchedSites[s.id] = true;
+      });
+      buildingData.forEach((b) => {
+        matchedBuildings[b.id] = true;
+      });
+      floorData.forEach((f) => {
+        matchedFloors[f.id] = true;
+      });
+
+      setExpandedSites(matchedSites);
+      setExpandedBuildings(matchedBuildings);
+      setExpandedFloors(matchedFloors);
+    }
+  }, [searchQuery, sites, buildingData, floorData]);
 
   if (!open) return null;
 
-  const filteredSites = searchQuery
-    ? sites.filter(
-        (s) =>
-          s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.floors.some((f) => f.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : sites;
+  // Filter logic
+  const query = searchQuery.toLowerCase();
+  
+  const getFilteredData = () => {
+    if (!query) {
+      return {
+        sites,
+        buildingData,
+        floorData,
+        floorplanData,
+      };
+    }
 
-  const handleToggleSite = (siteName: string) => {
-    setExpandedSite((prev) => (prev === siteName ? '' : siteName));
+    // Match helper
+    const matchesQuery = (name: string) => name.toLowerCase().includes(query);
+
+    // Collect matched floorplanData and build parent maps
+    const matchedFloorplans = floorplanData.filter((fp) => {
+      if (matchesQuery(fp.name)) return true;
+      
+      const parentFloor = floorData.find((f) => f.id === fp.floorId);
+      if (parentFloor && matchesQuery(parentFloor.name)) return true;
+
+      const parentBuilding = buildingData.find((b) => b.id === fp.buildingId);
+      if (parentBuilding && matchesQuery(parentBuilding.name)) return true;
+
+      const parentSite = sites.find((s) => s.id === fp.siteId);
+      if (parentSite && matchesQuery(parentSite.name)) return true;
+
+      return false;
+    });
+
+    const matchedFloorIds = new Set(matchedFloorplans.map((fp) => fp.floorId));
+    const matchedBuildingIds = new Set(matchedFloorplans.map((fp) => fp.buildingId));
+    const matchedSiteIds = new Set(matchedFloorplans.map((fp) => fp.siteId));
+
+    return {
+      sites: sites.filter((s) => matchedSiteIds.has(s.id)),
+      buildingData: buildingData.filter((b) => matchedBuildingIds.has(b.id)),
+      floorData: floorData.filter((f) => matchedFloorIds.has(f.id)),
+      floorplanData: matchedFloorplans,
+    };
   };
 
-  const handleSelectFloor = (siteName: string, floor: string) => {
-    setSelectedFloor(`${siteName}|${floor}`);
-    onSelectFloor?.(siteName, floor);
+  const filtered = getFilteredData();
+
+  const handleToggleSite = (siteId: string) => {
+    setExpandedSites((prev) => ({ ...prev, [siteId]: !prev[siteId] }));
+  };
+
+  const handleToggleBuilding = (buildingId: string) => {
+    setExpandedBuildings((prev) => ({ ...prev, [buildingId]: !prev[buildingId] }));
+  };
+
+  const handleToggleFloor = (floorId: string) => {
+    setExpandedFloors((prev) => ({ ...prev, [floorId]: !prev[floorId] }));
   };
 
   return (
@@ -123,7 +179,7 @@ const SiteSelector: React.FC<SiteSelectorProps> = ({ open, onClose, onSelectFloo
       <Box sx={{ px: 2, py: 1.5 }}>
         <TextField
           fullWidth
-          placeholder="Cari site / lantai"
+          placeholder="Cari site / gedung / lantai / layout"
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -160,25 +216,27 @@ const SiteSelector: React.FC<SiteSelectorProps> = ({ open, onClose, onSelectFloo
         }}
       >
         <List disablePadding>
-          {filteredSites.map((site) => {
-            const isExpanded = expandedSite === site.name;
+          {filtered.sites.map((site) => {
+            const isSiteExpanded = !!expandedSites[site.id];
+            const siteBuildings = filtered.buildingData.filter((b) => b.siteId === site.id);
 
             return (
-              <React.Fragment key={site.name}>
+              <React.Fragment key={site.id}>
+                {/* Site Node */}
                 <ListItemButton
-                  onClick={() => handleToggleSite(site.name)}
+                  onClick={() => handleToggleSite(site.id)}
                   sx={{
-                    px: 1.5,
-                    py: 0.75,
+                    px: 1,
+                    py: 0.5,
                     borderRadius: 1.5,
                     mb: 0.25,
                     '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, color: '#64748B' }}>
-                    {isExpanded ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
+                  <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5, color: '#64748B' }}>
+                    {isSiteExpanded ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, color: '#94A3B8' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, color: '#3b82f6' }}>
                     <IconBuildingSkyscraper size={16} />
                   </Box>
                   <ListItemText
@@ -189,53 +247,131 @@ const SiteSelector: React.FC<SiteSelectorProps> = ({ open, onClose, onSelectFloo
                   />
                 </ListItemButton>
 
-                <Collapse in={isExpanded}>
-                  <List disablePadding sx={{ pl: 3 }}>
-                    {site.floors.map((floor) => {
-                      const floorKey = `${site.name}|${floor}`;
-                      const isSelected = selectedFloor === floorKey;
+                {/* Buildings Collapse */}
+                <Collapse in={isSiteExpanded}>
+                  <List disablePadding sx={{ pl: 2 }}>
+                    {siteBuildings.map((building) => {
+                      const isBuildingExpanded = !!expandedBuildings[building.id];
+                      const buildingFloors = filtered.floorData.filter((f) => f.buildingId === building.id);
 
                       return (
-                        <ListItemButton
-                          key={floor}
-                          onClick={() => handleSelectFloor(site.name, floor)}
-                          selected={isSelected}
-                          sx={{
-                            px: 1.5,
-                            py: 0.5,
-                            borderRadius: 1.5,
-                            mb: 0.25,
-                            bgcolor: isSelected ? '#2563EB' : 'transparent',
-                            '&:hover': {
-                              bgcolor: isSelected ? '#2563EB' : 'rgba(255,255,255,0.04)',
-                            },
-                            '&.Mui-selected': {
-                              bgcolor: '#2563EB',
-                              '&:hover': { bgcolor: '#1d4ed8' },
-                            },
-                          }}
-                        >
-                          <Box
+                        <React.Fragment key={building.id}>
+                          {/* Building Node */}
+                          <ListItemButton
+                            onClick={() => handleToggleBuilding(building.id)}
                             sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              mr: 1,
-                              color: isSelected ? '#fff' : '#64748B',
+                              px: 1,
+                              py: 0.5,
+                              borderRadius: 1.5,
+                              mb: 0.25,
+                              '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
                             }}
                           >
-                            <IconBuilding size={14} />
-                          </Box>
-                          <ListItemText
-                            primary={floor}
-                            primaryTypographyProps={{
-                              sx: {
-                                color: isSelected ? '#fff' : '#94A3B8',
-                                fontSize: 12,
-                                fontWeight: isSelected ? 600 : 400,
-                              },
-                            }}
-                          />
-                        </ListItemButton>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5, color: '#64748B' }}>
+                              {isBuildingExpanded ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, color: '#22c55e' }}>
+                              <IconBuilding size={15} />
+                            </Box>
+                            <ListItemText
+                              primary={building.name}
+                              primaryTypographyProps={{
+                                sx: { color: '#CBD5E1', fontSize: 11.5, fontWeight: 550 },
+                              }}
+                            />
+                          </ListItemButton>
+
+                          {/* Floors Collapse */}
+                          <Collapse in={isBuildingExpanded}>
+                            <List disablePadding sx={{ pl: 2 }}>
+                              {buildingFloors.map((floor) => {
+                                const isFloorExpanded = !!expandedFloors[floor.id];
+                                const floorplanDataList = filtered.floorplanData.filter((fp) => fp.floorId === floor.id);
+
+                                return (
+                                  <React.Fragment key={floor.id}>
+                                    {/* Floor Node */}
+                                    <ListItemButton
+                                      onClick={() => handleToggleFloor(floor.id)}
+                                      sx={{
+                                        px: 1,
+                                        py: 0.5,
+                                        borderRadius: 1.5,
+                                        mb: 0.25,
+                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+                                      }}
+                                    >
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5, color: '#64748B' }}>
+                                        {isFloorExpanded ? <IconChevronDown size={13} /> : <IconChevronRight size={13} />}
+                                      </Box>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 1, color: '#f59e0b' }}>
+                                        <IconStack2 size={14} />
+                                      </Box>
+                                      <ListItemText
+                                        primary={floor.name}
+                                        primaryTypographyProps={{
+                                          sx: { color: '#94A3B8', fontSize: 11, fontWeight: 500 },
+                                        }}
+                                      />
+                                    </ListItemButton>
+
+                                    {/* Floorplans Collapse */}
+                                    <Collapse in={isFloorExpanded}>
+                                      <List disablePadding sx={{ pl: 2 }}>
+                                        {floorplanDataList.map((fp) => {
+                                          const isSelected = selectedFloorplanId === fp.id;
+
+                                          return (
+                                            <ListItemButton
+                                              key={fp.id}
+                                              onClick={() => onSelectFloorplan?.(fp)}
+                                              selected={isSelected}
+                                              sx={{
+                                                px: 1.5,
+                                                py: 0.4,
+                                                borderRadius: 1.5,
+                                                mb: 0.25,
+                                                bgcolor: isSelected ? '#2563EB' : 'transparent',
+                                                '&:hover': {
+                                                  bgcolor: isSelected ? '#2563EB' : 'rgba(255,255,255,0.04)',
+                                                },
+                                                '&.Mui-selected': {
+                                                  bgcolor: '#2563EB',
+                                                  '&:hover': { bgcolor: '#1d4ed8' },
+                                                },
+                                              }}
+                                            >
+                                              <Box
+                                                sx={{
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  mr: 1,
+                                                  color: isSelected ? '#fff' : '#64748B',
+                                                }}
+                                              >
+                                                <IconMap size={13} />
+                                              </Box>
+                                              <ListItemText
+                                                primary={fp.name}
+                                                primaryTypographyProps={{
+                                                  sx: {
+                                                    color: isSelected ? '#fff' : '#94A3B8',
+                                                    fontSize: 11,
+                                                    fontWeight: isSelected ? 600 : 400,
+                                                  },
+                                                }}
+                                              />
+                                            </ListItemButton>
+                                          );
+                                        })}
+                                      </List>
+                                    </Collapse>
+                                  </React.Fragment>
+                                );
+                              })}
+                            </List>
+                          </Collapse>
+                        </React.Fragment>
                       );
                     })}
                   </List>

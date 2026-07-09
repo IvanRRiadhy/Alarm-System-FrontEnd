@@ -36,7 +36,7 @@ const FullLayout: FC = () => {
   return (
     <>
       <LoadingBar />
-      <MainWrapper className={customizer.activeMode === 'dark' ? 'darkbg mainwrapper' : 'mainwrapper'}>
+      <MainWrapper className={customizer.activeMode === 'dark' ? 'darkbg mainwrapper' : 'mainwrapper'} >
 
         {/* ------------------------------------------- */}
         {/* Sidebar */}
@@ -51,6 +51,8 @@ const FullLayout: FC = () => {
             ...(customizer.isCollapse && {
               [theme.breakpoints.up('lg')]: { ml: `${customizer.MiniSidebarWidth}px` },
             }),
+              overflow: "hidden",
+              padding: "0px !important",
           }}
         >
           {/* ------------------------------------------- */}
@@ -63,6 +65,12 @@ const FullLayout: FC = () => {
             sx={{
               pt: '0px',
               maxWidth: customizer.isLayout === 'boxed' ? 'lg' : '100%!important',
+              overflow: "hidden",
+              '& .css-7ndfpp-MuiContainer-root': {
+                padding: '0!important',
+              },
+              paddingRight: '0px !important',
+              paddingLeft: '0px !important'
             }}
           >
             {/* ------------------------------------------- */}
@@ -79,7 +87,7 @@ const FullLayout: FC = () => {
             {/* End Page */}
             {/* ------------------------------------------- */}
           </Container>
-          <Customizer />
+          {/* <Customizer /> */}
         </PageWrapper>
       </MainWrapper>
             <Toaster

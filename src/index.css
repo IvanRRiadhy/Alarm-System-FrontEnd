@@ -14,6 +14,10 @@
   -webkit-text-size-adjust: 100%;
 }
 
+.css-1fa86kk-MuiContainer-root{
+  padding:"0px !important"
+}
+
 a {
   font-weight: 500;
   color: #646cff;

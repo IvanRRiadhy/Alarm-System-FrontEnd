@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
-  Chip,
   IconButton,
   Switch,
   FormControlLabel,
-  MenuItem,
-  Select,
-  FormControl,
+  lighten,
+  darken,
 } from '@mui/material';
 import {
   IconPlus,
@@ -26,75 +24,213 @@ import {
   IconCircleDot,
   IconMapPin,
 } from '@tabler/icons-react';
+import { Stage, Layer, Image as KonvaImage, Rect, Text, Group, Circle, Line } from 'react-konva';
+import Konva from 'konva';
 import SiteSelector from './SiteSelector';
+import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
+import { useAreaList } from 'src/hooks/useArea';
+import { FloorplanType } from 'src/store/apps/crud/floorplan';
+import { AppDispatch, useDispatch } from 'src/store/Store';
 
-// Device marker types
-interface DeviceMarker {
-  id: string;
-  label?: string;
-  top: string;
-  left: string;
-  type: 'camera' | 'door' | 'motion' | 'glass_break' | 'panic' | 'fire' | 'touch' | 'zone';
-  color: string;
-  hasAlert?: boolean;
-}
+const getCdnUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https://ble-cdn.tunnel.piranticerdasindonesia.com/${url}`;
+};
 
-const deviceMarkers: DeviceMarker[] = [
-  { id: 'cam03', label: 'CAM 03', top: '22%', left: '32%', type: 'camera', color: '#22C55E' },
-  { id: 'cam05', label: 'CAM 05', top: '62%', left: '48%', type: 'camera', color: '#22C55E' },
-  { id: 'cam08', label: 'CAM 08', top: '25%', left: '78%', type: 'camera', color: '#22C55E' },
-  { id: 'cam09', label: 'CAM 09', top: '18%', left: '85%', type: 'camera', color: '#22C55E' },
-  { id: 'cam11', label: 'CAM 11', top: '42%', left: '22%', type: 'camera', color: '#22C55E' },
-  { id: 'cam_atm', top: '48%', left: '15%', type: 'camera', color: '#22C55E' },
-  { id: 'door1', top: '12%', left: '52%', type: 'door', color: '#EF4444', hasAlert: true },
-  { id: 'door2', top: '88%', left: '45%', type: 'door', color: '#22C55E' },
-  { id: 'motion1', top: '35%', left: '42%', type: 'motion', color: '#F59E0B' },
-  { id: 'motion2', top: '55%', left: '25%', type: 'motion', color: '#22C55E' },
-  { id: 'glass1', top: '18%', left: '40%', type: 'glass_break', color: '#22C55E' },
-  { id: 'panic1', top: '50%', left: '60%', type: 'panic', color: '#22C55E' },
-  { id: 'fire1', top: '30%', left: '65%', type: 'fire', color: '#22C55E' },
-  { id: 'touch1', top: '70%', left: '70%', type: 'touch', color: '#22C55E' },
-];
+const getMarkerColor = (type: string, status: string) => {
+  if (status?.toLowerCase() === 'alarm' || status?.toLowerCase() === 'active') {
+    return '#EF4444'; // Red alert!
+  }
+  const t = (type || '').toLowerCase();
+  if (t.includes('motionsensor')) return '#F59E0B';
+  if (t.includes('doorsensor')) return '#38BDF8';
+  if (t.includes('glassbreaksensor')) return '#8B5CF6';
+  if (t.includes('beamsensor')) return '#06B6D4';
+  if (t.includes('vibrationsensor')) return '#10B981';
+  if (t.includes('cctvcamera')) return '#22C55E';
+  if (t.includes('doorlock')) return '#6366F1';
+  if (t.includes('siren')) return '#EF4444';
+  if (t.includes('strobelight')) return '#EC4899';
+  if (t.includes('panicbutton')) return '#D946EF';
+  return '#94A3B8'; // Other / default grey
+};
 
-// Room labels
-const roomLabels = [
-  { label: 'Ruang Teller', top: '50%', left: '55%' },
-  { label: 'Ruang Server', top: '30%', left: '80%' },
-  { label: 'Area ATM', top: '50%', left: '12%' },
-  { label: 'Pintu Utama', top: '8%', left: '52%' },
-  { label: 'Pintu Belakang', top: '92%', left: '45%' },
-];
-
-const deviceTypeIcon: Record<string, React.ReactNode> = {
-  camera: <IconCamera size={13} />,
-  door: <IconDoor size={13} />,
-  motion: <IconWalk size={13} />,
-  glass_break: <IconGlassFull size={13} />,
-  panic: <IconHandStop size={13} />,
-  fire: <IconFlame size={13} />,
-  touch: <IconFingerprint size={13} />,
-  zone: <IconCircleDot size={13} />,
+const getDeviceInitials = (type: string) => {
+  const t = (type || '').toLowerCase();
+  if (t.includes('motionsensor')) return 'MOT';
+  if (t.includes('doorsensor')) return 'DOR';
+  if (t.includes('glassbreaksensor')) return 'GLS';
+  if (t.includes('beamsensor')) return 'BEM';
+  if (t.includes('vibrationsensor')) return 'VIB';
+  if (t.includes('cctvcamera')) return 'CAM';
+  if (t.includes('doorlock')) return 'LCK';
+  if (t.includes('siren')) return 'SRN';
+  if (t.includes('strobelight')) return 'STB';
+  if (t.includes('panicbutton')) return 'PAN';
+  return 'OTH'; // Other
 };
 
 const legendItems = [
-  { label: 'Camera', icon: <IconCamera size={14} />, color: '#22C55E' },
-  { label: 'Access Door', icon: <IconDoor size={14} />, color: '#EF4444' },
-  { label: 'Motion Detector', icon: <IconWalk size={14} />, color: '#F59E0B' },
-  { label: 'Glass Break', icon: <IconGlassFull size={14} />, color: '#8B5CF6' },
-  { label: 'Pintu / Door', icon: <IconDoor size={14} />, color: '#06B6D4' },
-  { label: 'Panic Button', icon: <IconHandStop size={14} />, color: '#EC4899' },
-  { label: 'Fire Alarm', icon: <IconFlame size={14} />, color: '#EF4444' },
-  { label: 'Kick Alarm', icon: <IconAlertTriangle size={14} />, color: '#F59E0B' },
-  { label: 'Touch Sensor', icon: <IconFingerprint size={14} />, color: '#3B82F6' },
-  { label: 'Zone', icon: <IconCircleDot size={14} />, color: '#94A3B8' },
+  { label: 'Motion Sensor', type: 'MotionSensor' },
+  { label: 'Door Sensor', type: 'DoorSensor' },
+  { label: 'Glass Break Sensor', type: 'GlassBreakSensor' },
+  { label: 'Beam Sensor', type: 'BeamSensor' },
+  { label: 'Vibration Sensor', type: 'VibrationSensor' },
+  { label: 'CCTV Camera', type: 'CctvCamera' },
+  { label: 'Door Lock', type: 'DoorLock' },
+  { label: 'Siren', type: 'Siren' },
+  { label: 'Strobe Light', type: 'StrobeLight' },
+  { label: 'Panic Button', type: 'PanicButton' },
+  { label: 'Other', type: 'Other' },
 ];
 
 const FloorplanView: React.FC = () => {
+  const dispatch: AppDispatch = useDispatch();
   const [showSiteSelector, setShowSiteSelector] = useState(true);
   const [modeEdit, setModeEdit] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [selectedSite, setSelectedSite] = useState('KCP Surabaya Diponegoro');
-  const [selectedFloor, setSelectedFloor] = useState('Lantai 1');
+  const [selectedFloorplan, setSelectedFloorplan] = useState<FloorplanType | null>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
+  const [baseSize, setBaseSize] = useState({ width: 800, height: 600 });
+  const [stageScale, setStageScale] = useState(1);
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
+
+  // Fetch device mappings for selected floorplan
+  const filter = {
+    page: 1,
+    limit: 200,
+    sortBy: '',
+    sortOrder: 'asc' as const,
+    floorplanId: selectedFloorplan?.id || '',
+  };
+  const { data: mappingResponse } = useDeviceMappingList(
+    selectedFloorplan?.id ? filter : undefined
+  );
+  const mappings = selectedFloorplan ? (mappingResponse?.data || []) : [];
+
+  const { data: areaResponse } = useAreaList(
+    selectedFloorplan?.id
+      ? {
+          page: 1,
+          limit: 100,
+          sortBy: 'name',
+          sortOrder: 'asc' as const,
+          floorplanId: selectedFloorplan.id,
+        }
+      : undefined
+  );
+  const areas = selectedFloorplan ? (areaResponse?.data || []) : [];
+
+  const cdnImageUrl = selectedFloorplan ? getCdnUrl(selectedFloorplan.imageUrl) : '';
+
+  // Load Floorplan Image
+  useEffect(() => {
+    if (!cdnImageUrl) {
+      setImage(null);
+      return;
+    }
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.src = cdnImageUrl;
+    img.onload = () => {
+      setImage(img);
+      if (containerRef.current) {
+        const cWidth = containerRef.current.offsetWidth;
+        const cHeight = containerRef.current.offsetHeight || 500;
+        setContainerSize({ width: cWidth, height: cHeight });
+
+        const fitScale = Math.min(cWidth / img.width, cHeight / img.height);
+        const sWidth = img.width * fitScale;
+        const sHeight = img.height * fitScale;
+
+        setBaseSize({ width: sWidth, height: sHeight });
+        setStageScale(1);
+
+        setStagePos({
+          x: (cWidth - sWidth) / 2,
+          y: (cHeight - sHeight) / 2,
+        });
+      }
+    };
+  }, [cdnImageUrl]);
+
+  // Handle Resize of the container
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const handleResize = () => {
+      if (containerRef.current && image) {
+        setContainerSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    };
+
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(containerRef.current);
+    
+    // Call initially
+    handleResize();
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [image]);
+
+  // Wheel Zoom
+  const handleWheel = useCallback(
+    (e: Konva.KonvaEventObject<WheelEvent>) => {
+      e.evt.preventDefault();
+      const stage = e.target.getStage();
+      if (!stage) return;
+
+      const scaleBy = 1.1;
+      const oldScale = stageScale;
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+
+      const mousePointTo = {
+        x: (pointer.x - stagePos.x) / oldScale,
+        y: (pointer.y - stagePos.y) / oldScale,
+      };
+
+      const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+      if (newScale < 0.3 || newScale > 8) return;
+
+      setStageScale(newScale);
+      setStagePos({
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale,
+      });
+    },
+    [stageScale, stagePos],
+  );
+
+  const handleZoomIn = () => {
+    setStageScale((z) => Math.min(z * 1.2, 8));
+  };
+
+  const handleZoomOut = () => {
+    setStageScale((z) => Math.max(z / 1.2, 0.3));
+  };
+
+  const handleResetZoom = () => {
+    setStageScale(1);
+    if (image && containerRef.current) {
+      const cWidth = containerRef.current.offsetWidth;
+      const cHeight = containerRef.current.offsetHeight || 500;
+      const fitScale = Math.min(cWidth / image.width, cHeight / image.height);
+      const sWidth = image.width * fitScale;
+      const sHeight = image.height * fitScale;
+      setStagePos({
+        x: (cWidth - sWidth) / 2,
+        y: (cHeight - sHeight) / 2,
+      });
+    }
+  };
 
   return (
     <Box
@@ -134,23 +270,10 @@ const FloorplanView: React.FC = () => {
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
             <Typography sx={{ color: '#94A3B8', fontSize: 12 }}>
-              {selectedSite} - {selectedFloor}
+              {selectedFloorplan
+                ? `${selectedFloorplan.siteName} - ${selectedFloorplan.buildingName} - ${selectedFloorplan.floorName} - ${selectedFloorplan.name}`
+                : 'Silakan Pilih Layout / Floorplan'}
             </Typography>
-            <FormControl size="small" sx={{ minWidth: 0 }}>
-              <Select
-                value="current"
-                variant="standard"
-                disableUnderline
-                sx={{
-                  color: '#94A3B8',
-                  fontSize: 12,
-                  '& .MuiSelect-icon': { color: '#64748B', fontSize: 18 },
-                  '& .MuiSelect-select': { py: 0, pr: '20px !important' },
-                }}
-              >
-                <MenuItem value="current" sx={{ display: 'none' }}></MenuItem>
-              </Select>
-            </FormControl>
           </Box>
         </Box>
 
@@ -170,206 +293,275 @@ const FloorplanView: React.FC = () => {
 
       {/* Floorplan Area */}
       <Box
+        ref={containerRef}
         sx={{
           flex: 1,
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        <Box
-          sx={{
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-            transform: `scale(${zoom})`,
-            transformOrigin: 'center center',
-            transition: 'transform 0.3s ease',
-          }}
-        >
-          {/* Floor plan image */}
-          <img
-            src="/images/floorplan.png"
-            alt="Floor Plan"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              display: 'block',
-              opacity: 0.85,
+        {image ? (
+          <Stage
+            width={containerSize.width}
+            height={containerSize.height}
+            scaleX={stageScale}
+            scaleY={stageScale}
+            x={stagePos.x}
+            y={stagePos.y}
+            draggable
+            onDragEnd={(e) => {
+              if (e.target.getClassName() === 'Stage') {
+                setStagePos({ x: e.target.x(), y: e.target.y() });
+              }
             }}
-          />
+            onWheel={handleWheel}
+            style={{ display: 'block', cursor: stageScale > 1 ? 'grab' : 'default' }}
+            onMouseDown={(e) => {
+              if (e.target.getClassName() === 'Stage' || e.target.getClassName() === 'Image') {
+                const container = e.target.getStage()?.container();
+                if (container) container.style.cursor = 'grabbing';
+              }
+            }}
+            onMouseUp={(e) => {
+              const container = e.target.getStage()?.container();
+              if (container) container.style.cursor = stageScale > 1 ? 'grab' : 'default';
+            }}
+          >
+            {/* Background image layer */}
+            <Layer>
+              <KonvaImage image={image} width={baseSize.width} height={baseSize.height} />
+            </Layer>
 
-          {/* Room Labels */}
-          {roomLabels.map((room) => (
-            <Typography
-              key={room.label}
-              sx={{
-                position: 'absolute',
-                top: room.top,
-                left: room.left,
-                transform: 'translate(-50%, -50%)',
-                color: '#94A3B8',
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: '0.3px',
-                textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-                pointerEvents: 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {room.label}
+            {/* Areas Layer */}
+            {areas.length > 0 && (
+              <Layer>
+                {areas.map((area) => {
+                  const fitScale = baseSize.width / image.width;
+                  const points =
+                    area.areaNodes?.flatMap((node) => [
+                      node.x_px * fitScale,
+                      node.y_px * fitScale,
+                    ]) || [];
+                  const color = area.colorArea || '#FF4D4F';
+                    console.log("Areas", areas)
+                  return (
+                    <Group key={area.id}>
+                      <Line
+                        points={points}
+                        stroke={darken(color, 0.4)}
+                        strokeWidth={2}
+                        lineJoin="round"
+                        lineCap="round"
+                        closed
+                        fill={lighten(color, 0.75)}
+                        opacity={0.55}
+                      />
+                      {/* Area Name Text */}
+                      {area.areaNodes && area.areaNodes.length > 0 && (
+                        <Text
+                          text={area.name}
+                          x={
+                            (area.areaNodes.reduce((acc, curr) => acc + curr.x_px, 0) /
+                              area.areaNodes.length) *
+                              fitScale -
+                            50
+                          }
+                          y={
+                            (area.areaNodes.reduce((acc, curr) => acc + curr.y_px, 0) /
+                              area.areaNodes.length) *
+                              fitScale -
+                            6
+                          }
+                          width={100}
+                          align="center"
+                          fontSize={10}
+                          fontStyle="bold"
+                          fill={darken(color, 0.5)}
+                        />
+                      )}
+                    </Group>
+                  );
+                })}
+              </Layer>
+            )}
+
+            {/* Device markers layer */}
+            <Layer>
+              {mappings.map((mapping) => {
+                const x = (mapping.posPxX / 100) * baseSize.width;
+                const y = (mapping.posPxY / 100) * baseSize.height;
+                const color = getMarkerColor(mapping.deviceType, mapping.deviceStatus);
+                const isAlarm = (mapping.deviceStatus || '').toLowerCase().includes('alarm') ||
+                                (mapping.deviceStatus || '').toLowerCase().includes('active');
+
+                return (
+                  <Group
+                    key={mapping.id}
+                    x={x}
+                    y={y}
+                    onMouseEnter={(e) => {
+                      const container = e.target.getStage()?.container();
+                      if (container) container.style.cursor = 'pointer';
+                    }}
+                    onMouseLeave={(e) => {
+                      const container = e.target.getStage()?.container();
+                      if (container) container.style.cursor = stageScale > 1 ? 'grab' : 'default';
+                    }}
+                  >
+                    {/* Ring indicator for alarms */}
+                    {isAlarm && (
+                      <Circle
+                        radius={16}
+                        stroke={color}
+                        strokeWidth={2}
+                        dash={[4, 2]}
+                        shadowColor={color}
+                        shadowBlur={10}
+                      />
+                    )}
+
+                    {/* Main Dot */}
+                    <Circle
+                      radius={11}
+                      fill={color}
+                      stroke="#ffffff"
+                      strokeWidth={1.5}
+                      shadowColor="rgba(0,0,0,0.4)"
+                      shadowBlur={4}
+                      shadowOffset={{ x: 0, y: 2 }}
+                    />
+
+                    {/* Initials Text inside Dot */}
+                    <Text
+                      text={getDeviceInitials(mapping.deviceType)}
+                      x={-15}
+                      y={-4}
+                      width={30}
+                      fontSize={8}
+                      fontStyle="bold"
+                      fill="#ffffff"
+                      align="center"
+                    />
+
+                    {/* Label below marker */}
+                    {(mapping.label || mapping.deviceName) && (
+                      <Text
+                        text={mapping.label || mapping.deviceName || ''}
+                        x={-40}
+                        y={14}
+                        width={80}
+                        fontSize={9}
+                        fontStyle="bold"
+                        fill="#E2E8F0"
+                        align="center"
+                        scaleX={1 / stageScale}
+                        scaleY={1 / stageScale}
+                      />
+                    )}
+                  </Group>
+                );
+              })}
+            </Layer>
+          </Stage>
+        ) : (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: 1.5,
+            }}
+          >
+            <IconMapPin size={48} color="#475569" />
+            <Typography sx={{ color: '#94A3B8', fontSize: 14 }}>
+              {selectedFloorplan ? 'Loading floorplan image...' : 'Pilih layout / floorplan dari Site Selector'}
             </Typography>
-          ))}
-
-          {/* Device Markers */}
-          {deviceMarkers.map((marker) => (
-            <Box
-              key={marker.id}
-              sx={{
-                position: 'absolute',
-                top: marker.top,
-                left: marker.left,
-                transform: 'translate(-50%, -50%)',
-                cursor: 'pointer',
-                zIndex: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 0.25,
-              }}
-            >
-              {/* Marker dot */}
-              <Box
-                sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  bgcolor: `${marker.color}`,
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: `0 0 10px ${marker.color}60`,
-                  border: marker.hasAlert
-                    ? '2px solid #fff'
-                    : '1px solid rgba(255,255,255,0.2)',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'scale(1.2)',
-                    boxShadow: `0 0 16px ${marker.color}`,
-                  },
-                  ...(marker.hasAlert && {
-                    animation: 'pulse-alert 2s infinite',
-                    '@keyframes pulse-alert': {
-                      '0%': { boxShadow: `0 0 0 0 ${marker.color}80` },
-                      '70%': { boxShadow: `0 0 0 8px ${marker.color}00` },
-                      '100%': { boxShadow: `0 0 0 0 ${marker.color}00` },
-                    },
-                  }),
-                }}
-              >
-                {deviceTypeIcon[marker.type]}
-              </Box>
-
-              {/* Camera label */}
-              {marker.label && (
-                <Typography
-                  sx={{
-                    color: '#E2E8F0',
-                    fontSize: 9,
-                    fontWeight: 600,
-                    bgcolor: 'rgba(0,0,0,0.6)',
-                    px: 0.75,
-                    py: 0.15,
-                    borderRadius: 0.5,
-                    whiteSpace: 'nowrap',
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {marker.label}
-                </Typography>
-              )}
-            </Box>
-          ))}
-        </Box>
+          </Box>
+        )}
 
         {/* Zoom Controls */}
-        <Box
-          sx={{
-            position: 'absolute',
-            right: 12,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0.5,
-            zIndex: 5,
-          }}
-        >
-          <IconButton
-            size="small"
-            onClick={() => setZoom((z) => Math.min(z + 0.15, 2))}
+        {image && (
+          <Box
             sx={{
-              bgcolor: 'rgba(17,24,39,0.85)',
-              color: '#E2E8F0',
-              border: '1px solid rgba(255,255,255,0.1)',
-              width: 30,
-              height: 30,
-              '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
+              position: 'absolute',
+              right: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+              zIndex: 5,
             }}
           >
-            <IconPlus size={14} />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => setZoom((z) => Math.max(z - 0.15, 0.5))}
-            sx={{
-              bgcolor: 'rgba(17,24,39,0.85)',
-              color: '#E2E8F0',
-              border: '1px solid rgba(255,255,255,0.1)',
-              width: 30,
-              height: 30,
-              '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
-            }}
-          >
-            <IconMinus size={14} />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => setZoom(1)}
-            sx={{
-              bgcolor: 'rgba(17,24,39,0.85)',
-              color: '#E2E8F0',
-              border: '1px solid rgba(255,255,255,0.1)',
-              width: 30,
-              height: 30,
-              '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
-            }}
-          >
-            <IconArrowsMinimize size={14} />
-          </IconButton>
-          <IconButton
-            size="small"
-            sx={{
-              bgcolor: 'rgba(17,24,39,0.85)',
-              color: '#E2E8F0',
-              border: '1px solid rgba(255,255,255,0.1)',
-              width: 30,
-              height: 30,
-              '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
-            }}
-          >
-            <IconMaximize size={14} />
-          </IconButton>
-        </Box>
+            <IconButton
+              size="small"
+              onClick={handleZoomIn}
+              sx={{
+                bgcolor: 'rgba(17,24,39,0.85)',
+                color: '#E2E8F0',
+                border: '1px solid rgba(255,255,255,0.1)',
+                width: 30,
+                height: 30,
+                '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
+              }}
+            >
+              <IconPlus size={14} />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={handleZoomOut}
+              sx={{
+                bgcolor: 'rgba(17,24,39,0.85)',
+                color: '#E2E8F0',
+                border: '1px solid rgba(255,255,255,0.1)',
+                width: 30,
+                height: 30,
+                '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
+              }}
+            >
+              <IconMinus size={14} />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={handleResetZoom}
+              sx={{
+                bgcolor: 'rgba(17,24,39,0.85)',
+                color: '#E2E8F0',
+                border: '1px solid rgba(255,255,255,0.1)',
+                width: 30,
+                height: 30,
+                '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
+              }}
+            >
+              <IconArrowsMinimize size={14} />
+            </IconButton>
+            <IconButton
+              size="small"
+              sx={{
+                bgcolor: 'rgba(17,24,39,0.85)',
+                color: '#E2E8F0',
+                border: '1px solid rgba(255,255,255,0.1)',
+                width: 30,
+                height: 30,
+                '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
+              }}
+            >
+              <IconMaximize size={14} />
+            </IconButton>
+          </Box>
+        )}
 
         {/* Site Selector overlay */}
         <SiteSelector
           open={showSiteSelector}
           onClose={() => setShowSiteSelector(false)}
-          onSelectFloor={(site, floor) => {
-            setSelectedSite(site);
-            setSelectedFloor(floor);
+          selectedFloorplanId={selectedFloorplan?.id}
+          onSelectFloorplan={(floorplan) => {
+            setSelectedFloorplan(floorplan);
+            setShowSiteSelector(false);
           }}
         />
       </Box>
@@ -390,30 +582,49 @@ const FloorplanView: React.FC = () => {
           '&::-webkit-scrollbar-thumb': { background: '#334155', borderRadius: 10 },
         }}
       >
-        {legendItems.map((item) => (
-          <Box
-            key={item.label}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              flexShrink: 0,
-            }}
-          >
-            <Box sx={{ color: item.color, display: 'flex', alignItems: 'center' }}>
-              {item.icon}
-            </Box>
-            <Typography
+        {legendItems.map((item) => {
+          const initials = getDeviceInitials(item.type);
+          const color = getMarkerColor(item.type, 'normal');
+
+          return (
+            <Box
+              key={item.label}
               sx={{
-                color: '#94A3B8',
-                fontSize: 11,
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.75,
+                flexShrink: 0,
               }}
             >
-              {item.label}
-            </Typography>
-          </Box>
-        ))}
+              <Box
+                sx={{
+                  width: 28,
+                  height: 18,
+                  bgcolor: color,
+                  color: '#fff',
+                  fontSize: 8.5,
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '4px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }}
+              >
+                {initials}
+              </Box>
+              <Typography
+                sx={{
+                  color: '#94A3B8',
+                  fontSize: 11,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {item.label}
+              </Typography>
+            </Box>
+          );
+        })}
 
         <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
           <FormControlLabel

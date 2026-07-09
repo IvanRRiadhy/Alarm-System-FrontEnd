@@ -1,16 +1,19 @@
-import { Drawer, Theme, useMediaQuery } from '@mui/material';
+import {  Drawer, Theme, useMediaQuery } from '@mui/material';
+
 import React from 'react';
-import DeviceDetailList from './DeviceDetailList';
+import AreaList from './AreaList';
 
 const drawerWidth = 260;
 
-interface Props {
-  isEditingSidebarOpen: boolean;
-  onEditingSidebarClose: (event: React.MouseEvent<HTMLElement>) => void;
-}
 
-const DeviceDetailSidebar = ({ isEditingSidebarOpen, onEditingSidebarClose }: Props) => {
+// interface Props {
+//   isMobileSidebarOpen: boolean;
+//   onSidebarClose: (event: React.MouseEvent<HTMLElement>) => void;
+// }
+// const AddEditMaksedAreaSidebar = ({ isMobileSidebarOpen, onSidebarClose }: Props) => {
+const AddEditMaksedAreaSidebar = () => {
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
+  // const theme = useTheme();
 
   return (
     <>
@@ -30,17 +33,15 @@ const DeviceDetailSidebar = ({ isEditingSidebarOpen, onEditingSidebarClose }: Pr
             overflowY: 'auto',
           },
         }}
-        ModalProps={{
-          onBackdropClick: () => {}, // ← prevent auto close
-        }}
-        open={isEditingSidebarOpen}
-        onClose={onEditingSidebarClose}
+        open={true}
+        // open={isMobileSidebarOpen}
+        // onClose={onSidebarClose}
         variant="permanent"
       >
-        <DeviceDetailList />
+        <AreaList />
       </Drawer>
     </>
   );
 };
 
-export default DeviceDetailSidebar;
+export default AddEditMaksedAreaSidebar;

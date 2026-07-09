@@ -244,7 +244,7 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
                     width: '100%', 
                     height: 'auto', 
                     display: 'block',
-                    opacity: 0.65
+                    opacity: 0
                   }} 
                 />
 
@@ -540,17 +540,7 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
 
           {/* Actions inside panel */}
           <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            {selectedDevice?.channelId && (
-              <Button 
-                variant="outlined" 
-                color="error" 
-                onClick={() => setUnassignConfirmOpen(true)}
-                disabled={editDevice.isPending}
-                sx={{ mr: 'auto', fontWeight: 700 }}
-              >
-                Unassign Device
-              </Button>
-            )}
+            
             {(selectedChannel || selectedDevice) && (
               <Button 
                 variant="text" 
@@ -572,6 +562,17 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
             >
               {editDevice.isPending ? 'Assigning...' : 'Assign'}
             </Button>
+            {selectedDevice?.channelId && (
+              <Button 
+                variant="outlined" 
+                color="error" 
+                onClick={() => setUnassignConfirmOpen(true)}
+                disabled={editDevice.isPending}
+                sx={{ fontWeight: 700 }}
+              >
+                Unassign Device
+              </Button>
+            )}
           </Box>
         </Box>
       </DialogContent>

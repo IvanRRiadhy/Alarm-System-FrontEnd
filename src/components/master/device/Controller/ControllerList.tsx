@@ -159,7 +159,6 @@ const ControllerList = () => {
       handleCloseDeleteDialog();
     };
 
-    console.log("Data", data)
 //   const exportMutation = useExportSiteConfig();
   const [exportingId, setExportingId] = useState<string | null>(null);
 

@@ -176,7 +176,8 @@ const BuildingList = () => {
 
   const { data, isLoading: queryLoading } = useBuildingList(buildingFilter);
   console.log("Dataaa", data)
-  const { data: floorData, isLoading: floorLoading } = useAllFloors();
+  const { data: floorResponse, isLoading: floorLoading } = useFloorList();
+  const floorData = floorResponse?.data || [];
   const buildingData = data?.data || [];
   const buildingTotalCount = data?.meta?.totalItems || 0;
   const buildingFilteredCount = data?.meta?.totalItems || 0;
