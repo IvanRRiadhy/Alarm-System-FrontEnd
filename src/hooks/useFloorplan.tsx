@@ -1,32 +1,33 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
-import { FloorplanType, GetFilter } from '../store/apps/crud/floorplan';
-import { RootState, useSelector } from 'src/store/Store';
+import { FloorplanType, GetFilter, UpdateFloorplanMeta } from '../store/apps/crud/floorplan';
+import { AppDispatch, RootState, useDispatch, useSelector } from 'src/store/Store';
+import { metaData } from 'src/store/apps/crud/site';
 
 const FLOORPLAN_API_URL = '/api/floorplans/';
-const FLOORPLAN_DT_URL = '/api/floorplans/filter/';
 
 interface PaginatedResponse<T> {
   data: T[];
-  draw: number;
-  recordsTotal: number;
-  recordsFiltered: number;
+  msg: string;
+  meta: metaData;
+  status: number;
 }
 
 // Fetch list with caching
 export function useFloorplanList(filter?: GetFilter) {
+  const dispatch: AppDispatch = useDispatch();
   return useQuery({
     queryKey: ['floorplan-list', filter],
     queryFn: async () => {
-      const response = await axiosServices.get(FLOORPLAN_DT_URL, {params: filter});
-      const collection = response.data.collection;
-
+      const response = await axiosServices.get(FLOORPLAN_API_URL, {params: filter});
+      const collection = response.data;
+      dispatch(UpdateFloorplanMeta(collection.meta))
       // shape it into a typed object
       return {
         data: collection.data as FloorplanType[],
-        draw: collection.draw,
-        recordsTotal: collection.recordsTotal,
-        recordsFiltered: collection.recordsFiltered,
+        msg: collection.msg,
+        meta: collection.meta,
+        status: collection.status
       } satisfies PaginatedResponse<FloorplanType>;
     },
     placeholderData: keepPreviousData,
@@ -71,6 +72,7 @@ export function useEditFloorplan() {
     mutationFn: async (payload: Partial<FloorplanType>) => {
       if (!payload.id) throw new Error('Missing floorplan id');
       const { id, ...filteredPayload } = payload;
+      console.log("Payload")
       const res = await axiosServices.put(`${FLOORPLAN_API_URL}${id}`, filteredPayload);
       return res.data;
     },
@@ -105,7 +107,6 @@ export function useFloorplanStatus() {
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     hasLoaded: query.isFetched, // ✅ substitusi untuk redux.hasLoaded
-    totalCount: query.data?.recordsTotal || 0,
-    filteredCount: query.data?.recordsFiltered || 0,
+    totalCount: query.data?.meta.totalItems
   };
 }

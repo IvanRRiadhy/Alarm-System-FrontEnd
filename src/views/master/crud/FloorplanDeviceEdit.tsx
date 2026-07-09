@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import PageContainer from 'src/components/container/PageContainer';
 import AppCard from 'src/components/shared/AppCard';
 import { Box } from '@mui/material';
-import AddEditDeviceSidebar from 'src/components/master/CRUD/floorplanDevice/AddEditFloorplanDevice/AddEditDeviceSidebar';
-import EditDeviceFloorView from 'src/components/master/CRUD/floorplanDevice/AddEditFloorplanDevice/Preview/EditDeviceFloorView';
-import DeviceDetailSidebar from 'src/components/master/CRUD/floorplanDevice/AddEditFloorplanDevice/DeviceDetailSidebar';
+import AddEditDeviceSidebar from 'src/components/master/site/Floorplan/DeviceMapping/AddEditDeviceSidebar';
+import EditDeviceFloorView from 'src/components/master/site/Floorplan/DeviceMapping/Preview/EditDeviceFloorView';
+import DeviceDetailSidebar from 'src/components/master/site/Floorplan/DeviceMapping/DeviceDetailSidebar';
 import { RootState, useSelector } from 'src/store/Store';
 
 const FloorplanDeviceEdit = () => {

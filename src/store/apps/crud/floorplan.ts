@@ -8,6 +8,7 @@ import { MaskedAreaType } from "./maskedArea";
 import { defaultFloorplanFilter } from "../defaultForm";
 import { ensureMinLatency, retryUntilSuccess } from "src/utils/retry";
 import { EngineType } from "./engine";
+import { metaData } from "./site";
 
 const Floorplan_API_URL = '/api/MstFloorplan/';
 const Floorplan_DT_URL = '/api/MstFloorplan/filter/';
@@ -76,6 +77,7 @@ interface StateType {
     floorplanFilteredCount: number;
     floorplanFilter: GetFilter;
     lastFilter?: GetFilter;
+    floorplanMeta: metaData
 isLoading: boolean;
 hasLoaded: boolean;
 };
@@ -88,6 +90,14 @@ const initialState: StateType = {
     floorplanTotalCount: 0,
     floorplanFilteredCount: 0,
     floorplanFilter: defaultFloorplanFilter,
+    floorplanMeta: {
+                page: 1,
+        limit: 10,
+        totalItems: 0,
+        totalPages: 0,
+        hasPreviousPage: false,
+        hasNextPage: false,
+    },
     isLoading: false,
     hasLoaded: false,
 };
@@ -114,6 +124,9 @@ export const FloorplanSlice = createSlice({
         },
         UpdateFilter: (state: StateType, action: PayloadAction<Partial<GetFilter>>) => {
           state.floorplanFilter = { ...state.floorplanFilter, ...action.payload };
+        },
+        UpdateFloorplanMeta: (state: StateType, action: PayloadAction<Partial<metaData>>) => {
+            state.floorplanMeta = { ...state.floorplanMeta, ...action.payload}
         }
     },
     extraReducers: (builder) => {
@@ -207,7 +220,7 @@ export const FloorplanSlice = createSlice({
     },
 });
 
-export const { GetFloorplan, GetAllFloorplan, SelectFloorplan, SearchFloorplan, UpdateFilter } = FloorplanSlice.actions;
+export const { GetFloorplan, GetAllFloorplan, SelectFloorplan, SearchFloorplan, UpdateFilter, UpdateFloorplanMeta } = FloorplanSlice.actions;
 
 export const fetchFloorplan = () => async (dispatch: AppDispatch) => {
     const started = Date.now();

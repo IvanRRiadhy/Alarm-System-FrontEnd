@@ -29,12 +29,12 @@ import toast from 'react-hot-toast';
 import { defaultFloorplanForm } from 'src/store/apps/defaultForm';
 import { EngineType, fetchEngines } from 'src/store/apps/crud/engine';
 import { useAddFloorplan, useEditFloorplan } from 'src/hooks/useFloorplan';
-import { useAllFloors } from 'src/hooks/useFloor';
+import { useAllFloors, useFloorList } from 'src/hooks/useFloor';
 import { useAllEngines } from 'src/hooks/useEngine';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 import { useUploadCDN } from 'src/hooks/usePatrolCase';
 import AreaHierarchySelector, { SelectedNode } from 'src/components/shared/AreaHierarchySelector';
-import { useAllBuilding } from 'src/hooks/useBuilding';
+import { useAllBuilding, useBuildingList } from 'src/hooks/useBuilding';
 
 interface FormType {
   type?: string;
@@ -72,8 +72,12 @@ const AddEditFloorplan = ({ type, floorplan, fixedFloorId, trigger }: FormType) 
   //   // console.log(formData);
   // }, [dispatch]);
 
-  const { data: floorData = [], isLoading: floorLoading } = useAllFloors();
-  const { data: buildingData = [] } = useAllBuilding();
+  // const { data: floorData = [], isLoading: floorLoading } = useAllFloors();
+  const { data: floorRes, isLoading: floorLoading} = useFloorList();
+  const floorData = floorRes?.data || [];
+  // const { data: buildingData = [] } = useAllBuilding();
+  const { data: buildingRes, isLoading: buildingLoading} = useBuildingList();
+  const buildingData = buildingRes?.data || [];
   const { data: engineData = [], isLoading: engineLoading } = useAllEngines();
 
   const filteredBuildings = React.useMemo(() => {

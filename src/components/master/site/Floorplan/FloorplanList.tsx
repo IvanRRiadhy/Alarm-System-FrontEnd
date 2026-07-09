@@ -80,8 +80,8 @@ const FloorplanList = () => {
 
   const { data, isLoading: queryLoading } = useFloorplanList(floorplanFilter);
   const floorplanData = data?.data || [];
-  const floorplanTotalCount = data?.recordsTotal || 0;
-  const floorplanFilteredCount = data?.recordsFiltered || 0;
+  // const floorplanTotalCount = data?.recordsTotal || 0;
+  const floorplanFilteredCount = data?.meta?.totalItems || 0;
   // const { t } = useTranslation();
   const isLoading = useSelector((state: RootState) => state.floorplanReducer.isLoading);
   const hasLoaded = useSelector((state: RootState) => state.floorplanReducer.hasLoaded);

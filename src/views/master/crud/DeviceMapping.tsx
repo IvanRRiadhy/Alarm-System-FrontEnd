@@ -15,14 +15,14 @@ import AppCard from 'src/components/shared/AppCard';
 import { RootState, useSelector } from 'src/store/Store';
 import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
-// import AddEditDevice from 'src/components/master/CRUD/floorplanDevice/addEditDevice';
-import FloorplanDeviceList2 from 'src/components/master/CRUD/floorplanDevice/floorplanDeviceList2';
-// import FloorplanDeviceImport from 'src/components/master/CRUD/floorplanDevice/floorplanDeviceImport';
-// import FloorplanDeviceExport from 'src/components/master/CRUD/floorplanDevice/floorplanDeviceExport';
-import FloorplanFilter from 'src/components/master/CRUD/floorplan/FloorplanFilter';
+// import AddEditDevice from 'src/components/master/site/FloorplanDevice/addEditDevice';
+import FloorplanDeviceList2 from 'src/components/master/site/DeviceMapping/floorplanDeviceList2';
+// import FloorplanDeviceImport from 'src/components/master/site/FloorplanDevice/floorplanDeviceImport';
+// import FloorplanDeviceExport from 'src/components/master/site/FloorplanDevice/floorplanDeviceExport';
+// import FloorplanFilter from 'src/components/master/site/Floorplan/FloorplanFilter';
 import { useFloorplanStatus } from 'src/hooks/useFloorplan';
 import { useFloorplanDeviceStatus } from 'src/hooks/useFloorplanDevice';
-import FloorplanSearch from 'src/components/master/CRUD/floorplan/FloorplanSearch';
+import FloorplanSearch from 'src/components/master/site/Floorplan/FloorplanSearch';
 interface cardType {
   icon?: string;
   title: string;
@@ -103,10 +103,10 @@ const FloorplanDevice = () => {
           }}
         >
           <ParentCard title="Floorplan List" codeModel={[
-            <FloorplanSearch key="search" />,
+            // <FloorplanSearch key="search" />,
             // <FloorplanDeviceImport key="import" />,
             // <FloorplanDeviceExport key="export" />,
-            <FloorplanFilter key="filter" />,
+            // <FloorplanFilter key="filter" />,
           ]}>
             {/* <FloorplanDeviceList /> */}
             <FloorplanDeviceList2 />

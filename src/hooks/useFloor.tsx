@@ -1,9 +1,9 @@
 // src/hooks/useFloor.ts
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
-import { floorType, GetFilter } from 'src/store/apps/crud/floor';
+import { floorType, GetFilter, UpdateFloorMeta } from 'src/store/apps/crud/floor';
 import { useSelector } from 'react-redux';
-import { RootState } from 'src/store/Store';
+import { AppDispatch, RootState, useDispatch } from 'src/store/Store';
 import { metaData } from 'src/store/apps/crud/site';
 
 const FLOOR_API_URL = '/api/floors/';
@@ -18,12 +18,13 @@ interface PaginatedResponse<T> {
 
 // ✅ Get list of floors (supports filters, pagination, sorting)
 export function useFloorList(filter?: GetFilter) {
+  const dispatch: AppDispatch = useDispatch();
   return useQuery({
     queryKey: ['floor-list', filter],
     queryFn: async () => {
       const response = await axiosServices.get(FLOOR_API_URL, { params: filter });
       const collection = response.data;
-
+      dispatch(UpdateFloorMeta(collection.meta))
       return {
         data: collection.data as floorType[],
         msg: response.data.msg,

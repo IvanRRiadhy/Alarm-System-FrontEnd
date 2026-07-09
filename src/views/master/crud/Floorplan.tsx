@@ -37,13 +37,14 @@ const Floorplan = () => {
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
   const mdUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
-const { filteredCount: floorplanCount, hasLoaded, isFetching } = useFloorplanStatus();
+// const { filteredCount: floorplanCount, hasLoaded, isFetching } = useFloorplanStatus();
+  const {floorplanMeta} = useSelector((state: RootState) => state.floorplanReducer)
 
   const { t } = useTranslation();
   const topCards: cardType[] = [
     {
       title: 'Total Floorplan',
-      subtitle: floorplanCount.toString(),
+      subtitle: floorplanMeta.totalItems.toString(),
       bgcolor: 'success',
     },
   ];
@@ -63,7 +64,7 @@ const { filteredCount: floorplanCount, hasLoaded, isFetching } = useFloorplanSta
                 >
                   {t(`${topcard.title}`)}
                 </Typography>
-                {!hasLoaded ? (
+                {!floorplanMeta ? (
                   <CircularProgress
                     size={24}
                     style={{ marginTop: 10, color: topcard.bgcolor + '.main' }}

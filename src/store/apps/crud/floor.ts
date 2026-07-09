@@ -6,6 +6,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { defaultFloorFilter } from "../defaultForm";
 import { BuildingType } from "./building";
 import { ensureMinLatency, retryUntilSuccess } from "src/utils/retry";
+import { metaData } from "./site";
 
 const API_URL = "/api/MstFloor/";
 const API_DT_URL = "/api/MstFloor/filter/";
@@ -62,6 +63,7 @@ interface StateType {
     floorFilteredCount: number;
     floorFilter: GetFilter;
     lastFilter?: GetFilter;
+    floorMeta: metaData;
 isLoading: boolean;
 hasLoaded: boolean;
 }
@@ -74,6 +76,14 @@ const initialState: StateType = {
     floorTotalCount: 0,
     floorFilteredCount: 0,
     floorFilter: defaultFloorFilter,
+    floorMeta: {
+                page: 1,
+        limit: 10,
+        totalItems: 0,
+        totalPages: 0,
+        hasPreviousPage: false,
+        hasNextPage: false,
+    },
     isLoading: false,
     hasLoaded: false,
 };
@@ -102,6 +112,9 @@ export const FloorSlice = createSlice({
         },
         UpdateFilter: (state: StateType, action: PayloadAction<Partial<GetFilter>>) => {
           state.floorFilter = { ...state.floorFilter, ...action.payload };
+        },
+        UpdateFloorMeta: (state: StateType, action: PayloadAction<Partial<GetFilter>>) => {
+            state.floorMeta = {...state.floorMeta, ...action.payload};
         }
     },
 
@@ -207,7 +220,8 @@ export const {
     SelectFloor,
     SetSelectedFloor,
     SearchFloor,
-    UpdateFilter
+    UpdateFilter,
+    UpdateFloorMeta
 } = FloorSlice.actions;
 
 export const fetchFloors = () => async (dispatch: AppDispatch) => {
