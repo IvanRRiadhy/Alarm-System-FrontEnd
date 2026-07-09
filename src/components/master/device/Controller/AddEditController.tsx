@@ -103,6 +103,7 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
           channelCount: formData.channelCount,
           macAddress: formData.macAddress,
           firmwareVersion: formData.firmwareVersion,
+          alarmMode: formData.alarmMode,
         };
   
         if (type === 'add') {
