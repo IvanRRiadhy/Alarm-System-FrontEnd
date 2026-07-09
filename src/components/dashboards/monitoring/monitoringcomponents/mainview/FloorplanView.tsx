@@ -28,9 +28,13 @@ import { Stage, Layer, Image as KonvaImage, Rect, Text, Group, Circle, Line } fr
 import Konva from 'konva';
 import SiteSelector from './SiteSelector';
 import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
+import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import { useAreaList } from 'src/hooks/useArea';
 import { FloorplanType } from 'src/store/apps/crud/floorplan';
 import { AppDispatch, useDispatch } from 'src/store/Store';
+import { useSiteList } from 'src/hooks/useSite';
+import { useFloorList } from 'src/hooks/useFloor';
+import { useFloorplanList } from 'src/hooks/useFloorplan';
 
 const getCdnUrl = (url?: string | null) => {
   if (!url) return '';
@@ -85,11 +89,72 @@ const legendItems = [
   { label: 'Other', type: 'Other' },
 ];
 
-const FloorplanView: React.FC = () => {
+interface FloorplanViewProps {
+  selectedDeviceId?: string;
+  onSelectDevice?: (device: DeviceMappingType) => void;
+}
+
+const FloorplanView: React.FC<FloorplanViewProps> = ({
+  selectedDeviceId,
+  onSelectDevice,
+}) => {
   const dispatch: AppDispatch = useDispatch();
   const [showSiteSelector, setShowSiteSelector] = useState(true);
   const [modeEdit, setModeEdit] = useState(false);
   const [selectedFloorplan, setSelectedFloorplan] = useState<FloorplanType | null>(null);
+
+  // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
+  const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
+  const { data: floorResponse } = useFloorList();
+  const { data: floorplanResponse } = useFloorplanList();
+
+  useEffect(() => {
+    if (selectedFloorplan) return;
+
+    const sites = siteResponse?.data || [];
+    const floorData = floorResponse?.data || [];
+    const floorplanData = floorplanResponse?.data || [];
+
+    if (sites.length > 0 && floorData.length > 0 && floorplanData.length > 0) {
+      const firstSite = sites[0];
+      const siteFloors = floorData.filter((f) => f.siteId === firstSite.id);
+      
+      // Find floor level 0
+      let targetFloor = siteFloors.find((f) => f.level === 0);
+      if (!targetFloor) {
+        // Find floor with smallest level > 0
+        const positiveFloors = siteFloors.filter((f) => f.level > 0).sort((a, b) => a.level - b.level);
+        if (positiveFloors.length > 0) {
+          targetFloor = positiveFloors[0];
+        }
+      }
+      if (!targetFloor && siteFloors.length > 0) {
+        // Sort all levels ascending and take the first one
+        const sortedFloors = [...siteFloors].sort((a, b) => a.level - b.level);
+        targetFloor = sortedFloors[0];
+      }
+
+      if (targetFloor) {
+        const floorplans = floorplanData.filter((fp) => fp.floorId === targetFloor.id);
+        if (floorplans.length > 0) {
+          setSelectedFloorplan(floorplans[0]);
+          return;
+        }
+      }
+
+      // Fallback 1: Any floorplan in the first site
+      const siteFloorplans = floorplanData.filter((fp) => fp.siteId === firstSite.id);
+      if (siteFloorplans.length > 0) {
+        setSelectedFloorplan(siteFloorplans[0]);
+        return;
+      }
+
+      // Fallback 2: Any floorplan overall
+      if (floorplanData.length > 0) {
+        setSelectedFloorplan(floorplanData[0]);
+      }
+    }
+  }, [siteResponse, floorResponse, floorplanResponse, selectedFloorplan]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -309,20 +374,20 @@ const FloorplanView: React.FC = () => {
             x={stagePos.x}
             y={stagePos.y}
             draggable
-            onDragEnd={(e) => {
+            onDragEnd={(e: any) => {
               if (e.target.getClassName() === 'Stage') {
                 setStagePos({ x: e.target.x(), y: e.target.y() });
               }
             }}
             onWheel={handleWheel}
             style={{ display: 'block', cursor: stageScale > 1 ? 'grab' : 'default' }}
-            onMouseDown={(e) => {
+            onMouseDown={(e: any) => {
               if (e.target.getClassName() === 'Stage' || e.target.getClassName() === 'Image') {
                 const container = e.target.getStage()?.container();
                 if (container) container.style.cursor = 'grabbing';
               }
             }}
-            onMouseUp={(e) => {
+            onMouseUp={(e: any) => {
               const container = e.target.getStage()?.container();
               if (container) container.style.cursor = stageScale > 1 ? 'grab' : 'default';
             }}
@@ -393,17 +458,20 @@ const FloorplanView: React.FC = () => {
                 const color = getMarkerColor(mapping.deviceType, mapping.deviceStatus);
                 const isAlarm = (mapping.deviceStatus || '').toLowerCase().includes('alarm') ||
                                 (mapping.deviceStatus || '').toLowerCase().includes('active');
+                const isSelected = selectedDeviceId === mapping.id;
 
                 return (
                   <Group
                     key={mapping.id}
                     x={x}
                     y={y}
-                    onMouseEnter={(e) => {
+                    onClick={() => onSelectDevice?.(mapping)}
+                    onTouchEnd={() => onSelectDevice?.(mapping)}
+                    onMouseEnter={(e: any) => {
                       const container = e.target.getStage()?.container();
                       if (container) container.style.cursor = 'pointer';
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={(e: any) => {
                       const container = e.target.getStage()?.container();
                       if (container) container.style.cursor = stageScale > 1 ? 'grab' : 'default';
                     }}
@@ -420,12 +488,23 @@ const FloorplanView: React.FC = () => {
                       />
                     )}
 
+                    {/* Highlight ring for selected device */}
+                    {isSelected && (
+                      <Circle
+                        radius={16.5}
+                        stroke="#60A5FA"
+                        strokeWidth={2}
+                        shadowColor="#60A5FA"
+                        shadowBlur={8}
+                      />
+                    )}
+
                     {/* Main Dot */}
                     <Circle
-                      radius={11}
+                      radius={isSelected ? 13.5 : 11}
                       fill={color}
-                      stroke="#ffffff"
-                      strokeWidth={1.5}
+                      stroke={isSelected ? "#60A5FA" : "#ffffff"}
+                      strokeWidth={isSelected ? 2 : 1.5}
                       shadowColor="rgba(0,0,0,0.4)"
                       shadowBlur={4}
                       shadowOffset={{ x: 0, y: 2 }}
@@ -434,10 +513,10 @@ const FloorplanView: React.FC = () => {
                     {/* Initials Text inside Dot */}
                     <Text
                       text={getDeviceInitials(mapping.deviceType)}
-                      x={-15}
-                      y={-4}
-                      width={30}
-                      fontSize={8}
+                      x={isSelected ? -18 : -15}
+                      y={isSelected ? -5 : -4}
+                      width={isSelected ? 36 : 30}
+                      fontSize={isSelected ? 9.5 : 8}
                       fontStyle="bold"
                       fill="#ffffff"
                       align="center"
@@ -448,11 +527,11 @@ const FloorplanView: React.FC = () => {
                       <Text
                         text={mapping.label || mapping.deviceName || ''}
                         x={-40}
-                        y={14}
+                        y={isSelected ? 17 : 14}
                         width={80}
-                        fontSize={9}
+                        fontSize={isSelected ? 10.5 : 9}
                         fontStyle="bold"
-                        fill="#E2E8F0"
+                        fill={isSelected ? "#60A5FA" : "#E2E8F0"}
                         align="center"
                         scaleX={1 / stageScale}
                         scaleY={1 / stageScale}

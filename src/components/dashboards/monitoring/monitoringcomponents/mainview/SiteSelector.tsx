@@ -50,6 +50,18 @@ const SiteSelector: React.FC<SiteSelectorProps> = ({ open, onClose, onSelectFloo
   const { data: floorplanResponse } = useFloorplanList();
   const floorplanData = floorplanResponse?.data || [];
 
+  // Auto-expand path for the currently selected floorplan
+  useEffect(() => {
+    if (selectedFloorplanId && floorplanData.length > 0) {
+      const currentFp = floorplanData.find((fp) => fp.id === selectedFloorplanId);
+      if (currentFp) {
+        setExpandedSites((prev) => ({ ...prev, [currentFp.siteId]: true }));
+        setExpandedBuildings((prev) => ({ ...prev, [currentFp.buildingId]: true }));
+        setExpandedFloors((prev) => ({ ...prev, [currentFp.floorId]: true }));
+      }
+    }
+  }, [selectedFloorplanId, floorplanData]);
+
   // Auto-expand nodes on search query change
   useEffect(() => {
     if (searchQuery) {

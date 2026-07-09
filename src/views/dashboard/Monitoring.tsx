@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, IconButton } from '@mui/material';
 import {
   IconChevronLeft,
@@ -7,16 +7,52 @@ import {
   IconChevronsUp,
 } from '@tabler/icons-react';
 import PageContainer from 'src/components/container/PageContainer';
-import EventSidebar from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
+import EventSidebar, { dummyEvents, EventItem, getEventIconAndColor } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
 import FloorplanView from 'src/components/dashboards/monitoring/monitoringcomponents/mainview/FloorplanView';
 import LiveCamera from 'src/components/dashboards/monitoring/monitoringcomponents/footer/LiveCamera';
 import DeviceInfo from 'src/components/dashboards/monitoring/monitoringcomponents/footer/DeviceInfo';
 import DeviceLog from 'src/components/dashboards/monitoring/monitoringcomponents/footer/DeviceLog';
 import EventDetail from 'src/components/dashboards/monitoring/monitoringcomponents/footer/EventDetail';
+import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
+import { startMQTTclient } from 'src/utils/MQTT';
 
 const Monitoring = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [footerOpen, setFooterOpen] = useState(true);
+  const [selectedDevice, setSelectedDevice] = useState<DeviceMappingType | null>(null);
+  const [events, setEvents] = useState<EventItem[]>(dummyEvents);
+  const [selectedLog, setSelectedLog] = useState<any>(null);
+
+  useEffect(() => {
+    console.log('[MQTT] Connecting & subscribing to alarm/events/');
+    const unsubscribe = startMQTTclient((data: any) => {
+      console.log('[MQTT] Received event message:', data);
+      
+      const eventType = data.eventTypes || data.eventType || '';
+      const { icon, color } = getEventIconAndColor(eventType);
+      
+      const newEvent: EventItem = {
+        id: data.id || Date.now(),
+        time: data.time || new Date().toLocaleTimeString('it-IT'),
+        title: data.title || 'Event Terdeteksi',
+        site: data.site || 'Site Utama',
+        severity: data.severity || 'Low',
+        area: data.area || 'Zona',
+        icon: icon,
+        iconColor: color,
+        deviceId: data.deviceId,
+        deviceName: data.deviceName,
+      };
+
+      setEvents((prev) => [newEvent, ...prev]);
+    }, 'alarm/events/');
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   return (
     <PageContainer title="Monitoring" description="Security Monitoring Dashboard">
@@ -66,7 +102,7 @@ const Monitoring = () => {
           </IconButton>
 
           <Box sx={{ flex: 1, overflow: 'hidden', opacity: sidebarOpen ? 1 : 0, transition: 'opacity 0.2s' }}>
-            <EventSidebar />
+            <EventSidebar events={events} />
           </Box>
         </Box>
 
@@ -88,7 +124,10 @@ const Monitoring = () => {
               position: 'relative',
             }}
           >
-            <FloorplanView />
+            <FloorplanView
+              selectedDeviceId={selectedDevice?.id}
+              onSelectDevice={setSelectedDevice}
+            />
 
             {/* Collapse/Expand Footer Button */}
             <IconButton
@@ -129,9 +168,9 @@ const Monitoring = () => {
             }}
           >
             <LiveCamera />
-            <DeviceInfo />
-            <DeviceLog />
-            <EventDetail />
+            <DeviceInfo selectedDevice={selectedDevice} />
+            <DeviceLog selectedDevice={selectedDevice} events={events} selectedLog={selectedLog} onSelectLog={setSelectedLog} />
+            <EventDetail selectedLog={selectedLog} />
           </Box>
         </Box>
       </Box>
