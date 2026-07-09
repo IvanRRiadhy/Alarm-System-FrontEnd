@@ -11,6 +11,7 @@ import './utils/i18n';
 import './_mockApis';
 import { loadRuntimeConfig } from './config';
 import { initializeAxiosBaseURL } from './utils/axios';
+import { initializeMQTTConfig, updateMQTTBrokerURL } from './utils/MQTT';
 
 // ✅ Buat QueryClient instance global
 const queryClient = new QueryClient({
@@ -27,6 +28,8 @@ const queryClient = new QueryClient({
 async function startApp() {
   await loadRuntimeConfig();
   initializeAxiosBaseURL();
+  initializeMQTTConfig();
+  updateMQTTBrokerURL();
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
   <Provider store={store}>

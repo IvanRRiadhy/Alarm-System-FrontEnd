@@ -19,10 +19,10 @@ import {
   IconFingerprint,
 } from '@tabler/icons-react';
 
-type Severity = 'Critical' | 'High' | 'Low';
-type FilterType = 'Semua' | Severity;
+export type Severity = 'Critical' | 'High' | 'Low';
+export type FilterType = 'Semua' | Severity;
 
-interface EventItem {
+export interface EventItem {
   id: number;
   time: string;
   title: string;
@@ -31,9 +31,11 @@ interface EventItem {
   area: string;
   icon: React.ReactNode;
   iconColor: string;
+  deviceId?: string;
+  deviceName?: string;
 }
 
-const events: EventItem[] = [
+export const dummyEvents: EventItem[] = [
   {
     id: 1,
     time: '10:28:45',
@@ -136,13 +138,44 @@ const events: EventItem[] = [
   },
 ];
 
+export const getEventIconAndColor = (eventType: string) => {
+  const type = (eventType || '').toLowerCase();
+  if (type.includes('door') || type.includes('pintu')) {
+    return { icon: <IconDoor size={18} />, color: '#EF4444' };
+  }
+  if (type.includes('motion') || type.includes('run') || type.includes('gerakan') || type.includes('walk')) {
+    return { icon: <IconRun size={18} />, color: '#F59E0B' };
+  }
+  if (type.includes('glass') || type.includes('kaca')) {
+    return { icon: <IconGlassFull size={18} />, color: '#F59E0B' };
+  }
+  if (type.includes('panic') || type.includes('hand') || type.includes('tombol')) {
+    return { icon: <IconHandStop size={18} />, color: '#EF4444' };
+  }
+  if (type.includes('kick') || type.includes('tendang')) {
+    return { icon: <IconAlertTriangle size={18} />, color: '#F59E0B' };
+  }
+  if (type.includes('fire') || type.includes('flame') || type.includes('kebakaran')) {
+    return { icon: <IconFlame size={18} />, color: '#EF4444' };
+  }
+  if (type.includes('touch') || type.includes('fingerprint') || type.includes('sentuh')) {
+    return { icon: <IconFingerprint size={18} />, color: '#3B82F6' };
+  }
+  // Default fallback
+  return { icon: <IconAlertTriangle size={18} />, color: '#3B82F6' };
+};
+
 const severityColors: Record<Severity, string> = {
   Critical: '#EF4444',
   High: '#F59E0B',
   Low: '#3B82F6',
 };
 
-const EventSidebar: React.FC = () => {
+interface EventSidebarProps {
+  events: EventItem[];
+}
+
+const EventSidebar: React.FC<EventSidebarProps> = ({ events }) => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('Semua');
 
   const criticalCount = events.filter((e) => e.severity === 'Critical').length;

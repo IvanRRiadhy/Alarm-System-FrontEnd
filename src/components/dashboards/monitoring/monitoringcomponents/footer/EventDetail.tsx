@@ -7,7 +7,59 @@ import {
 } from '@mui/material';
 import { IconCamera } from '@tabler/icons-react';
 
-const EventDetail: React.FC = () => {
+interface EventDetailProps {
+  selectedLog: any;
+}
+
+const severityColors: Record<string, string> = {
+  Critical: '#EF4444',
+  High: '#F59E0B',
+  Low: '#3B82F6',
+};
+
+const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
+  // Format today's date: e.g. "Selasa, 6 Mei 2025"
+  const formattedDate = new Date().toLocaleDateString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  if (!selectedLog) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          bgcolor: '#111827',
+          borderRadius: 2,
+          border: '1px solid rgba(255,255,255,0.08)',
+          overflow: 'hidden',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+        }}
+      >
+        <Typography sx={{ color: '#64748B', fontSize: 12 }}>
+          Pilih log untuk melihat detail
+        </Typography>
+      </Box>
+    );
+  }
+
+  const severity = selectedLog.severity || 'Low';
+  const severityColor = severityColors[severity] || '#3B82F6';
+
+  const details = [
+    { label: 'Lokasi', value: selectedLog.site || 'KCP Surabaya Diponegoro' },
+    { label: 'Lantai', value: selectedLog.floorplanName || 'Lantai 1' },
+    { label: 'Zona', value: selectedLog.area || 'Zona 1' },
+    { label: 'Device', value: selectedLog.deviceName || 'Unknown Device' },
+    { label: 'Deskripsi', value: selectedLog.description || selectedLog.message || 'Tidak ada deskripsi' },
+  ];
+
   return (
     <Box
       sx={{
@@ -47,7 +99,7 @@ const EventDetail: React.FC = () => {
             fontSize: 11,
           }}
         >
-          Selasa, 6 Mei 2025
+          {selectedLog.time || formattedDate}
         </Typography>
       </Box>
 
@@ -75,31 +127,25 @@ const EventDetail: React.FC = () => {
               mb: 0.5,
             }}
           >
-            Pintu Utama Terbuka
+            {selectedLog.message}
           </Typography>
           <Chip
-            label="Critical"
+            label={severity}
             size="small"
             sx={{
               height: 20,
               fontSize: 10,
               fontWeight: 700,
-              bgcolor: '#EF444420',
-              color: '#EF4444',
-              border: '1px solid #EF444440',
+              bgcolor: `${severityColor}20`,
+              color: severityColor,
+              border: `1px solid ${severityColor}40`,
             }}
           />
         </Box>
 
         {/* Detail Fields */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-          {[
-            { label: 'Lokasi', value: 'KCP Surabaya Diponegoro' },
-            { label: 'Lantai', value: 'Lantai 1' },
-            { label: 'Zona', value: 'Zona 1 - Pintu Utama' },
-            { label: 'Device', value: 'Door Sensor - Main Entrance' },
-            { label: 'Deskripsi', value: 'Pintu Utama terbuka lebih dari 30 detik' },
-          ].map((field) => (
+          {details.map((field) => (
             <Box
               key={field.label}
               sx={{
