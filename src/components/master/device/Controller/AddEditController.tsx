@@ -10,6 +10,7 @@ import {
   Tooltip,
   Typography,
   CircularProgress,
+  MenuItem,
 } from '@mui/material';
 import { IconPencil, IconPlus } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
@@ -305,6 +306,27 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
                                 variant="outlined"
                                 placeholder="Enter Firmware Version"
                             />
+                        </Grid>
+                        {/* Alarm Mode */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <CustomFormLabel htmlFor="alarmMode">Alarm Mode</CustomFormLabel>
+                            <CustomTextField
+                                id="alarmMode"
+                                value={formData.alarmMode}
+                                onChange={handleInputChange}
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Enter Firmware Version"
+                                select
+                                error={!!formErrors.alarmMode}
+                                helperText={formErrors.alarmMode}
+                                required
+                            >
+                                <MenuItem value={"Disarmed"}>Disarmed</MenuItem>
+                                <MenuItem value={"ArmedStay"}>Armed Stay</MenuItem>
+                                <MenuItem value={"ArmedAway"}>Armed Away</MenuItem>
+                                <MenuItem value={"Acknowledge"}>Acknowledge</MenuItem>
+                            </CustomTextField>
                         </Grid>
                     </Grid>
                 </DialogContent>
