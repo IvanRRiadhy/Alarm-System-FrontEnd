@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, IconButton } from '@mui/material';
 import {
   IconChevronLeft,
@@ -7,7 +7,7 @@ import {
   IconChevronsUp,
 } from '@tabler/icons-react';
 import PageContainer from 'src/components/container/PageContainer';
-import EventSidebar, { dummyEvents, EventItem, getEventIconAndColor } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
+import EventSidebar, { dummyEvents, EventItem } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
 import FloorplanView from 'src/components/dashboards/monitoring/monitoringcomponents/mainview/FloorplanView';
 import LiveCamera from 'src/components/dashboards/monitoring/monitoringcomponents/footer/LiveCamera';
 import DeviceInfo from 'src/components/dashboards/monitoring/monitoringcomponents/footer/DeviceInfo';
@@ -15,6 +15,11 @@ import DeviceLog from 'src/components/dashboards/monitoring/monitoringcomponents
 import EventDetail from 'src/components/dashboards/monitoring/monitoringcomponents/footer/EventDetail';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import { startMQTTclient } from 'src/utils/MQTT';
+import { mapAlarmMessageToEvents, MqttAlarmMessage, AlarmLookupData } from 'src/utils/alarmMessageMapper';
+import { useControllerList } from 'src/hooks/useController';
+import { useChannel } from 'src/hooks/useChannel';
+import { useDeviceList } from 'src/hooks/useDevice';
+import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
 
 const Monitoring = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -23,36 +28,59 @@ const Monitoring = () => {
   const [events, setEvents] = useState<EventItem[]>(dummyEvents);
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
+  // Fetch all lookup data needed for MQTT message mapping
+  const { data: controllerResponse } = useControllerList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc' });
+  const { data: channelResponse } = useChannel({ page: 1, limit: 1000, sortBy: 'channelNo', sortOrder: 'asc', controllerId: null });
+  const { data: deviceResponse } = useDeviceList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc' });
+  const { data: deviceMappingResponse } = useDeviceMappingList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc', floorplanId: null });
+
+  // Keep lookup data in a ref so the MQTT callback always sees the latest
+  const lookupRef = useRef<AlarmLookupData>({
+    controllers: [],
+    channels: [],
+    devices: [],
+    deviceMappings: [],
+  });
+
+  useEffect(() => {
+    lookupRef.current = {
+      controllers: controllerResponse?.data || [],
+      channels: channelResponse?.data || [],
+      devices: deviceResponse?.data || [],
+      deviceMappings: deviceMappingResponse?.data || [],
+    };
+  }, [controllerResponse, channelResponse, deviceResponse, deviceMappingResponse]);
+
+  // Stable MQTT message handler that reads from lookupRef
+  const handleMqttMessage = useCallback((data: any) => {
+    console.log('[MQTT] Received alarm message:', data);
+
+    const message = data as MqttAlarmMessage;
+
+    // Validate that the message has the expected structure
+    if (!message.site_id || !message.client_id || !message.zones || !message.relays) {
+      console.warn('[MQTT] Message does not match expected alarm structure, skipping:', data);
+      return;
+    }
+
+    const newEvents = mapAlarmMessageToEvents(message, lookupRef.current);
+    console.log(`[MQTT] Mapped ${newEvents.length} events from alarm message`);
+
+    if (newEvents.length > 0) {
+      setEvents((prev) => [...newEvents, ...prev]);
+    }
+  }, []);
+
   useEffect(() => {
     console.log('[MQTT] Connecting & subscribing to alarm/events/');
-    const unsubscribe = startMQTTclient((data: any) => {
-      console.log('[MQTT] Received event message:', data);
-      
-      const eventType = data.eventTypes || data.eventType || '';
-      const { icon, color } = getEventIconAndColor(eventType);
-      
-      const newEvent: EventItem = {
-        id: data.id || Date.now(),
-        time: data.time || new Date().toLocaleTimeString('it-IT'),
-        title: data.title || 'Event Terdeteksi',
-        site: data.site || 'Site Utama',
-        severity: data.severity || 'Low',
-        area: data.area || 'Zona',
-        icon: icon,
-        iconColor: color,
-        deviceId: data.deviceId,
-        deviceName: data.deviceName,
-      };
-
-      setEvents((prev) => [newEvent, ...prev]);
-    }, 'alarm/events/');
+    const unsubscribe = startMQTTclient(handleMqttMessage, 'alarm/events/');
 
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, []);
+  }, [handleMqttMessage]);
 
   return (
     <PageContainer title="Monitoring" description="Security Monitoring Dashboard">

@@ -488,12 +488,24 @@ export const defaultAlarmRuleForm: AlarmRuleDataType = {
   name: '',
   isActive: true,
   inputs: [],
+  inputDeviceIds: [],
+  outputDeviceIds: [],
   outputs: [],
   scheduleTemplateId: '',
   scheduleTemplateName: '',
 }
 
 export const defaultAlarmRuleFilter: AlarmRuleFilter = {
+  page : 1,
+  limit : 5,
+  // search : '',
+  sortBy : '',
+  sortOrder : 'desc',
+}
+//#endregion
+
+//#region User
+export const defaultUserFilter: UserFilter = {
   page : 1,
   limit : 5,
   // search : '',
@@ -988,17 +1000,6 @@ export const defaultPatrolCaseUploadForm: CaseUploadType = {
 
 //#endregion
 
-//#region User
-export const defaultUserFilter: UserFilter = {
-  Draw: 1,
-  Start: 0,
-  Length: 5,
-  SortColumn: 'UpdatedAt',
-  SortDir: 'desc',
-  SearchValue: '',
-  filters: null,
-}
-//#endregion
 
 //#region Patrol Report
 export const defaultPatrolReportFilter: PatrolReportFilter = {

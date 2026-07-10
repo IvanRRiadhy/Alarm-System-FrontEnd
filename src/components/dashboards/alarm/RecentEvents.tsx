@@ -79,6 +79,7 @@ const RecentEvents: React.FC<RecentEventsProps> = ({ recentEvents = [] }) => {
         border: '1px solid rgba(255,255,255,.08)',
         overflow: 'hidden',
         height: '100%',
+        maxHeight: '575px',
       }}
     >
       <Box

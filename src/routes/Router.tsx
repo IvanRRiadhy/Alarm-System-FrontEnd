@@ -189,6 +189,9 @@ const SchedulerEdit = Loadable(lazy(() => import('../views/master/crud/Scheduler
 //Rule
 const AlarmRule = Loadable(lazy(() => import('../views/master/crud/AlarmRule')));
 
+//User
+const User = Loadable(lazy(() => import('../views/master/crud/User')))
+
 
 
 const Router = [
@@ -316,6 +319,9 @@ const Router = [
 
       //Rule
       {path: '/master/rule', element: <AlarmRule/> },
+
+      //User
+      {path: '/master/user', element: <User/> },
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],

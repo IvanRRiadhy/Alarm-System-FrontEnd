@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogTitle,
   Grid2 as Grid,
-  MenuItem,
   Typography,
   Stepper,
   Step,
@@ -17,50 +16,69 @@ import {
 } from '@mui/material';
 import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
-import CustomSelect from 'src/components/forms/theme-elements/CustomSelect';
-import { PersonnelType } from 'src/store/apps/crud/personnels';
-import { useAddPersonnel, useEditPersonnel } from 'src/hooks/usePersonnel';
-import { defaultPersonnelForm } from 'src/store/apps/defaultForm';
-import { IconEdit, IconUpload, IconCamera, IconX, IconReload } from '@tabler/icons-react';
+import { userType, userRegistrationType } from 'src/store/apps/crud/users';
+import { useRegisterUser, useEditUser } from 'src/hooks/useUser';
+import { IconEdit, IconUpload, IconCamera, IconX, IconReload, IconPlus } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { useUploadCDN } from 'src/hooks/useCDN';
 import { BASE_URL } from 'src/utils/axios';
-import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
-import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { toastError } from 'src/utils/errors';
 
-interface AddEditPersonnelProps {
-  personnel?: PersonnelType;
+interface AddEditUserProps {
+  user?: userType;
   type: 'add' | 'edit';
 }
 
-const steps = ['Personnel Details', 'Photo'];
+const steps = ['User Details', 'Profile Picture (Optional)'];
 
-const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) => {
+const defaultUserForm: userRegistrationType = {
+  username: '',
+  password: '',
+  email: '',
+  fullName: '',
+  profilePicture: '',
+};
+
+const AddEditUser: React.FC<AddEditUserProps> = ({ user, type }) => {
   const [open, setOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<PersonnelType>(personnel || defaultPersonnelForm);
+  
+  const getInitialFormData = (): userRegistrationType => {
+    if (type === 'edit' && user) {
+      return {
+        username: user.username || '',
+        fullName: user.fullName || '',
+        email: user.email || '',
+        password: '', // blank by default on edit
+        profilePicture: user.profilePicture || '',
+      };
+    }
+    return { ...defaultUserForm };
+  };
 
-  const {data: siteResponse, isLoading} = useSiteLookup();
-  const siteData = siteResponse?.data || [];
+  const [formData, setFormData] = useState<userRegistrationType>(getInitialFormData());
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Photo states
   const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(personnel?.photoUrl ? `${personnel.photoUrl}` : null);
+  const [preview, setPreview] = useState<string | null>(
+    user?.profilePicture ? `${user.profilePicture}` : null
+  );
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const addMutation = useAddPersonnel();
-  const editMutation = useEditPersonnel();
+  const registerMutation = useRegisterUser();
+  const editMutation = useEditUser();
   const uploadMutation = useUploadCDN();
 
   const handleOpen = () => {
-    setFormData(personnel || defaultPersonnelForm);
-    setPreview(personnel?.photoUrl ? `${personnel.photoUrl}` : null);
+    setFormData(getInitialFormData());
+    setPreview(user?.profilePicture ? `${user.profilePicture}` : null);
     setImage(null);
+    setFormErrors({});
     setActiveStep(0);
     setOpen(true);
   };
@@ -77,10 +95,36 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
     setOpen(false);
   };
 
+  const validateStep0 = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!formData.username?.trim()) {
+      errors.username = 'Username is required';
+    }
+    if (!formData.fullName?.trim()) {
+      errors.fullName = 'Full Name is required';
+    }
+    if(!formData.email?.trim()) {
+      errors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        errors.email = 'Invalid email format';
+      }
+    }
+    if (type === 'add' && !formData.password?.trim()) {
+      errors.password = 'Password is required';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleNext = () => {
     if (activeStep === 0) {
-      // Validate step 1 if needed
-      setActiveStep(1);
+      if (validateStep0()) {
+        setActiveStep(1);
+      } else {
+        toast.error('Please fill in all required fields.');
+      }
     }
   };
 
@@ -90,11 +134,11 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
     setIsCameraOpen(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name as string]: value,
+      [name]: value,
     }));
   };
 
@@ -150,8 +194,13 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
 
   // --- Submit Logic ---
   const handleSubmit = async () => {
+    if (!validateStep0()) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+
     setIsSaving(true);
-    let finalPhotoUrl = formData.photoUrl || '';
+    let finalProfilePicture = formData.profilePicture || '';
 
     // Upload image to CDN if a new image was selected/captured
     if (image) {
@@ -164,7 +213,7 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
         if (!uploaded || !uploaded.fileUrl) {
           throw new Error('Invalid response from CDN upload');
         }
-        finalPhotoUrl = uploaded.fileUrl;
+        finalProfilePicture = uploaded.fileUrl;
       } catch (err) {
         console.error('CDN upload failed:', err);
         toast.error('Failed to upload image.');
@@ -173,22 +222,33 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
       }
     }
 
-    const payload = {
-      ...formData,
-      photoUrl: finalPhotoUrl,
-    };
+    // Prepare payload. Omit password on edit if it's empty
+    const payload: userRegistrationType = {
+      username: formData.username,
+      fullName: formData.fullName,
+      email: formData.email,
+      profilePicture: finalProfilePicture,
+    } as any;
+
+    if (type === 'add' || formData.password) {
+      payload.password = formData.password;
+    }
 
     try {
       if (type === 'add') {
-        await addMutation.mutateAsync(payload);
-        toast.success('Personnel added successfully');
+        await registerMutation.mutateAsync(payload);
+        toast.success('User registered successfully');
       } else {
-        await editMutation.mutateAsync(payload);
-        toast.success('Personnel updated successfully');
+        if (user?.id) {
+          await editMutation.mutateAsync({ payload, id: user.id });
+          toast.success('User updated successfully');
+        } else {
+          throw new Error('Missing User ID');
+        }
       }
       handleClose();
     } catch (error) {
-      toastError(error, 'Failed to save personnel');
+      toastError(error, 'Failed to save user');
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -198,22 +258,22 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
   return (
     <>
       {type === 'add' ? (
-        <Button variant="contained" color="primary" onClick={handleOpen}>
-          Add Personnel
+        <Button variant="contained" color="primary" onClick={handleOpen} startIcon={<IconPlus size="18" />}>
+          Add User
         </Button>
       ) : (
-        <Button onClick={handleOpen} size="small" variant="contained" startIcon={<IconEdit size="18" />}>
-          Edit
-        </Button>
+        <IconButton color="primary" size="small" onClick={handleOpen}>
+          <IconEdit size="20" />
+        </IconButton>
       )}
 
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle sx={{ pb: 2 }}>
           <Typography variant="h5" fontWeight={600}>
-            {type === 'add' ? 'Add Personnel' : 'Edit Personnel'}
+            {type === 'add' ? 'Add User' : 'Edit User'}
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ minHeight: '400px' }}>
+        <DialogContent sx={{ minHeight: '350px' }}>
           <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
             {steps.map((label) => (
               <Step key={label}>
@@ -225,121 +285,58 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
           {activeStep === 0 && (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Name</CustomFormLabel>
+                <CustomFormLabel htmlFor="username">Username</CustomFormLabel>
                 <CustomTextField
-                  name="name"
-                  value={formData.name}
+                  id="username"
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
+                  error={!!formErrors.username}
+                  helperText={formErrors.username}
                   fullWidth
                   required
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Employee Code</CustomFormLabel>
+                <CustomFormLabel htmlFor="fullName">Full Name</CustomFormLabel>
                 <CustomTextField
-                  name="employeeCode"
-                  value={formData.employeeCode}
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
                   onChange={handleChange}
+                  error={!!formErrors.fullName}
+                  helperText={formErrors.fullName}
                   fullWidth
+                  required
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Gender</CustomFormLabel>
-                <CustomSelect name="gender" value={formData.gender} onChange={handleChange} fullWidth>
-                  <MenuItem value="" disabled>Select Gender</MenuItem>
-                  <MenuItem value="RatherNotSay">Rather Not Say</MenuItem>
-                  <MenuItem value="Male">Male</MenuItem>
-                  <MenuItem value="Female">Female</MenuItem>
-                </CustomSelect>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Email</CustomFormLabel>
+                <CustomFormLabel htmlFor="email">Email</CustomFormLabel>
                 <CustomTextField
+                  id="email"
                   name="email"
-                  type="email"
                   value={formData.email}
                   onChange={handleChange}
+                  error={!!formErrors.fullName}
+                  helperText={formErrors.fullName}
                   fullWidth
+                  required
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Phone</CustomFormLabel>
+                <CustomFormLabel htmlFor="password">
+                  Password {type === 'edit' && '(Leave blank to keep unchanged)'}
+                </CustomFormLabel>
                 <CustomTextField
-                  name="phone"
-                  value={formData.phone}
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
                   onChange={handleChange}
+                  error={!!formErrors.password}
+                  helperText={formErrors.password}
                   fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Department</CustomFormLabel>
-                <CustomTextField
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Position</CustomFormLabel>
-                <CustomTextField
-                  name="position"
-                  value={formData.position}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>City</CustomFormLabel>
-                <CustomTextField name="city" value={formData.city} onChange={handleChange} fullWidth />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Postal Code</CustomFormLabel>
-                <CustomTextField
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              {/* <Grid size={{ xs: 12, md: 6 }}>
-                <CustomFormLabel>Is Active</CustomFormLabel>
-                <CustomSelect
-                  name="isActive"
-                  value={formData.isActive ? 'true' : 'false'}
-                  onChange={(e: any) =>
-                    setFormData((prev) => ({ ...prev, isActive: e.target.value === 'true' }))
-                  }
-                  fullWidth
-                >
-                  <MenuItem value="true">Active</MenuItem>
-                  <MenuItem value="false">Inactive</MenuItem>
-                </CustomSelect>
-              </Grid> */}
-              <Grid size={{ lg: 6, md: 12, sm: 12 }}>
-                              <CustomFormLabel htmlFor="site-select">Site</CustomFormLabel>
-                              <CustomAutocomplete
-                                label="Select Site"
-                                options={siteData}
-                                value={siteData.find((s) => s.id === formData.siteId) || null}
-                                onChange={(val) => setFormData((prev) => ({ ...prev, siteId: val?.id ?? '' }))}
-                                getOptionLabel={(o) => o.name}
-                                isOptionEqualToValue={(a, b) => a.id === b.id}
-                                // error={!!formErrors.siteId}
-                                // helperText={formErrors.siteId}
-                                required
-                                loading={isLoading}
-                              />
-                            </Grid>
-              <Grid size={{ xs: 12 }}>
-                <CustomFormLabel>Address</CustomFormLabel>
-                <CustomTextField
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  multiline
-                  rows={2}
-                  fullWidth
+                  required={type === 'add'}
                 />
               </Grid>
             </Grid>
@@ -348,7 +345,7 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
           {activeStep === 1 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
               <Typography variant="h6" mb={2}>
-                Upload or Capture Photo
+                Upload or Capture Profile Picture (Optional)
               </Typography>
               
               {!isCameraOpen && !preview && (
@@ -356,13 +353,13 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
                   <Button
                     variant="outlined"
                     startIcon={<IconUpload />}
-                    onClick={() => document.getElementById('photo-upload')?.click()}
+                    onClick={() => document.getElementById('profile-pic-upload')?.click()}
                   >
                     Upload Image
                   </Button>
                   <input
                     type="file"
-                    id="photo-upload"
+                    id="profile-pic-upload"
                     accept="image/png, image/jpeg, image/jpg"
                     style={{ display: 'none' }}
                     onChange={handleImageChange}
@@ -408,7 +405,7 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
                   <Box position="relative" display="inline-block">
                     <img
                       src={preview}
-                      alt="Personnel"
+                      alt="Profile Preview"
                       style={{
                         width: '200px',
                         height: '200px',
@@ -423,6 +420,7 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
                       onClick={() => {
                         setImage(null);
                         setPreview(null);
+                        setFormData((prev) => ({ ...prev, profilePicture: '' }));
                       }}
                       sx={{
                         position: 'absolute',
@@ -443,13 +441,13 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
                     <Button
                       variant="text"
                       startIcon={<IconReload size={18} />}
-                      onClick={() => document.getElementById('photo-upload-replace')?.click()}
+                      onClick={() => document.getElementById('profile-pic-upload-replace')?.click()}
                     >
                       Change Image
                     </Button>
                     <input
                       type="file"
-                      id="photo-upload-replace"
+                      id="profile-pic-upload-replace"
                       accept="image/png, image/jpeg, image/jpg"
                       style={{ display: 'none' }}
                       onChange={handleImageChange}
@@ -489,4 +487,4 @@ const AddEditPersonnel: React.FC<AddEditPersonnelProps> = ({ personnel, type }) 
   );
 };
 
-export default AddEditPersonnel;
+export default AddEditUser;

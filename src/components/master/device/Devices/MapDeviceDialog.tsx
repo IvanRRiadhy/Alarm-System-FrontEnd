@@ -25,7 +25,7 @@ import {
 } from '@tabler/icons-react';
 import { Stage, Layer, Image as KonvaImage, Rect, Text, Group } from 'react-konva';
 import useImage from 'use-image';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { useBuildingList } from 'src/hooks/useBuilding';
 import { useFloorList } from 'src/hooks/useFloor';
 import { useFloorplanList } from 'src/hooks/useFloorplan';
@@ -58,7 +58,7 @@ const MapDeviceDialog: React.FC<MapDeviceDialogProps> = ({ open, onClose, device
   const [expandedFloors, setExpandedFloors] = useState<Record<string, boolean>>({});
 
   // Fetch Hierarchy Data
-  const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
+  const { data: siteResponse } = useSiteLookup();
   const sites = siteResponse?.data || [];
   const { data: buildingResponse } = useBuildingList();
   const buildings = buildingResponse?.data || [];

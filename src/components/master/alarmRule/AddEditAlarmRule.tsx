@@ -27,7 +27,7 @@ import CustomTextField from 'src/components/forms/theme-elements/CustomTextField
 import { defaultAlarmRuleForm } from 'src/store/apps/defaultForm';
 import { AlarmRuleDataType } from 'src/store/apps/crud/alarmRule';
 import { useAddAlarmRule, useEditAlarmRule } from 'src/hooks/useAlarmRule';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { useScheduleList } from 'src/hooks/useSchedule';
 import { useDeviceList } from 'src/hooks/useDevice';
 import { SiteType } from 'src/store/apps/crud/site';
@@ -49,7 +49,7 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Fetch Sites
-  const { data: siteResponse } = useSiteList();
+  const { data: siteResponse } = useSiteLookup();
   const siteData = siteResponse?.data || [];
 
   // Fetch Schedules

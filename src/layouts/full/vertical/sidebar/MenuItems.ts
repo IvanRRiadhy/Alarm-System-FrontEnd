@@ -248,7 +248,15 @@ const Menuitems: MenuitemsType[] = [
     title: 'Alarm Rules',
     icon: IconAlarm,
     href: '/master/rule',
-  }
+  },
+
+  //User
+  {
+    id: uniqueId(),
+    title: 'User',
+    icon: IconUser,
+    href: '/master/user',
+  },
 
   // {
   //   id: uniqueId(),

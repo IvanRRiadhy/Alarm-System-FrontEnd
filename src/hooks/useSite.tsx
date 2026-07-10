@@ -32,6 +32,18 @@ export function useSiteList(filter?: GetFilter) {
     })
 }
 
+export function useSiteLookup() {
+    return useQuery({
+        queryKey: ['site-lookup'],
+        queryFn: async () => {
+            const response = await axiosServices.get<PaginatedResponse<SiteType>>(`${Site_API_URL}lookup`);
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes
+    })
+}
+
 export function useAddSite(){
     const queryClient = useQueryClient();
     return useMutation({

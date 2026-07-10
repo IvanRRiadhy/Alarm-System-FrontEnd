@@ -20,7 +20,7 @@ import CustomTextField from 'src/components/forms/theme-elements/CustomTextField
 import { defaultControllerForm } from 'src/store/apps/defaultForm';
 import { controllerType } from 'src/store/apps/crud/controller';
 import { useAddController, useEditController } from 'src/hooks/useController';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { SiteType } from 'src/store/apps/crud/site';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 import { toastError } from 'src/utils/errors';
@@ -39,7 +39,7 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-    const { data: siteResponse } = useSiteList();
+    const { data: siteResponse } = useSiteLookup();
     const siteData = siteResponse?.data || [];
 
     const addMutation = useAddController();

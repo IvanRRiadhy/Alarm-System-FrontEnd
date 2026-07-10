@@ -20,7 +20,7 @@ import SiteSelector from 'src/components/dashboards/monitoring/monitoringcompone
 import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
 import { useAreaList } from 'src/hooks/useArea';
 import { FloorplanType } from 'src/store/apps/crud/floorplan';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { useFloorList } from 'src/hooks/useFloor';
 import { useFloorplanList } from 'src/hooks/useFloorplan';
 
@@ -82,7 +82,7 @@ const FloorPlan = () => {
   const [selectedFloorplan, setSelectedFloorplan] = useState<FloorplanType | null>(null);
 
   // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
-  const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
+  const { data: siteResponse } = useSiteLookup();
   const { data: floorResponse } = useFloorList();
   const { data: floorplanResponse } = useFloorplanList();
 

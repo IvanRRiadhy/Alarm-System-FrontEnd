@@ -266,7 +266,7 @@ const ActiveAlarms: React.FC<ActiveAlarmsProps> = ({ region, recentActiveAlarms 
 
               key={severity}
 
-              onClick={() => setSelectedSeverity(severity)}
+              onClick={() => setSelectedSeverity(selectedSeverity === severity ? 'All' : severity)}
 
               sx={{
 

@@ -23,7 +23,7 @@ import CustomTextField from 'src/components/forms/theme-elements/CustomTextField
 import { defaultDeviceForm } from 'src/store/apps/defaultForm';
 import { deviceType } from 'src/store/apps/crud/devices';
 import { useAddDevice, useEditDevice } from 'src/hooks/useDevice';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { SiteType } from 'src/store/apps/crud/site';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 import { toastError } from 'src/utils/errors';
@@ -42,7 +42,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
     });
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-    const { data: siteResponse } = useSiteList();
+    const { data: siteResponse } = useSiteLookup();
     const siteData = siteResponse?.data || [];
 
     const addMutation = useAddDevice();

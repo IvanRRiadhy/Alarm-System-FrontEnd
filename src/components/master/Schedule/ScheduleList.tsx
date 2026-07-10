@@ -32,7 +32,7 @@ import {
   SelectedSchedule,
 } from 'src/store/apps/crud/schedule';
 import { useDeleteSchedule, useScheduleList } from 'src/hooks/useSchedule';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { useNavigate } from 'react-router';
 import { toastError } from 'src/utils/errors';
 
@@ -50,7 +50,7 @@ const ScheduleList: React.FC = () => {
   const scheduleFilter = useSelector((state: RootState) => state.scheduleReducer.scheduleFilter);
 
   const { data, isLoading } = useScheduleList(scheduleFilter);
-  const { data: siteRes } = useSiteList();
+  const { data: siteRes } = useSiteLookup();
   const deleteMutation = useDeleteSchedule();
 
   const scheduleData = data?.data || [];

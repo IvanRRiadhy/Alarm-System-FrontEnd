@@ -31,7 +31,7 @@ import {
 import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { SiteType } from 'src/store/apps/crud/site';
 import { RootState, useSelector } from 'src/store/Store';
 import { useAddSchedule, useEditSchedule } from 'src/hooks/useSchedule';
@@ -134,7 +134,7 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
   } | null>(null);
 
   // ─ Site data ─
-  const { data: siteRes, isLoading: sitesLoading } = useSiteList();
+  const { data: siteRes, isLoading: sitesLoading } = useSiteLookup();
   const siteOptions = useMemo(() => {
     const list = siteRes?.data || [];
     return list.map((s: SiteType) => ({ label: s.name, id: s.id }));

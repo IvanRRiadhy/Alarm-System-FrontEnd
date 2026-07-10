@@ -25,6 +25,7 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
         border: '1px solid rgba(255,255,255,.08)',
         overflow: 'hidden',
         height: '100%',
+        maxHeight: '575px'
       }}
     >
       <Box
@@ -79,6 +80,7 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
                 chipBg = 'rgba(245,158,11,.15)';
                 chipColor = '#F59E0B';
               }
+              if (!row.severity) return
 
               return (
                 <TableRow

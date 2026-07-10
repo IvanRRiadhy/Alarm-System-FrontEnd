@@ -30,7 +30,7 @@ import {
 } from 'src/store/apps/crud/building';
 import { defaultBuildingForm } from 'src/store/apps/defaultForm';
 import { useAddBuilding, useEditBuilding } from 'src/hooks/useBuilding';
-import { useSiteList } from 'src/hooks/useSite';
+import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 import { useUploadCDN } from 'src/hooks/useCDN';
 import { toastError } from 'src/utils/errors';
@@ -56,7 +56,7 @@ const AddEditBuilding = ({ type, building }: FormType) => {
     ...defaultBuildingForm,
     ...building,
   });
-  const {data: siteResponse} = useSiteList();
+  const {data: siteResponse} = useSiteLookup();
   const siteData = siteResponse?.data || [];
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
   const addMutation = useAddBuilding();
