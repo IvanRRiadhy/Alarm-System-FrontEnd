@@ -123,6 +123,7 @@ const DeviceMappingSidebar = ({
         width: 300,
         minWidth: 300,
         height: '100%',
+        maxHeight:'80vh',
         display: 'flex',
         flexDirection: 'column',
         borderRight: '1px solid rgba(0, 0, 0, 0.08)',

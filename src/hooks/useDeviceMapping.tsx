@@ -58,6 +58,8 @@ export function useEditDeviceMapping() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["device-mapping-list"] })
+                        queryClient.invalidateQueries({ queryKey: ["device-lookup"] })
+            queryClient.invalidateQueries({ queryKey: ["device-list"] })
         }
     })
 }
