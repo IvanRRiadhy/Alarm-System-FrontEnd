@@ -35,6 +35,7 @@ import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 import { useUploadCDN } from 'src/hooks/usePatrolCase';
 import AreaHierarchySelector, { SelectedNode } from 'src/components/shared/AreaHierarchySelector';
 import { useAllBuilding, useBuildingList } from 'src/hooks/useBuilding';
+import { toastError } from 'src/utils/errors';
 
 interface FormType {
   type?: string;
@@ -209,7 +210,7 @@ const AddEditFloorplan = ({ type, floorplan, fixedFloorId, trigger }: FormType) 
       handleClose();
     } catch (error) {
       console.error('Save failed:', error);
-      toast.error('Failed to save floorplan.');
+      toastError(error, 'Failed to save floorplan.');
     } finally {
       setIsSaving(false);
     }

@@ -52,7 +52,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
 
   const rtspUrl = deviceDetail?.rtspUrl || '';
   const cameraName = selectedDevice ? (selectedDevice.label || selectedDevice.deviceName) : 'CAM 05 - Ruang Teller';
-
+  console.log("DEvice", selectedDevice)
   // Update live clock overlay
   useEffect(() => {
     const updateTime = () => {
@@ -85,8 +85,8 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
     }
   };
 
-  // Loopable security camera feed simulation
-  const simulatedFeedUrl = "https://assets.mixkit.co/videos/preview/mixkit-security-camera-view-of-a-street-at-night-42289-large.mp4";
+  // Static camera feed for IP Webcam / MJPEG stream
+  const simulatedFeedUrl = "http://192.168.1.218:8080/video";
 
   return (
     <Box
@@ -168,18 +168,14 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
           <CircularProgress size={24} sx={{ color: '#60A5FA', zIndex: 3 }} />
         ) : (
           <>
-            <video
-              ref={videoRef}
-              src={simulatedFeedUrl}
-              autoPlay
-              loop
-              muted={isMuted}
-              playsInline
+            <img
+              src={isPlaying ? simulatedFeedUrl : ''}
+              alt="Live Camera Feed"
               style={{
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
-                opacity: isPlaying ? 0.75 : 0.25,
+                opacity: isPlaying ? 0.85 : 0.25,
                 transition: 'opacity 0.3s ease',
               }}
             />

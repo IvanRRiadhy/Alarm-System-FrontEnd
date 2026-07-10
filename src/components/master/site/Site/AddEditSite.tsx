@@ -31,6 +31,7 @@ import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { toastError } from 'src/utils/errors';
 
 interface FormType {
     type?: string;
@@ -241,7 +242,7 @@ const AddEditSite = ({type, site}: FormType) => {
         handleClose();
       } catch (error) {
         console.error('Error saving site:', error);
-        toast.error('Saving data unsuccessful.');
+        toastError(error, 'Saving data unsuccessful.');
       } finally {
         setIsSaving(false);
       }
@@ -304,7 +305,7 @@ const AddEditSite = ({type, site}: FormType) => {
         }
       } catch (error) {
         console.error('Locate error:', error);
-        toast.error('Error finding coordinates.');
+        toastError(error, 'Error finding coordinates.');
       } finally {
         setIsLocating(false);
       }

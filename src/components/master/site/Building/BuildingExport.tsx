@@ -14,6 +14,7 @@ import { PictureAsPdf, TableChart, Upload } from '@mui/icons-material';
 import { AppDispatch, useDispatch } from 'src/store/Store';
 import { ExportBuilding } from 'src/store/apps/crud/building';
 import toast from 'react-hot-toast';
+import { toastError } from 'src/utils/errors';
 
 const BuildingExport = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -40,7 +41,7 @@ const BuildingExport = () => {
       toast.success(`Exported Building as ${type.toUpperCase()}`);
     } catch (error) {
       console.error('Export Error:', error);
-      toast.error('Failed to export Building');
+      toastError(error, 'Failed to export Building');
     } finally {
       setIsExporting(false);
     }

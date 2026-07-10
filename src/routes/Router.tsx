@@ -179,6 +179,16 @@ const Controller = Loadable(lazy(() => import('../views/master/crud/Controller')
 const Device = Loadable(lazy(() => import('../views/master/crud/Device')));
 const DeviceMappingPage = Loadable(lazy(() => import('../views/master/crud/DeviceMappingPage')));
 
+//Security
+const Personnel = Loadable(lazy(() => import('../views/master/crud/Personnel')));
+
+//Scheduler
+const Scheduler = Loadable(lazy(() => import('../views/master/crud/Scheduler')));
+const SchedulerEdit = Loadable(lazy(() => import('../views/master/crud/SchedulerEdit')));
+
+//Rule
+const AlarmRule = Loadable(lazy(() => import('../views/master/crud/AlarmRule')));
+
 
 
 const Router = [
@@ -287,7 +297,7 @@ const Router = [
       { path: '/mui-trees/simpletree/simpletree-items', element: <SimpletreeItems /> },
       { path: '/mui-trees/simpletree/simpletree-selection', element: <SimpletreeSelection /> },
 
-      {/* Site */},
+      // Site
       {path: '/master/site/site', element: <Site/>},
       {path: '/master/site/building', element: <Building/>},
       {path: '/master/site/floor', element: <Floor/>},
@@ -296,6 +306,16 @@ const Router = [
       // Device
       {path: '/master/device/devices', element: <Device/>},
       {path: '/master/device/controller', element: <Controller/>},
+
+      //Schedule
+      {path: '/master/schedule/', element: <Scheduler/>},
+      {path: '/master/schedule/edit', element: <SchedulerEdit/>},
+
+      // Security
+      {path: '/master/security/personnel', element: <Personnel/>},
+
+      //Rule
+      {path: '/master/rule', element: <AlarmRule/> },
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],

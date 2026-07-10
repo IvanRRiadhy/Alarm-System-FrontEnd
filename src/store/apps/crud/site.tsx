@@ -58,7 +58,7 @@ interface StateType {
     siteMeta: metaData;
     isLoading: boolean;
     hasLoaded: boolean;
-}
+};
 
 const initialState: StateType = {
     sites: [],

@@ -23,6 +23,7 @@ import { useAddController, useEditController } from 'src/hooks/useController';
 import { useSiteList } from 'src/hooks/useSite';
 import { SiteType } from 'src/store/apps/crud/site';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
+import { toastError } from 'src/utils/errors';
 
 interface FormType {
     type?: 'add' | 'edit';
@@ -64,6 +65,7 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
 
     // 🧩 Validation
     const validateForm = (): boolean => {
+      console.log("Formdata", formData)
       const errors: Record<string, string> = {};
       if (!formData.name?.trim()) errors.name = 'Controller name is required';
       if (!formData.siteId) errors.siteId = 'Site is required';
@@ -71,6 +73,7 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
       if (formData.port === undefined || formData.port === null || isNaN(Number(formData.port))) {
         errors.port = 'Port is required and must be a number';
       }
+      if (!formData.hardwareId?.trim()) errors.hardwareId = 'Hardware ID is required';
       if (formData.channelCount === undefined || formData.channelCount === null || isNaN(Number(formData.channelCount))) {
         errors.channelCount = 'Channel Count is required and must be a number';
       } else if (Number(formData.channelCount) > 64) {
@@ -97,6 +100,7 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
         const payload = {
           id: formData.id,
           siteId: formData.siteId,
+          hardwareId: formData.hardwareId,
           name: formData.name,
           ipAddress: formData.ipAddress,
           port: Number(formData.port),
@@ -117,7 +121,7 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
         handleClose();
       } catch (error) {
         console.error('Error saving controller:', error);
-        toast.error('Saving data unsuccessful.');
+        toastError(error, 'Saving data unsuccessful.');
       } finally {
         setIsSaving(false);
       }
@@ -260,6 +264,22 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
                             />
                         </Grid>
 
+                         {/* Hardware ID */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <CustomFormLabel htmlFor="hardwareId">Hardware ID</CustomFormLabel>
+                            <CustomTextField
+                                id="hardwareId"
+                                value={formData.hardwareId ?? ""}
+                                onChange={handleInputChange}
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Enter Hardware ID"
+                                error={!!formErrors.hardwareId}
+                                helperText={formErrors.hardwareId}
+                                required
+                            />
+                        </Grid>
+
                         {/* Channel Count */}
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <CustomFormLabel htmlFor="channelCount">Channel Count</CustomFormLabel>
@@ -318,15 +338,15 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
                                 onChange={handleInputChange}
                                 fullWidth
                                 variant="outlined"
-                                // placeholder="Enter Alarm Mode"
                                 select
                                 error={!!formErrors.alarmMode}
                                 helperText={formErrors.alarmMode}
                                 required
                             >
                                 <MenuItem value={"Disarmed"}>Disarmed</MenuItem>
-                                <MenuItem value={"ArmedScheduled"}>Armed Scheduled</MenuItem>
-                                <MenuItem value={"ArmedManual"}>Armed Manual</MenuItem>
+                                <MenuItem value={"ArmedAway"}>Armed Away</MenuItem>
+                                <MenuItem value={"ArmedStay"}>Armed Stay</MenuItem>
+                                <MenuItem value={"Acknowledge"}>Acknowledge</MenuItem>
                             </CustomTextField>
                         </Grid>
                     </Grid>

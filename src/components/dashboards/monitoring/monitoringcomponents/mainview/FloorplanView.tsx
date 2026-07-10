@@ -12,6 +12,7 @@ import {
   IconPlus,
   IconMinus,
   IconMaximize,
+  IconMinimize,
   IconArrowsMinimize,
   IconCamera,
   IconDoor,
@@ -156,6 +157,31 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     }
   }, [siteResponse, floorResponse, floorplanResponse, selectedFloorplan]);
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      if (wrapperRef.current) {
+        wrapperRef.current.requestFullscreen().catch((err) => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
@@ -299,6 +325,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
 
   return (
     <Box
+      ref={wrapperRef}
       sx={{
         position: 'relative',
         height: '100%',
@@ -619,6 +646,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
             </IconButton>
             <IconButton
               size="small"
+              onClick={toggleFullscreen}
               sx={{
                 bgcolor: 'rgba(17,24,39,0.85)',
                 color: '#E2E8F0',
@@ -628,7 +656,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                 '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
               }}
             >
-              <IconMaximize size={14} />
+              {isFullscreen ? <IconMinimize size={14} /> : <IconMaximize size={14} />}
             </IconButton>
           </Box>
         )}

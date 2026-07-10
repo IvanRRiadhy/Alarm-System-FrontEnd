@@ -28,6 +28,7 @@ import { useAllBuilding, useBuildingList } from 'src/hooks/useBuilding'; // ✅ 
 import type { floorType } from 'src/store/apps/crud/floor';
 import { BuildingType } from 'src/store/apps/crud/building';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
+import { toastError } from 'src/utils/errors';
 
 interface FormType {
   type?: 'add' | 'edit';
@@ -107,7 +108,7 @@ const AddEditFloor = ({ type, floor, fixedBuildingId, trigger }: FormType) => {
       handleClose();
     } catch (error) {
       console.error('Error saving floor:', error);
-      toast.error('Saving data unsuccessful.');
+      toastError(error, 'Saving data unsuccessful.');
     } finally {
       setIsSaving(false);
     }

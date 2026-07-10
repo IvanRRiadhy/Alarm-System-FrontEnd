@@ -39,6 +39,7 @@ import toast from 'react-hot-toast';
 import { BuildingType, fetchBuildings } from 'src/store/apps/crud/building';
 import { fetchFloors } from 'src/store/apps/crud/floor';
 import { fetchEngines } from 'src/store/apps/crud/engine';
+import { toastError } from 'src/utils/errors';
 const columns = [
   { label: 'Floorplan Name', field: 'name', sortAble: true },
   { label: 'Floor Name', field: 'floorName', sortAble: true },
@@ -204,7 +205,7 @@ const FloorplanList = () => {
       //       toast.success('Data Deleted');
       //     }
       //   } catch (error) {
-      //     toast.error('Delete Data Unsuccessful');
+      //     toastError(error, 'Delete Data Unsuccessful');
       //     console.error('Error deleting floorplan:', error);
       //   }
       //   setTimeout(() => {
@@ -214,7 +215,7 @@ const FloorplanList = () => {
         await deleteMutation.mutateAsync(selectedFloorplan.id);
         toast.success('Data Deleted');
       } catch (error) {
-        toast.error('Delete failed');
+        toastError(error, 'Delete failed');
         console.error(error);
       }
     }

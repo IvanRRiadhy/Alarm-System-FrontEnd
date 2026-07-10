@@ -50,7 +50,7 @@ const Modern = () => {
               md: 12,
               lg: 5
             }}>
-            <SiteMap region={region} />
+            <SiteMap region={region} activeAlarmsBySite={dashboardData?.activeAlarmsBySite} />
           </Grid>
 
           {/* FloorPlan */}

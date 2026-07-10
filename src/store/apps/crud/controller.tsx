@@ -23,6 +23,7 @@ export interface controllerType {
     id: string,
     siteId: string,
     siteName: string,
+    hardwareId:string,
     name: string,
     ipAddress: string,
     port: number,

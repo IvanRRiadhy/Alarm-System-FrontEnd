@@ -15,6 +15,7 @@ import { AppDispatch, useDispatch } from 'src/store/Store';
 import { ImportFloor } from 'src/store/apps/crud/floor';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { toastError } from 'src/utils/errors';
 
 const FloorImport = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -60,7 +61,7 @@ const FloorImport = () => {
       toast.success('Import Success');
     } catch (err) {
       console.log('Import Error:', err);
-      toast.error('Import Error');
+      toastError(error, 'Import Error');
     } finally {
       setImportLoading(false);
     }

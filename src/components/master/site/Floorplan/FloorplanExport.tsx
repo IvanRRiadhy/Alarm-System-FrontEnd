@@ -14,6 +14,7 @@ import { PictureAsPdf, TableChart, Upload } from '@mui/icons-material';
 import { AppDispatch, useDispatch } from 'src/store/Store';
 import { ExportFloorplan } from 'src/store/apps/crud/floorplan';
 import toast from 'react-hot-toast';
+import { toastError } from 'src/utils/errors';
 
 const FloorplanExport = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -40,7 +41,7 @@ const FloorplanExport = () => {
       toast.success(`Exported Floorplan as ${type.toUpperCase()}`);
     } catch (error) {
       console.error('Export Error:', error);
-      toast.error('Failed to export Floorplan');
+      toastError(error, 'Failed to export Floorplan');
     } finally {
       setIsExporting(false);
     }

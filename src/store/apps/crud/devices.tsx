@@ -17,6 +17,7 @@ export type GetFilter = {
     sortBy: string;
     sortOrder: "asc" | "desc";
     floorplanId?: string;
+    deviceIO?: string; //input, output, stream, none
 };
 
 export interface deviceType {
@@ -27,6 +28,7 @@ export interface deviceType {
     channelId: string | null,
     hardwareId: string,
     serialNumber: string,
+    manufacturer: string,
     model: string,
     deviceType: 'Other' | 'MotionSensor' | 'DoorSensor' | 'GlassBreakSensor' | 'BeamSensor' | 'VibrationSensor' | 'CctvCamera' | 'DoorLock' | 'Siren' | 'StrobeLight' | 'PanicButton',
     AlarmSeverity: 'low' | 'medium' | 'high' | 'critical',
@@ -41,6 +43,11 @@ export interface deviceType {
     username: string | null,
     password: string | null,
     rtspUrl: string | null,
+    controllerId?: string,
+    controllerName?: string,
+    battery?: string,
+    isOnline?: string,
+    lastSeen?: string,
 };
 
 interface StateType {

@@ -30,6 +30,7 @@ import { GetFilter } from 'src/store/apps/crud/deviceMapping';
 import DeviceMappingSidebar from './DeviceMappingSidebar';
 import FloorplanCanvas from './FloorplanCanvas';
 import toast from 'react-hot-toast';
+import { toastError } from 'src/utils/errors';
 
 interface FloorplanDeviceMapViewProps {
   floorplan: FloorplanType;
@@ -129,8 +130,8 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
         toast.success('Device mapping deleted');
         if (editingId === id) setEditingId(null);
       },
-      onError: () => {
-        toast.error('Failed to delete');
+      onError: (error) => {
+        toastError(error, 'Failed to delete');
       },
       onSettled: () => {
         setDeletingId(null);
@@ -182,8 +183,8 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
           setPendingPlacement(null);
           setSelectedDeviceId('');
         },
-        onError: () => {
-          toast.error('Failed to place device mapping');
+        onError: (error) => {
+          toastError(error, 'Failed to place device mapping');
         },
       },
     );
@@ -201,7 +202,7 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
 
   const handleConfirmAreaPlacement = useCallback(() => {
     if (!pendingAreaNodes || !areaName.trim()) {
-      toast.error('Please enter a name for the area.');
+      toast.error( 'Please enter a name for the area.');
       return;
     }
 
@@ -219,8 +220,8 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
           setIsPlacingAreaMode(false);
           setPendingAreaNodes(null);
         },
-        onError: () => {
-          toast.error('Failed to create area.');
+        onError: (error) => {
+          toastError(error, 'Failed to create area.');
         },
       }
     );
@@ -244,8 +245,8 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
       onSuccess: () => {
         toast.success('Area deleted');
       },
-      onError: () => {
-        toast.error('Failed to delete area');
+      onError: (error) => {
+        toastError(error, 'Failed to delete area');
       },
       onSettled: () => {
         setDeletingAreaId(null);
@@ -262,8 +263,8 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
           onSuccess: () => {
             toast.success('Position updated');
           },
-          onError: () => {
-            toast.error('Failed to update position');
+          onError: (error) => {
+            toastError(error, 'Failed to update position');
           },
         },
       );
@@ -279,8 +280,8 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
           onSuccess: () => {
             toast.success('Device mapping updated');
           },
-          onError: () => {
-            toast.error('Failed to update device mapping');
+          onError: (error) => {
+            toastError(error, 'Failed to update device mapping');
           },
         },
       );

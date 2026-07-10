@@ -26,6 +26,7 @@ import { useAddDevice, useEditDevice } from 'src/hooks/useDevice';
 import { useSiteList } from 'src/hooks/useSite';
 import { SiteType } from 'src/store/apps/crud/site';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
+import { toastError } from 'src/utils/errors';
 
 interface FormType {
     type?: 'add' | 'edit';
@@ -73,7 +74,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
       // if (!formData.channelId?.trim()) errors.channelId = 'Channel ID is required';
       if (!formData.hardwareId?.trim()) errors.hardwareId = 'Hardware ID is required';
       if (!formData.serialNumber?.trim()) errors.serialNumber = 'Serial Number is required';
-
+      if (!formData.manufacturer?.trim()) errors.manufacturer = 'Manufacturer is required';
       // Conditional validation if device is a CCTV camera
       if (formData.deviceType === 'CctvCamera') {
         if (!formData.ipAddress?.trim()) errors.ipAddress = 'IP Address is required for CCTV';
@@ -104,6 +105,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
           channelId: null,
           hardwareId: formData.hardwareId,
           serialNumber: formData.serialNumber,
+          manufacturer: formData.manufacturer,
           model: formData.model,
           deviceType: formData.deviceType,
           AlarmSeverity: formData.AlarmSeverity,
@@ -131,7 +133,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
         handleClose();
       } catch (error) {
         console.error('Error saving device:', error);
-        toast.error('Saving data unsuccessful.');
+        toastError(error, 'Saving data unsuccessful.');
       } finally {
         setIsSaving(false);
       }
@@ -280,6 +282,22 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
                                         placeholder="Enter Serial Number"
                                         error={!!formErrors.serialNumber}
                                         helperText={formErrors.serialNumber}
+                                        required
+                                    />
+                                </Grid>
+
+                                {/* Manufacturer */}
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <CustomFormLabel htmlFor="manufacturer">Manufacturer</CustomFormLabel>
+                                    <CustomTextField
+                                        id="manufacturer"
+                                        value={formData.manufacturer}
+                                        onChange={handleInputChange}
+                                        fullWidth
+                                        variant="outlined"
+                                        placeholder="Enter Manufacturer"
+                                        error={!!formErrors.manufacturer}
+                                        helperText={formErrors.manufacturer}
                                         required
                                     />
                                 </Grid>

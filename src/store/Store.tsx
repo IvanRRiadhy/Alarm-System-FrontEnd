@@ -27,6 +27,7 @@ import maskedAreaReducer from './apps/crud/maskedArea';
 import bleReaderReducer from './apps/crud/bleReader';
 import floorReducer from './apps/crud/floor';
 import memberReducer from './apps/crud/member';
+import personnelReducer from './apps/crud/personnels';
 import trackingTransReducer from './apps/crud/trackingTrans';
 import visitorReducer from './apps/crud/visitor';
 import blacklistReducer from './apps/crud/blacklist';
@@ -69,6 +70,8 @@ import ControllerReducer from './apps/crud/controller';
 import deviceReducer from './apps/crud/devices';
 import deviceMappingReducer from './apps/crud/deviceMapping';
 import areaReducer from './apps/crud/area';
+import scheduleReducer from './apps/crud/schedule';
+import alarmRuleReducer from './apps/crud/alarmRule';
 // import ReaderHealthReducer from './apps/tracking/ReaderHealth';
 // import EventLogReducer from './apps/tracking/Event';
 // import SessionReducer from './apps/session';
@@ -104,6 +107,7 @@ const rootReducer = combineReducers({
   bleReaderReducer: bleReaderReducer,
   floorReducer: floorReducer,
   memberReducer: memberReducer,
+  personnelReducer: personnelReducer,
   trackingTransReducer: trackingTransReducer,
   visitorReducer: visitorReducer,
   blacklistReducer: blacklistReducer,
@@ -146,6 +150,8 @@ const rootReducer = combineReducers({
   deviceReducer: deviceReducer,
   deviceMappingReducer: deviceMappingReducer,
   areaReducer: areaReducer,
+  scheduleReducer: scheduleReducer,
+  alarmRuleReducer: alarmRuleReducer,
   // ReaderHealthReducer: ReaderHealthReducer,
   InvestigateReducer: InvestigateReducer,
   // EventLogReducer: EventLogReducer,

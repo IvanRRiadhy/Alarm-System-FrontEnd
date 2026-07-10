@@ -27,6 +27,7 @@ import earcut from 'earcut';
 import { uniqueId } from 'lodash';
 import toast from 'react-hot-toast';
 import { FloorplanDeviceType, addDeviceToDisable, removeDeviceToDisable } from 'src/store/apps/crud/floorplanDevice';
+import { toastError } from 'src/utils/errors';
 
 type CollisionResult =
   | { collided: false }
@@ -672,7 +673,7 @@ const EditAreaRenderer: React.FC<Props> = ({
 
         if (collision) {
           // alert('Areas cannot overlap! Position reverted.');
-          toast.error('Areas cannot overlap! Position reverted.');
+          toastError(error, 'Areas cannot overlap! Position reverted.');
         } else if (dx !== 0 || dy !== 0) {
           await handleDragArea(areaName, dx, dy);
         }
@@ -786,7 +787,7 @@ const EditAreaRenderer: React.FC<Props> = ({
       });
 
       if (hasCollision && cornerDragData) {
-        toast.error('Areas cannot overlap! Position reverted.');
+        toastError(error, 'Areas cannot overlap! Position reverted.');
         handleDragCorner(
           cornerDragData.areaName,
           cornerDragData.cornerIndex,

@@ -42,6 +42,7 @@ import { defaultBuildingFilter } from 'src/store/apps/defaultForm';
 import toast from 'react-hot-toast';
 import { useBuildingList, useDeleteBuilding } from 'src/hooks/useBuilding';
 import { useAllFloors, useFloorList, useDeleteFloor } from 'src/hooks/useFloor';
+import { toastError } from 'src/utils/errors';
 
 const columns = [
   { label: 'Building Name', field: 'name', sortAble: true },
@@ -215,7 +216,7 @@ const BuildingList = () => {
         await deleteFloorMutation.mutateAsync(selectedFloor.id);
         toast.success('Floor deleted successfully');
       } catch (error) {
-        toast.error('Delete failed');
+        toastError(error, 'Delete failed');
         console.error(error);
       }
     }
@@ -287,7 +288,7 @@ const BuildingList = () => {
         await deleteMutation.mutateAsync(selectedBuilding.id);
         toast.success('Data Deleted');
       } catch (error) {
-        toast.error('Delete failed');
+        toastError(error, 'Delete failed');
         console.error(error);
       }
     }

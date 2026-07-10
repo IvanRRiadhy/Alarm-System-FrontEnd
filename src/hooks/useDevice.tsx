@@ -53,11 +53,12 @@ export function useAddDevice(){
     return useMutation({
         mutationFn: async (payload: Partial<deviceType>) => {
             const { id, ...filteredPayload } = payload;
+            console.log("Payload", filteredPayload)
             const response = await axiosServices.post(DEVICE_API_URL, filteredPayload)
             return response.data
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["controller-list"] })
+            queryClient.invalidateQueries({ queryKey: ["device-list"] })
         }
     })
 }
@@ -67,7 +68,7 @@ export function useEditDevice() {
     return useMutation({
         mutationFn: async (payload: Partial<deviceType>) => {
             if (!payload.id) throw new Error('Missing device id');
-            const { id, siteId, ...filteredPayload } = payload;
+            const { id, siteId, siteName, battery, isOnline, lastSeen, controllerId, controllerName, ...filteredPayload } = payload;
             const response = await axiosServices.put(`${DEVICE_API_URL}${id}`, filteredPayload)
             return response.data
         },

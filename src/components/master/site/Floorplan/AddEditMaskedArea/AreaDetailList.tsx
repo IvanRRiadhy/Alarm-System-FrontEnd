@@ -36,6 +36,7 @@ import isEqual from 'lodash/isEqual';
 import { useCreateMaskedAreaLabel, useMaskedAreaLabels } from 'src/hooks/useMaskedAreaLabel';
 import toast from 'react-hot-toast';
 import CustomSwitch from 'src/components/forms/theme-elements/CustomSwitch';
+import { toastError } from 'src/utils/errors';
 
 // Define the form data type for better type safety
 interface AreaFormData {
@@ -250,7 +251,7 @@ const AreaDetailList = () => {
     setOpenCreateDialog(false);
   } catch (err) {
     console.error(err);
-    toast.error('Failed to create label');
+    toastError(error, 'Failed to create label');
   }
 };
 
@@ -507,7 +508,7 @@ const AreaDetailList = () => {
                     checked={formData.isAssemblyPoint}
                     onChange={(e: any) => {
                       if (e.target.checked && formData.restrictedStatus === 'Restrict') {
-                        toast.error('Assembly Point cannot be Restricted');
+                        toastError(error, 'Assembly Point cannot be Restricted');
                         setShowErrorBorder(true);
                         setTimeout(() => setShowErrorBorder(false), 2000);
                         return;

@@ -36,6 +36,7 @@ import { useAllFloorplans, useDeleteFloorplan } from 'src/hooks/useFloorplan';
 import { FloorplanType, SelectFloorplan } from 'src/store/apps/crud/floorplan';
 import AddEditFloorplan from 'src/components/master/site/Floorplan/AddEditFloorplan';
 import { Collapse, Paper } from '@mui/material';
+import { toastError } from 'src/utils/errors';
 // import { useTranslation } from 'react-i18next';
 
 const columns = [
@@ -196,7 +197,7 @@ const FloorList = () => {
         await deleteFloorplanMutation.mutateAsync(selectedFloorplan.id);
         toast.success('Floorplan deleted successfully');
       } catch (error) {
-        toast.error('Delete failed');
+        toastError(error, 'Delete failed');
         console.error(error);
       }
     }
@@ -312,7 +313,7 @@ const FloorList = () => {
       //     toast.success('Data Deleted');
       //   }
       // } catch (error) {
-      //   toast.error('Delete Data Unsuccessful');
+      //   toastError(error, 'Delete Data Unsuccessful');
       //   console.error('Error deleting floor:', error);
       // }
       // setTimeout(() => {
@@ -322,7 +323,7 @@ const FloorList = () => {
         await deleteMutation.mutateAsync(selectedFloor.id);
         toast.success('Data Deleted');
       } catch (error) {
-        toast.error('Delete failed');
+        toastError(error, 'Delete failed');
         console.error(error);
       }
     }

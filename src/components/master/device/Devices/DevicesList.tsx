@@ -35,6 +35,7 @@ import { useDeviceList, useDeleteDevice } from 'src/hooks/useDevice';
 import { deviceType } from 'src/store/apps/crud/devices';
 import AddEditDevices from './AddEditDevices';
 import MapDeviceDialog from './MapDeviceDialog';
+import { toastError } from 'src/utils/errors';
 
 const columns = [
   { label: 'Device Name', field: 'name', sortAble: true },
@@ -134,7 +135,7 @@ const DevicesList = () => {
           await deleteMutation.mutateAsync(selectedDevice.id);
           toast.success('Data Deleted');
         } catch (error) {
-          toast.error('Delete failed');
+          toastError(error, 'Delete failed');
           console.error(error);
         }
       }

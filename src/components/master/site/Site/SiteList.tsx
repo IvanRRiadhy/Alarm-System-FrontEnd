@@ -37,6 +37,7 @@ import {
 import { defaultSiteFilter } from 'src/store/apps/defaultForm';
 import { useDeleteSite, useSiteList } from 'src/hooks/useSite';
 import AddEditSite from './AddEditSite';
+import { toastError } from 'src/utils/errors';
 
 const columns = [
   { label: 'Site Name', field: 'name', sortAble: true },
@@ -139,7 +140,7 @@ const SiteList = () => {
           await deleteMutation.mutateAsync(selectedSite.id);
           toast.success('Data Deleted');
         } catch (error) {
-          toast.error('Delete failed');
+          toastError(error, 'Delete failed');
           console.error(error);
         }
       }

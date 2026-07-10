@@ -43,6 +43,7 @@ import toast from 'react-hot-toast';
 import { useReleaseFloorplanDevice } from 'src/hooks/useFloorplanDevice';
 import { useBlocker } from 'react-router';
 import usePreventWindowClose from 'src/hooks/usePreventWindowClose';
+import { toastError } from 'src/utils/errors';
 
 const AreaList = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -353,7 +354,7 @@ const AreaList = () => {
           disableDevice = true;
         } else {
           console.error('Failed to disable devices:', res.message);
-          toast.error('Failed to disable devices');
+          toastError(error, 'Failed to disable devices');
         }
       }
 
@@ -363,7 +364,7 @@ const AreaList = () => {
       } else if (errorCount > 0) {
         toast.error(`Completed ${successCount} operations, ${errorCount} failed`);
       } else {
-        toast.error('No changes to save');
+        toastError(error, 'No changes to save');
       }
 
       // Refetch data to ensure UI is in sync
@@ -371,7 +372,7 @@ const AreaList = () => {
       dispatch(fetchFloorplanDT(floorplanFilter));
     } catch (error) {
       console.error('Error during save operations:', error);
-      toast.error('Save operation failed');
+      toastError(error, 'Save operation failed');
     } finally {
       setTimeout(() => {
         handleCloseEditing();

@@ -16,6 +16,7 @@ import { AppDispatch, useDispatch } from 'src/store/Store';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useImportBuildingConfig } from 'src/hooks/useBuilding';
+import { toastError } from 'src/utils/errors';
 
 const BuildingImport = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -65,7 +66,7 @@ const BuildingImport = () => {
       toast.success('Import Success');
     } catch (err) {
       console.log('Import Error:', err);
-      toast.error('Import Error');
+      toastError(error, 'Import Error');
     } finally {
       setImportLoading(false);
       
@@ -86,7 +87,7 @@ const BuildingImport = () => {
       toast.success('Building Configuration Imported Successfully');
     } catch (err) {
       console.log('Import Config Error:', err);
-      toast.error('Import Config Failed');
+      toastError(error, 'Import Config Failed');
     } finally {
       setImportLoading(false);
     }

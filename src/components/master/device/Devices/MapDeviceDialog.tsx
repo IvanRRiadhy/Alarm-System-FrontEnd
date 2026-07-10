@@ -33,6 +33,7 @@ import { useDeviceMappingList, useEditDeviceMapping } from 'src/hooks/useDeviceM
 import { FloorplanType } from 'src/store/apps/crud/floorplan';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import toast from 'react-hot-toast';
+import { toastError } from 'src/utils/errors';
 
 interface MapDeviceDialogProps {
   open: boolean;
@@ -109,8 +110,8 @@ const MapDeviceDialog: React.FC<MapDeviceDialogProps> = ({ open, onClose, device
           setConfirmOpen(false);
           onClose();
         },
-        onError: () => {
-          toast.error('Failed to map device.');
+        onError: (error) => {
+          toastError(error, 'Failed to map device.');
         },
       }
     );

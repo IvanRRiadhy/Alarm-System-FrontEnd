@@ -75,6 +75,12 @@ import {
   IconBuilding,
   IconMap,
   IconBuildingSkyscraper,
+  IconDevices,
+  IconBoxPadding,
+  IconDeviceTablet,
+  IconUser,
+  IconUserShield,
+  IconAlarm,
 } from '@tabler/icons-react';
 
 const Menuitems: MenuitemsType[] = [
@@ -188,7 +194,7 @@ const Menuitems: MenuitemsType[] = [
     {
     id: uniqueId(),
     title: 'Device',
-    icon: IconBuildingSkyscraper,
+    icon: IconDevices,
     // chip: '2',
     // chipColor: 'secondary',
     href: '/master/device',
@@ -196,17 +202,53 @@ const Menuitems: MenuitemsType[] = [
       {
         id: uniqueId(),
         title: 'Devices',
-        icon: IconBuildingSkyscraper,
+        icon: IconDeviceTablet,
         href: '/master/device/devices',
       },
       {
         id: uniqueId(),
         title: 'Controller',
-        icon: IconBuilding,
+        icon: IconBoxPadding,
         href: '/master/device/controller',
       },
     ]
   },
+
+  // Security
+  {
+    id: uniqueId(),
+    title: 'Security',
+    icon: IconUser,
+    // chip: '2',
+    // chipColor: 'secondary',
+    href: '/master/security',
+    children: [
+      {
+        id: uniqueId(),
+        title: 'Personnels',
+        icon: IconUserShield,
+        href: '/master/security/personnel',
+      },
+    ]
+  },
+
+    // Scheduler
+  {
+    id: uniqueId(),
+    title: 'Schedule',
+    icon: IconCalendar,
+    // chip: '2',
+    // chipColor: 'secondary',
+    href: '/master/schedule',
+  },
+
+  //Rule
+  {
+    id: uniqueId(),
+    title: 'Alarm Rules',
+    icon: IconAlarm,
+    href: '/master/rule',
+  }
 
   // {
   //   id: uniqueId(),

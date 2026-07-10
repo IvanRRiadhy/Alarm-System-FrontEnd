@@ -62,6 +62,7 @@ export function useEditArea() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["area-list"] })
+            queryClient.invalidateQueries({queryKey:["device-mapping-list"]})
         }
     })
 }
@@ -76,6 +77,7 @@ export function useDeleteArea() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["area-list"] })
+            queryClient.invalidateQueries({queryKey:["device-mapping-list"]})
         }
     })
 }

@@ -12,8 +12,8 @@ export const useDashboardSummary = (filter: any)=>{
             return response.data;
         },
                 placeholderData: keepPreviousData,
-                staleTime: 5 * 60 * 1000, // 5 minutes
-                gcTime: 10 * 60 * 1000, // 10 minutes
+                staleTime: 5  * 1000, // 5 seconds
+                gcTime: 10  * 1000, // 10 seconds
     })
 }
 

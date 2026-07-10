@@ -16,8 +16,25 @@ import L from 'leaflet';
 
 import 'leaflet/dist/leaflet.css';
 
+export interface ActiveAlarmSite {
+  siteId: string;
+  siteName: string;
+  region: string;
+  latitude: number;
+  longitude: number;
+  severity: string;
+  status: string;
+  totalAlarms: number;
+  totalDeviceOn: number;
+  totalDeviceOff: number;
+  totalAlarmOn: number;
+  totalAlarmOff: number;
+  lastAlarmAt: string;
+}
+
 type SiteMapProps = {
   region: string;
+  activeAlarmsBySite?: ActiveAlarmSite[];
 };
 
 interface Site {
@@ -132,11 +149,23 @@ const bounds: [[number, number], [number, number]] = [
   [8, 142],
 ];
 
-const SiteMap: React.FC<SiteMapProps> = ({ region }) => {
+const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
+  const displaySites = activeAlarmsBySite && activeAlarmsBySite.length > 0
+    ? activeAlarmsBySite.map((site) => ({
+        id: site.siteId,
+        name: site.siteName,
+        region: site.region,
+        lat: site.latitude,
+        lng: site.longitude,
+        status: (site.status || 'normal').toLowerCase() as keyof typeof colors,
+        alarms: site.totalAlarms,
+      }))
+    : sites;
+
   const filtered =
     region === 'Semua Region'
-      ? sites
-      : sites.filter((x) => x.region === region);
+      ? displaySites
+      : displaySites.filter((x) => x.region === region);
 
   return (
     <Paper

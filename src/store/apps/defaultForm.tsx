@@ -48,6 +48,10 @@ import { GetFilter as ControllerFilter} from './crud/controller';
 import { deviceType } from './crud/devices';
 import { GetFilter as DeviceFilter } from './crud/devices';
 import { GetFilter as ChannelFilter} from './crud/channel';
+import { PersonnelType } from './crud/personnels';
+import { GetFilter as PersonnelFilter } from './crud/personnels';
+import { GetFilter as ScheduleFilter,ScheduleDataType } from './crud/schedule';
+import { AlarmRuleDataType, GetFilter as AlarmRuleFilter } from './crud/alarmRule';
 
 //#region AccessCCTV
 export const defaultAccessCCTVForm: CCTVType = {
@@ -363,6 +367,7 @@ export const defaultControllerForm: controllerType = {
     id: '',
     siteId: '',
     siteName: '',
+    hardwareId: '',
     name: '',
     ipAddress: '',
     port: 0,
@@ -404,6 +409,7 @@ export const defaultDeviceForm: deviceType = {
     channelId: '',
     hardwareId: '',
     serialNumber: '',
+    manufacturer: '',
     model: '',
     deviceType: 'Other',
     AlarmSeverity: 'low',
@@ -426,6 +432,74 @@ export const defaultDeviceFilter: DeviceFilter = {
   sortBy: '',
   sortOrder: 'desc',
 };
+//#endregion
+
+//#region Personnel
+
+export const defaultPersonnelForm: PersonnelType = {
+    id: "",
+    employeeCode: "",
+    name: "",
+    gender: "",
+    address: "",
+    city: "",
+    postalCode: "",
+    phone: "",
+    email: "",
+    department: "",
+    position: "",
+    photoUrl: "",
+    isActive: true,
+    siteId: "",
+    siteName: "",
+};
+
+export const defaultPersonnelFilter: PersonnelFilter = {
+  page: 1,
+  limit: 5,
+  search: '',
+  sortBy: '',
+  sortOrder: 'desc',
+};
+//#endregion
+
+//#region Schedule
+export const defaultScheduleForm: ScheduleDataType = {
+  id: '',
+  siteId: '',
+  name: '',
+  isActive: true,
+  items: [],
+};
+
+export const defaultScheduleFilter: ScheduleFilter = {
+  page: 1,
+  limit: 5,
+  sortBy: 'UpdatedAt',
+  sortOrder: 'desc',
+};
+//#endregion
+
+//#region Alarm Rule
+export const defaultAlarmRuleForm: AlarmRuleDataType = {
+  id: '',
+  siteId: '',
+  siteName: '',
+  name: '',
+  isActive: true,
+  inputs: [],
+  outputs: [],
+  scheduleTemplateId: '',
+  scheduleTemplateName: '',
+}
+
+export const defaultAlarmRuleFilter: AlarmRuleFilter = {
+  page : 1,
+  limit : 5,
+  // search : '',
+  sortBy : '',
+  sortOrder : 'desc',
+}
 //#endregion
 
 //#region Integration

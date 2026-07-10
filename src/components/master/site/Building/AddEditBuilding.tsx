@@ -33,6 +33,7 @@ import { useAddBuilding, useEditBuilding } from 'src/hooks/useBuilding';
 import { useSiteList } from 'src/hooks/useSite';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 import { useUploadCDN } from 'src/hooks/useCDN';
+import { toastError } from 'src/utils/errors';
 
 interface FormType {
   type?: string;
@@ -156,9 +157,9 @@ const AddEditBuilding = ({ type, building }: FormType) => {
           throw new Error('Invalid response from CDN upload');
         }
         finalImageUrl = uploaded.fileUrl;
-      } catch (err) {
-        console.error('CDN upload failed:', err);
-        toast.error('Failed to upload image.');
+      } catch (error) {
+        console.error('CDN upload failed:', error);
+        toastError(error, 'Failed to upload image.');
         setIsSaving(false);
         return; // Aborts saving, keeps dialog open
       }
@@ -192,7 +193,7 @@ const AddEditBuilding = ({ type, building }: FormType) => {
       handleClose();
     } catch (error) {
       console.error('Error saving building:', error);
-      toast.error('Failed to save building.');
+      toastError(error, 'Failed to save building.');
     } finally {
       setIsSaving(false);
     }

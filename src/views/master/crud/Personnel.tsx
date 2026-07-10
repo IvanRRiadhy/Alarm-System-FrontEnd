@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Box, Drawer, useMediaQuery, Theme } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
+// import Breadcrumb from 'src/layouts/full/shared/breadcrumb/Breadcrumb';
 import AppCard from 'src/components/shared/AppCard';
-import TimeGroupDetails from 'src/components/master/CRUD/timeGroup/TimeGroupContent';
-import TimeGroupList from 'src/components/master/CRUD/timeGroup/TimeGroupList';
-import TimeGroupSearch from 'src/components/master/CRUD/timeGroup/TimeGroupSearch';
-
+import PersonnelFilter from 'src/components/master/security/Personnels/PersonnelFilter';
+import PersonnelSearch from 'src/components/master/security/Personnels/PersonnelSearch';
+import PersonnelList from 'src/components/master/security/Personnels/PersonnelList';
+import PersonnelContent from 'src/components/master/security/Personnels/PersonnelContent';
 const drawerWidth = 240;
 const secdrawerWidth = 320;
 
-const TimeGroup = () => {
+const SecurityGuard = () => {
   const [isLeftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
@@ -21,6 +22,7 @@ const TimeGroup = () => {
         {/* ------------------------------------------- */}
         {/* Left Part */}
         {/* ------------------------------------------- */}
+
         <Drawer
           open={isLeftSidebarOpen}
           onClose={() => setLeftSidebarOpen(false)}
@@ -28,12 +30,29 @@ const TimeGroup = () => {
             width: drawerWidth,
             [`& .MuiDrawer-paper`]: { width: drawerWidth, position: 'relative', zIndex: 2 },
             flexShrink: 0,
+            maxHeight: 'calc(100vh - 100px)',
           }}
           variant={lgUp ? 'permanent' : 'temporary'}
         >
-          <TimeGroupSearch onClick={() => setLeftSidebarOpen(true)} />
-          <TimeGroupList />
+          <PersonnelFilter />
         </Drawer>
+
+        {/* ------------------------------------------- */}
+        {/* Middle part */}
+        {/* ------------------------------------------- */}
+        <Box
+          sx={{
+            minWidth: secdrawerWidth,
+            width: { xs: '100%', md: secdrawerWidth, lg: secdrawerWidth },
+            flexShrink: 0,
+            maxHeight: 'calc(100vh - 175px)',
+          }}
+        >
+          {/* <ContactSearch onClick={() => setLeftSidebarOpen(true)} /> */}
+          <PersonnelSearch onClick={() => setLeftSidebarOpen(true)} />
+          <PersonnelList />
+        </Box>
+
         {/* ------------------------------------------- */}
         {/* Main part */}
         {/* ------------------------------------------- */}
@@ -49,11 +68,27 @@ const TimeGroup = () => {
             [`& .MuiDrawer-paper`]: { width: '100%', position: 'relative' },
           }}
         >
-          <TimeGroupDetails />
+          {/* back btn Part */}
+          {mdUp ? (
+            ''
+          ) : (
+            <Box sx={{ p: 3 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                onClick={() => setRightSidebarOpen(false)}
+                sx={{ display: { xs: 'block', md: 'none', lg: 'none' } }}
+              >
+                Back{' '}
+              </Button>
+            </Box>
+          )}
+          <PersonnelContent />
         </Drawer>
       </AppCard>
     </PageContainer>
   );
 };
 
-export default TimeGroup;
+export default SecurityGuard;

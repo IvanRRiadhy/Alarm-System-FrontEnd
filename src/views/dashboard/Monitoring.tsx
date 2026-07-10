@@ -167,7 +167,7 @@ const Monitoring = () => {
               transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
-            <LiveCamera />
+            <LiveCamera selectedDevice={selectedDevice} />
             <DeviceInfo selectedDevice={selectedDevice} />
             <DeviceLog selectedDevice={selectedDevice} events={events} selectedLog={selectedLog} onSelectLog={setSelectedLog} />
             <EventDetail selectedLog={selectedLog} />

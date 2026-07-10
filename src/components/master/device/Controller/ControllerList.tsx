@@ -36,6 +36,7 @@ import { useControllerList, useDeleteController } from 'src/hooks/useController'
 import { controllerType } from 'src/store/apps/crud/controller';
 import AddEditController from './AddEditController';
 import ControllerChannel from './ControllerChannel';
+import { toastError } from 'src/utils/errors';
 
 const columns = [
   { label: 'Controller Name', field: 'name', sortAble: true },
@@ -152,7 +153,7 @@ const ControllerList = () => {
           await deleteMutation.mutateAsync(selectedController.id);
           toast.success('Data Deleted');
         } catch (error) {
-          toast.error('Delete failed');
+          toastError(error, 'Delete failed');
           console.error(error);
         }
       }
@@ -297,7 +298,7 @@ const ControllerList = () => {
                                   justifyContent: 'center',
                                 }}
                               >
-                                {index + 1 + page * rowsPerPage}
+                                {index + 1 + (page - 1) * rowsPerPage}
                               </TableCell>
                               <TableCell>{controller.name}</TableCell>
                               <TableCell>{controller.ipAddress}</TableCell>
