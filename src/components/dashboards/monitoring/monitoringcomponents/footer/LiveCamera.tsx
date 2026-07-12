@@ -5,6 +5,7 @@ import {
   IconButton,
   Chip,
   CircularProgress,
+  Button,
 } from '@mui/material';
 import {
   IconLayoutGrid,
@@ -57,40 +58,90 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
   const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const openedWindowsRef = useRef<Record<string, Window | null>>({});
 
   const isCCTV = selectedDevice?.deviceType === 'CctvCamera';
 
-  const fallbackCctvs = React.useMemo(() => {
-    if (!selectedDevice || !deviceMappings || isCCTV) return [];
+  const [openedCameraIds, setOpenedCameraIds] = useState<string[]>([]);
+
+  // Reset opened camera list and close popups when selected device changes
+  useEffect(() => {
+    Object.values(openedWindowsRef.current).forEach((win) => {
+      if (win && !win.closed) {
+        win.close();
+      }
+    });
+    openedWindowsRef.current = {};
+    setOpenedCameraIds([]);
+  }, [selectedDevice?.id]);
+
+  // Periodically check if opened windows were closed to return feed to main display
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const closedIds: string[] = [];
+      Object.entries(openedWindowsRef.current).forEach(([deviceId, win]) => {
+        if (!win || win.closed) {
+          closedIds.push(deviceId);
+        }
+      });
+
+      if (closedIds.length > 0) {
+        setOpenedCameraIds((prev) => prev.filter((id) => !closedIds.includes(id)));
+        closedIds.forEach((id) => {
+          delete openedWindowsRef.current[id];
+        });
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      Object.values(openedWindowsRef.current).forEach((win) => {
+        if (win && !win.closed) {
+          win.close();
+        }
+      });
+    };
+  }, []);
+
+  const cctvLoop = React.useMemo(() => {
+    if (!selectedDevice || !deviceMappings) return [];
+    if (isCCTV) {
+      return [selectedDevice];
+    }
     return deviceMappings.filter(
       (dm) => dm.areaId === selectedDevice.areaId && dm.deviceType === 'CctvCamera'
     );
   }, [selectedDevice, deviceMappings, isCCTV]);
 
+  const activeLoop = React.useMemo(() => {
+    return cctvLoop.filter(
+      (dm): dm is DeviceMappingType & { deviceId: string } =>
+        dm.deviceId !== null && !openedCameraIds.includes(dm.deviceId)
+    );
+  }, [cctvLoop, openedCameraIds]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    setCurrentIndex(0);
-  }, [fallbackCctvs.length]);
+    if (currentIndex >= activeLoop.length) {
+      setCurrentIndex(0);
+    }
+  }, [activeLoop.length, currentIndex]);
 
   useEffect(() => {
-    if (fallbackCctvs.length <= 1 || isHovered) {
+    if (activeLoop.length <= 1 || isHovered) {
       return;
     }
 
     const timer = setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % fallbackCctvs.length);
+      setCurrentIndex((prev) => (prev + 1) % activeLoop.length);
     }, 10000);
 
     return () => clearTimeout(timer);
-  }, [fallbackCctvs.length, currentIndex, isHovered]);
+  }, [activeLoop.length, currentIndex, isHovered]);
 
-  const activeDevice = isCCTV 
-    ? selectedDevice 
-    : fallbackCctvs.length > 0 
-      ? fallbackCctvs[currentIndex] 
-      : null;
+  const activeDevice = activeLoop.length > 0 ? activeLoop[currentIndex] : null;
 
   const activeDeviceId = activeDevice?.deviceId;
 
@@ -113,7 +164,9 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
   const rtspUrl = deviceDetail?.rtspUrl || '';
   const cameraName = activeDevice 
     ? (activeDevice.label || activeDevice.deviceName) 
-    : 'No CCTV Camera';
+    : activeLoop.length === 0 && cctvLoop.length > 0
+      ? 'All Cameras Opened'
+      : 'No CCTV Camera';
 
   // Update live clock overlay
   useEffect(() => {
@@ -147,6 +200,17 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
     }
   };
 
+  const handleOpenNewWindow = () => {
+    if (!activeDevice) return;
+    const feedUrl = simulatedFeedUrl;
+    const winName = `CCTV_${activeDevice.deviceId}`;
+    const newWin = window.open(feedUrl, winName, 'width=800,height=600,scrollbars=yes,resizable=yes');
+    if (newWin) {
+      openedWindowsRef.current[activeDevice.deviceId] = newWin;
+    }
+    setOpenedCameraIds((prev) => [...prev, activeDevice.deviceId]);
+  };
+
   // Static camera feed for IP Webcam / MJPEG stream
   const simulatedFeedUrl = "http://192.168.1.218:8080/video";
 
@@ -165,7 +229,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
       }}
     >
       {/* Header */}
-      <Box
+      {/* <Box
         sx={{
           px: 2,
           py: 1.25,
@@ -182,10 +246,38 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
         >
           LIVE CAMERA
         </Typography>
+      </Box> */}
+      <Box
+        sx={{
+          px: 2,
+          py: 1.25,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography noWrap sx={{ color: '#E2E8F0', fontSize: 12, fontWeight: 600 }}>
+          {cameraName}
+        </Typography>
+        {activeDevice && (
+          <Chip
+            label="● LIVE"
+            size="small"
+            sx={{
+              height: 20,
+              fontSize: 10,
+              fontWeight: 700,
+              bgcolor: '#22C55E20',
+              color: '#22C55E',
+              border: '1px solid #22C55E40',
+            }}
+          />
+        )}
       </Box>
 
       {/* Camera name + LIVE badge */}
-      <Box
+      {/* <Box
         sx={{
           px: 2,
           py: 1,
@@ -211,7 +303,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
             }}
           />
         )}
-      </Box>
+      </Box> */}
 
       {/* Camera Feed Container */}
       <Box
@@ -232,6 +324,43 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
       >
         {isLoading ? (
           <CircularProgress size={24} sx={{ color: '#60A5FA', zIndex: 3 }} />
+        ) : cctvLoop.length === 0 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 2,
+              color: '#64748B',
+              textAlign: 'center',
+            }}
+          >
+            <IconVolumeOff size={28} />
+            <Typography sx={{ mt: 1, fontSize: 11, fontWeight: 500 }}>
+              Tidak ada CCTV di area ini
+            </Typography>
+            <Typography sx={{ fontSize: 9, opacity: 0.7 }}>
+              No CCTV in this area
+            </Typography>
+          </Box>
+        ) : activeLoop.length === 0 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 2,
+              color: '#64748B',
+              textAlign: 'center',
+            }}
+          >
+            <IconInfoCircle size={28} color="#60A5FA" />
+            <Typography sx={{ mt: 1.5, fontSize: 12, fontWeight: 500, color: '#E2E8F0' }}>
+              All Camera is opened in other window
+            </Typography>
+          </Box>
         ) : activeDevice ? (
           <>
             <img
@@ -258,41 +387,30 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
               }}
             />
 
-            {/* REC Indicator */}
-            <Box
+            {/* Open in New Window Button */}
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleOpenNewWindow}
+              startIcon={<IconMaximize size={12} />}
               sx={{
                 position: 'absolute',
                 top: 10,
                 left: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.75,
-                bgcolor: 'rgba(15, 23, 42, 0.75)',
-                px: 1,
-                py: 0.5,
-                borderRadius: 0.5,
-                border: '1px solid rgba(239, 68, 68, 0.2)',
                 zIndex: 3,
+                fontSize: 9,
+                fontWeight: 700,
+                bgcolor: '#2563EB',
+                py: 0.5,
+                px: 1,
+                minWidth: 'auto',
+                '&:hover': {
+                  bgcolor: '#1d4ed8',
+                },
               }}
             >
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: '#EF4444',
-                  boxShadow: '0 0 6px #EF4444',
-                  animation: isPlaying ? 'blink-rec 1.5s infinite alternate' : 'none',
-                  '@keyframes blink-rec': {
-                    '0%': { opacity: 0.3 },
-                    '100%': { opacity: 1 },
-                  },
-                }}
-              />
-              <Typography sx={{ color: '#EF4444', fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}>
-                REC
-              </Typography>
-            </Box>
+              Open Window
+            </Button>
 
             {/* RTSP stream metadata overlay */}
             {rtspUrl && (
@@ -344,31 +462,11 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
               {currentTime}
             </Typography>
           </>
-        ) : (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              p: 2,
-              color: '#64748B',
-              textAlign: 'center',
-            }}
-          >
-            <IconVolumeOff size={28} />
-            <Typography sx={{ mt: 1, fontSize: 11, fontWeight: 500 }}>
-              Tidak ada CCTV di area ini
-            </Typography>
-            <Typography sx={{ fontSize: 9, opacity: 0.7 }}>
-              No CCTV in this area
-            </Typography>
-          </Box>
-        )}
+        ) : null}
       </Box>
 
       {/* Controls */}
-      <Box
+      {/* <Box
         sx={{
           px: 1.5,
           py: 1,
@@ -434,7 +532,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
             {icon}
           </IconButton>
         ))}
-      </Box>
+      </Box> */}
     </Box>
   );
 };
