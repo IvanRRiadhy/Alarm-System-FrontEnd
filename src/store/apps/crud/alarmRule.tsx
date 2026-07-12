@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { AppDispatch, dispatch } from "src/store/Store";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { defaultAlarmRuleFilter, defaultBuildingFilter, defaultScheduleFilter, defaultScheduleForm, defaultSiteFilter } from "../defaultForm";
+import { defaultAlarmRuleFilter} from "../defaultForm";
 import { metaData } from "./site";
 
 const API_URL = '/api/schedule-templates'

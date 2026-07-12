@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import { EventItem } from '../sidebar/EventSidebar';
+import { IconInfoCircle } from '@tabler/icons-react';
 
 type LogTabType = 'Semua' | 'Event' | 'Alarm' | 'System';
 
@@ -183,6 +184,31 @@ interface DeviceLogProps {
 }
 
 const DeviceLog: React.FC<DeviceLogProps> = ({ selectedDevice, events, selectedLog, onSelectLog }) => {
+  if (!selectedDevice) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          bgcolor: '#111827',
+          borderRadius: 2,
+          border: '1px solid rgba(255,255,255,0.08)',
+          p: 3,
+          color: '#64748B',
+          textAlign: 'center',
+        }}
+      >
+        <IconInfoCircle size={32} />
+        <Typography sx={{ mt: 1, fontSize: 12 }}>
+          Pilih device pada floorplan untuk melihat informasi detail.
+        </Typography>
+      </Box>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState<number>(0);
 
   const tabLabels: LogTabType[] = ['Semua', 'Event', 'Alarm', 'System'];

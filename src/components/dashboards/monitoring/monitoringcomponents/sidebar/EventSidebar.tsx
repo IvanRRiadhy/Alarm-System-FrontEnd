@@ -7,6 +7,8 @@ import {
   Button,
   Avatar,
   Divider,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import {
   IconFilter,
@@ -33,6 +35,9 @@ export interface EventItem {
   iconColor: string;
   deviceId?: string;
   deviceName?: string;
+  floorplanId?: string | null;
+  statusAlarm?: string;
+  rawId?: string;
 }
 
 export const dummyEvents: EventItem[] = [
@@ -173,19 +178,54 @@ const severityColors: Record<Severity, string> = {
 
 interface EventSidebarProps {
   events: EventItem[];
+  onSelectEvent?: (event: EventItem) => void;
+  selectedEventId?: number | null;
+  currentFloorplanId?: string | null;
 }
 
-const EventSidebar: React.FC<EventSidebarProps> = ({ events }) => {
+const EventSidebar: React.FC<EventSidebarProps> = ({
+  events,
+  onSelectEvent,
+  selectedEventId,
+  currentFloorplanId,
+}) => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('Semua');
+  const [floorplanFilterActive, setFloorplanFilterActive] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const criticalCount = events.filter((e) => e.severity === 'Critical').length;
-  const highCount = events.filter((e) => e.severity === 'High').length;
-  const lowCount = events.filter((e) => e.severity === 'Low').length;
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
 
-  const filteredEvents =
+  const handleSelectFilterAll = () => {
+    setFloorplanFilterActive(false);
+    handleCloseMenu();
+  };
+
+  const handleSelectFilterFloorplan = () => {
+    setFloorplanFilterActive(true);
+    handleCloseMenu();
+  };
+
+  const baseEventsForCount = floorplanFilterActive && currentFloorplanId
+    ? events.filter((e) => e.floorplanId === currentFloorplanId)
+    : events;
+
+  const criticalCount = baseEventsForCount.filter((e) => e.severity === 'Critical').length;
+  const highCount = baseEventsForCount.filter((e) => e.severity === 'High').length;
+  const lowCount = baseEventsForCount.filter((e) => e.severity === 'Low').length;
+
+  const baseFilteredEvents =
     activeFilter === 'Semua'
       ? events
       : events.filter((e) => e.severity === activeFilter);
+
+  const filteredEvents = floorplanFilterActive && currentFloorplanId
+    ? baseFilteredEvents.filter((e) => e.floorplanId === currentFloorplanId)
+    : baseFilteredEvents;
 
   const filters: { label: string; value: FilterType; count?: number; color?: string }[] = [
     { label: 'Semua', value: 'Semua' },
@@ -252,9 +292,45 @@ const EventSidebar: React.FC<EventSidebarProps> = ({ events }) => {
               }}
             />
           ))}
-          <IconButton size="small" sx={{ color: '#94A3B8', ml: 'auto' }}>
+          <IconButton
+            size="small"
+            onClick={handleOpenMenu}
+            sx={{
+              color: floorplanFilterActive ? '#2563EB' : '#94A3B8',
+              ml: 'auto',
+              bgcolor: floorplanFilterActive ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+              '&:hover': {
+                bgcolor: floorplanFilterActive ? 'rgba(37, 99, 235, 0.2)' : 'rgba(255,255,255,0.06)',
+              }
+            }}
+          >
             <IconFilter size={16} />
           </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleCloseMenu}
+            PaperProps={{
+              sx: {
+                bgcolor: '#1e293b',
+                color: '#f8fafc',
+                border: '1px solid rgba(255,255,255,0.08)',
+                '& .MuiMenuItem-root:hover': {
+                  bgcolor: 'rgba(255,255,255,0.06)',
+                },
+                '& .Mui-selected': {
+                  bgcolor: 'rgba(37, 99, 235, 0.25) !important',
+                },
+              }
+            }}
+          >
+            <MenuItem selected={!floorplanFilterActive} onClick={handleSelectFilterAll}>
+              Tampilkan Semua Event (Show All)
+            </MenuItem>
+            <MenuItem selected={floorplanFilterActive} onClick={handleSelectFilterFloorplan}>
+              Hanya Event Layout Ini (Current Layout Only)
+            </MenuItem>
+          </Menu>
         </Box>
       </Box>
 
@@ -269,84 +345,90 @@ const EventSidebar: React.FC<EventSidebarProps> = ({ events }) => {
           '&::-webkit-scrollbar-thumb': { background: '#334155', borderRadius: 10 },
         }}
       >
-        {filteredEvents.map((event, index) => (
-          <React.Fragment key={event.id}>
-            <Box
-              sx={{
-                px: 2,
-                py: 1.5,
-                cursor: 'pointer',
-                transition: 'background .2s',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                <Avatar
-                  sx={{
-                    width: 34,
-                    height: 34,
-                    bgcolor: `${event.iconColor}18`,
-                    color: event.iconColor,
-                    mt: 0.25,
-                  }}
-                >
-                  {event.icon}
-                </Avatar>
-
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.2 }}>
-                    {event.time}
-                  </Typography>
-                  <Typography
+        {filteredEvents.map((event, index) => {
+          const isSelected = selectedEventId === event.id;
+          return (
+            <React.Fragment key={event.id}>
+              <Box
+                onClick={() => onSelectEvent?.(event)}
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  cursor: 'pointer',
+                  transition: 'background .2s',
+                  bgcolor: isSelected ? 'rgba(37, 99, 235, 0.15)' : 'transparent',
+                  borderLeft: `3px solid ${isSelected ? '#2563EB' : 'transparent'}`,
+                  '&:hover': { bgcolor: isSelected ? 'rgba(37, 99, 235, 0.2)' : 'rgba(255,255,255,0.04)' },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                  <Avatar
                     sx={{
-                      color: '#F8FAFC',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      lineHeight: 1.4,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                      width: 34,
+                      height: 34,
+                      bgcolor: `${event.iconColor}18`,
+                      color: event.iconColor,
+                      mt: 0.25,
                     }}
                   >
-                    {event.title}
-                  </Typography>
-                  <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.3 }}>
-                    {event.site}
-                  </Typography>
-                </Box>
+                    {event.icon}
+                  </Avatar>
 
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-end',
-                    gap: 0.5,
-                    flexShrink: 0,
-                  }}
-                >
-                  <Chip
-                    label={event.severity}
-                    size="small"
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.2 }}>
+                      {event.time}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: '#F8FAFC',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        lineHeight: 1.4,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {event.title}
+                    </Typography>
+                    <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.3 }}>
+                      {event.site}
+                    </Typography>
+                  </Box>
+
+                  <Box
                     sx={{
-                      height: 20,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      bgcolor: `${severityColors[event.severity]}20`,
-                      color: severityColors[event.severity],
-                      border: `1px solid ${severityColors[event.severity]}40`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: 0.5,
+                      flexShrink: 0,
                     }}
-                  />
-                  <Typography sx={{ color: '#64748B', fontSize: 10 }}>
-                    {event.area}
-                  </Typography>
+                  >
+                    <Chip
+                      label={event.severity}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        bgcolor: `${severityColors[event.severity]}20`,
+                        color: severityColors[event.severity],
+                        border: `1px solid ${severityColors[event.severity]}40`,
+                      }}
+                    />
+                    <Typography sx={{ color: '#64748B', fontSize: 10 }}>
+                      {event.area}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
-            </Box>
-            {index < filteredEvents.length - 1 && (
-              <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
-            )}
-          </React.Fragment>
-        ))}
+              {index < filteredEvents.length - 1 && (
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
+              )}
+            </React.Fragment>
+          );
+        })}
       </Box>
 
       {/* Footer */}

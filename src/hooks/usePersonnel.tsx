@@ -15,6 +15,21 @@ interface PaginatedResponse<T> {
   status: number;
 }
 
+export function usePersonnelLookup(filter?: GetFilter) {
+    return useQuery({
+        queryKey: ['personnel-lookup', filter],
+        queryFn: async () => {
+            const response = await axiosServices.get<PaginatedResponse<PersonnelType>>(`${PERSONNEL_API_URL}lookup`,{
+                params: filter
+            });
+            return response.data;
+        },
+        placeholderData: keepPreviousData,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes
+    })
+}
+
 export function usePersonnelList(filter?: GetFilter) {
     const dispatch = useDispatch();
     return useQuery({

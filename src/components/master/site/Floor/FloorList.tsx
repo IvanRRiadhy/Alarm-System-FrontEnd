@@ -32,7 +32,7 @@ import AddEditFloor from './AddEditFloor';
 import { defaultFloorFilter } from 'src/store/apps/defaultForm';
 import toast from 'react-hot-toast';
 import { useDeleteFloor, useFloorList } from 'src/hooks/useFloor';
-import { useAllFloorplans, useDeleteFloorplan } from 'src/hooks/useFloorplan';
+import { useAllFloorplans, useDeleteFloorplan, useFloorplanList } from 'src/hooks/useFloorplan';
 import { FloorplanType, SelectFloorplan } from 'src/store/apps/crud/floorplan';
 import AddEditFloorplan from 'src/components/master/site/Floorplan/AddEditFloorplan';
 import { Collapse, Paper } from '@mui/material';
@@ -165,8 +165,9 @@ const FloorList = () => {
   const floorFilter = useSelector((state: RootState) => state.floorReducer.floorFilter);
   // const { data: floorData = [], isLoading: queryLoading, isFetching } = useFloorList(floorFilter);
   const { data, isLoading: queryLoading } = useFloorList(floorFilter);
-  const { data: floorplanData, isLoading: floorplanLoading } = useAllFloorplans();
+  const { data: floorplanResponse, isLoading: floorplanLoading } = useFloorplanList();
   const floorData = data?.data || [];
+  const floorplanData = floorplanResponse?.data || [];
   const floorFilteredCount = data?.meta?.totalItems || 0;
   console.log("FLoor", data, queryLoading)
   const location = useLocation();

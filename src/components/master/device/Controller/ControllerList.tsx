@@ -354,13 +354,13 @@ const ControllerList = () => {
                                       )}
                                     </IconButton>
                                   </Tooltip> */}
-                                  {isChildShown && (
+                                  {/* {isChildShown && (
                                       <Tooltip title={isOpen ? 'Hide Floors' : 'Show Floors'} arrow>
                                           <IconButton size="small" onClick={() => toggleExpand(controller.id)}>
                                             {isOpen ? <IconChevronDown size={20} /> : <IconChevronRight size={20} />}
                                           </IconButton>
                                         </Tooltip>
-                                  )}
+                                  )} */}
                                 </Box>
                               </TableCell>
                             </TableRow>

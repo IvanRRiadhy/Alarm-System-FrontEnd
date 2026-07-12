@@ -7,19 +7,64 @@ import {
   IconChevronsUp,
 } from '@tabler/icons-react';
 import PageContainer from 'src/components/container/PageContainer';
-import EventSidebar, { dummyEvents, EventItem } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
+import EventSidebar, {
+  dummyEvents,
+  EventItem,
+  getEventIconAndColor,
+  Severity,
+} from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
 import FloorplanView from 'src/components/dashboards/monitoring/monitoringcomponents/mainview/FloorplanView';
 import LiveCamera from 'src/components/dashboards/monitoring/monitoringcomponents/footer/LiveCamera';
 import DeviceInfo from 'src/components/dashboards/monitoring/monitoringcomponents/footer/DeviceInfo';
 import DeviceLog from 'src/components/dashboards/monitoring/monitoringcomponents/footer/DeviceLog';
 import EventDetail from 'src/components/dashboards/monitoring/monitoringcomponents/footer/EventDetail';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
-import { startMQTTclient } from 'src/utils/MQTT';
-import { mapAlarmMessageToEvents, MqttAlarmMessage, AlarmLookupData } from 'src/utils/alarmMessageMapper';
+import { FloorplanType } from 'src/store/apps/crud/floorplan';
+// import { startMQTTclient } from 'src/utils/MQTT';
+import { AlarmLookupData } from 'src/utils/alarmMessageMapper';
 import { useControllerList } from 'src/hooks/useController';
 import { useChannel } from 'src/hooks/useChannel';
 import { useDeviceList } from 'src/hooks/useDevice';
 import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
+import { useAlarmEventList, AlarmEvent } from 'src/hooks/useAlarmEvent';
+
+// Helper function to map AlarmEvent to EventItem
+const mapAlarmEventToEventItem = (event: AlarmEvent): EventItem => {
+  let hash = 5381;
+  for (let i = 0; i < event.id.length; i++) {
+    hash = (hash * 33) ^ event.id.charCodeAt(i);
+  }
+  const numericId = Math.abs(hash);
+
+  const dateObj = new Date(event.createdAt);
+  const timeStr = isNaN(dateObj.getTime()) ? '' : dateObj.toLocaleTimeString('it-IT');
+
+  let severity: Severity = 'Low';
+  const sevLower = (event.severity || '').toLowerCase();
+  if (sevLower === 'critical') {
+    severity = 'Critical';
+  } else if (sevLower === 'high' || sevLower === 'medium') {
+    severity = 'High';
+  }
+
+  const { icon, color } = getEventIconAndColor(event.deviceType || event.message);
+
+  return {
+    id: numericId,
+    time: timeStr,
+    title: event.message,
+    site: event.siteName || 'Unknown Site',
+    severity,
+    area: event.floorName || event.buildingName || event.siteRegion || 'Unknown Area',
+    icon,
+    iconColor: color,
+    deviceId: event.deviceId,
+    deviceName: event.deviceName,
+    floorplanId: event.floorplanId,
+    statusAlarm: event.statusAlarm,
+    rawId: event.id,
+  };
+};
 
 const Monitoring = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -27,12 +72,55 @@ const Monitoring = () => {
   const [selectedDevice, setSelectedDevice] = useState<DeviceMappingType | null>(null);
   const [events, setEvents] = useState<EventItem[]>(dummyEvents);
   const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [selectedFloorplan, setSelectedFloorplan] = useState<FloorplanType | null>(null);
 
   // Fetch all lookup data needed for MQTT message mapping
   const { data: controllerResponse } = useControllerList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc' });
   const { data: channelResponse } = useChannel({ page: 1, limit: 1000, sortBy: 'channelNo', sortOrder: 'asc', controllerId: null });
   const { data: deviceResponse } = useDeviceList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc' });
-  const { data: deviceMappingResponse } = useDeviceMappingList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc', floorplanId: null });
+  const { data: deviceMappingResponse } = useDeviceMappingList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc', floorplanId: '' });
+  const { data: alarmEventsResponse } = useAlarmEventList({ page: 1, limit: 100 });
+
+  const handleSelectEvent = useCallback((event: EventItem) => {
+    const matchingDevice = deviceMappingResponse?.data?.find(
+      (dm) => event.deviceId && (dm.id === event.deviceId || dm.deviceId === event.deviceId)
+    );
+
+    if (matchingDevice) {
+      setSelectedDevice(matchingDevice);
+
+      const mappedLog = {
+        id: event.rawId || event.id.toString(),
+        time: event.time,
+        message: event.title,
+        type: event.severity === 'Critical' ? ('Alarm' as const) : ('Event' as const),
+        color: event.iconColor || '#3B82F6',
+        severity: event.severity,
+        site: event.site,
+        area: event.area,
+        deviceName: event.deviceName || matchingDevice.deviceName,
+        deviceType: matchingDevice.deviceType,
+        description: `${event.title} terdeteksi di area ${event.area || 'pengawasan'}.`,
+        statusAlarm: event.statusAlarm,
+      };
+      setSelectedLog(mappedLog);
+    } else {
+      console.warn('No matching device mapping found for event:', event);
+    }
+  }, [deviceMappingResponse]);
+
+
+  // Load and map history events on initialization
+  useEffect(() => {
+    if (alarmEventsResponse?.data) {
+      const mapped = alarmEventsResponse.data.map(mapAlarmEventToEventItem);
+      setEvents((prev) => {
+        const existingIds = new Set(prev.map((e) => e.id));
+        const newUnique = mapped.filter((e) => !existingIds.has(e.id));
+        return [...prev, ...newUnique];
+      });
+    }
+  }, [alarmEventsResponse]);
 
   // Keep lookup data in a ref so the MQTT callback always sees the latest
   const lookupRef = useRef<AlarmLookupData>({
@@ -52,35 +140,35 @@ const Monitoring = () => {
   }, [controllerResponse, channelResponse, deviceResponse, deviceMappingResponse]);
 
   // Stable MQTT message handler that reads from lookupRef
-  const handleMqttMessage = useCallback((data: any) => {
-    console.log('[MQTT] Received alarm message:', data);
+  // const handleMqttMessage = useCallback((data: any) => {
+  //   console.log('[MQTT] Received alarm message:', data);
 
-    const message = data as MqttAlarmMessage;
+  //   const message = data as MqttAlarmMessage;
 
-    // Validate that the message has the expected structure
-    if (!message.site_id || !message.client_id || !message.zones || !message.relays) {
-      console.warn('[MQTT] Message does not match expected alarm structure, skipping:', data);
-      return;
-    }
+  //   // Validate that the message has the expected structure
+  //   if (!message.site_id || !message.client_id || !message.zones || !message.relays) {
+  //     console.warn('[MQTT] Message does not match expected alarm structure, skipping:', data);
+  //     return;
+  //   }
 
-    const newEvents = mapAlarmMessageToEvents(message, lookupRef.current);
-    console.log(`[MQTT] Mapped ${newEvents.length} events from alarm message`);
+  //   const newEvents = mapAlarmMessageToEvents(message, lookupRef.current);
+  //   console.log(`[MQTT] Mapped ${newEvents.length} events from alarm message`);
 
-    if (newEvents.length > 0) {
-      setEvents((prev) => [...newEvents, ...prev]);
-    }
-  }, []);
+  //   if (newEvents.length > 0) {
+  //     setEvents((prev) => [...newEvents, ...prev]);
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    console.log('[MQTT] Connecting & subscribing to alarm/events/');
-    const unsubscribe = startMQTTclient(handleMqttMessage, 'alarm/events/');
+  // useEffect(() => {
+  //   console.log('[MQTT] Connecting & subscribing to alarm/events/');
+  //   const unsubscribe = startMQTTclient(handleMqttMessage, 'alarm/events/');
 
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [handleMqttMessage]);
+  //   return () => {
+  //     if (unsubscribe) {
+  //       unsubscribe();
+  //     }
+  //   };
+  // }, [handleMqttMessage]);
 
   return (
     <PageContainer title="Monitoring" description="Security Monitoring Dashboard">
@@ -130,7 +218,12 @@ const Monitoring = () => {
           </IconButton>
 
           <Box sx={{ flex: 1, overflow: 'hidden', opacity: sidebarOpen ? 1 : 0, transition: 'opacity 0.2s' }}>
-            <EventSidebar events={events} />
+            <EventSidebar
+              events={events}
+              onSelectEvent={handleSelectEvent}
+              selectedEventId={selectedLog ? Number(selectedLog.id) : null}
+              currentFloorplanId={selectedFloorplan?.id}
+            />
           </Box>
         </Box>
 
@@ -155,6 +248,8 @@ const Monitoring = () => {
             <FloorplanView
               selectedDeviceId={selectedDevice?.id}
               onSelectDevice={setSelectedDevice}
+              selectedFloorplan={selectedFloorplan}
+              onSelectFloorplan={setSelectedFloorplan}
             />
 
             {/* Collapse/Expand Footer Button */}
@@ -175,7 +270,7 @@ const Monitoring = () => {
                 '&:hover': { bgcolor: '#111827', color: '#fff' },
               }}
             >
-              {footerOpen ? <IconChevronsDown size={20  } /> : <IconChevronsUp size={20} />}
+              {footerOpen ? <IconChevronsDown size={20} /> : <IconChevronsUp size={20} />}
             </IconButton>
           </Box>
 
@@ -195,7 +290,7 @@ const Monitoring = () => {
               transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
-            <LiveCamera selectedDevice={selectedDevice} />
+            <LiveCamera selectedDevice={selectedDevice} deviceMappings={deviceMappingResponse?.data || []} />
             <DeviceInfo selectedDevice={selectedDevice} />
             <DeviceLog selectedDevice={selectedDevice} events={events} selectedLog={selectedLog} onSelectLog={setSelectedLog} />
             <EventDetail selectedLog={selectedLog} />

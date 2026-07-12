@@ -32,7 +32,7 @@ import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import { useAreaList } from 'src/hooks/useArea';
 import { FloorplanType } from 'src/store/apps/crud/floorplan';
-import { AppDispatch, useDispatch } from 'src/store/Store';
+import { AppDispatch, useDispatch, useSelector, RootState } from 'src/store/Store';
 import { useSiteList } from 'src/hooks/useSite';
 import { useFloorList } from 'src/hooks/useFloor';
 import { useFloorplanList } from 'src/hooks/useFloorplan';
@@ -93,16 +93,69 @@ const legendItems = [
 interface FloorplanViewProps {
   selectedDeviceId?: string;
   onSelectDevice?: (device: DeviceMappingType) => void;
+  selectedFloorplan?: FloorplanType | null;
+  onSelectFloorplan?: (floorplan: FloorplanType | null) => void;
 }
 
 const FloorplanView: React.FC<FloorplanViewProps> = ({
   selectedDeviceId,
   onSelectDevice,
+  selectedFloorplan: propSelectedFloorplan,
+  onSelectFloorplan,
 }) => {
   const dispatch: AppDispatch = useDispatch();
+  const alarmEvents = useSelector((state: RootState) => state.alarmEventReducer.alarmEventList);
+
+  const [pulseValue, setPulseValue] = useState(1);
+  const pulseDirectionRef = useRef(1);
+
+  useEffect(() => {
+    let animId: number;
+    const tick = () => {
+      setPulseValue((prev) => {
+        let next = prev + pulseDirectionRef.current * 0.02;
+        if (next >= 1.6) {
+          next = 1.6;
+          pulseDirectionRef.current = -1;
+        } else if (next <= 0.8) {
+          next = 0.8;
+          pulseDirectionRef.current = 1;
+        }
+        return next;
+      });
+      animId = requestAnimationFrame(tick);
+    };
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  const getActiveAlarm = (mappingId: string, deviceId: string | null) => {
+    if (!alarmEvents) return undefined;
+    return alarmEvents.find(
+      (evt) =>
+        evt.statusAlarm.toLowerCase() === 'on' &&
+        ((deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId)
+    );
+  };
+
+  const getSeverityColor = (severity?: string) => {
+    const s = (severity || '').toLowerCase();
+    if (s === 'low') return '#3B82F6';
+    if (s === 'high') return '#F59E0B';
+    if (s === 'critical') return '#EF4444';
+    return '#EF4444';
+  };
   const [showSiteSelector, setShowSiteSelector] = useState(true);
   const [modeEdit, setModeEdit] = useState(false);
-  const [selectedFloorplan, setSelectedFloorplan] = useState<FloorplanType | null>(null);
+  const [localSelectedFloorplan, setLocalSelectedFloorplan] = useState<FloorplanType | null>(null);
+  const selectedFloorplan = propSelectedFloorplan !== undefined ? propSelectedFloorplan : localSelectedFloorplan;
+  const setSelectedFloorplan = (fp: FloorplanType | null) => {
+    if (onSelectFloorplan) {
+      onSelectFloorplan(fp);
+    } else {
+      setLocalSelectedFloorplan(fp);
+    }
+  };
 
   // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
   const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
@@ -435,7 +488,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                       node.y_px * fitScale,
                     ]) || [];
                   const color = area.colorArea || '#FF4D4F';
-                    console.log("Areas", areas)
+                    // console.log("Areas", areas)
                   return (
                     <Group key={area.id}>
                       <Line
@@ -486,6 +539,9 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                 const isAlarm = (mapping.deviceStatus || '').toLowerCase().includes('alarm') ||
                                 (mapping.deviceStatus || '').toLowerCase().includes('active');
                 const isSelected = selectedDeviceId === mapping.id;
+                const activeAlarm = getActiveAlarm(mapping.id, mapping.deviceId);
+                const isBlinking = !!activeAlarm;
+                const blinkColor = activeAlarm ? getSeverityColor(activeAlarm.severity) : '#EF4444';
 
                 return (
                   <Group
@@ -503,6 +559,17 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                       if (container) container.style.cursor = stageScale > 1 ? 'grab' : 'default';
                     }}
                   >
+                    {/* Pulsing alarm ring */}
+                    {isBlinking && (
+                      <Circle
+                        radius={(isSelected ? 13.5 : 11) * pulseValue}
+                        fill={blinkColor}
+                        opacity={Math.max(0, 1.8 - pulseValue) * 0.45}
+                        stroke={blinkColor}
+                        strokeWidth={1.5}
+                      />
+                    )}
+
                     {/* Ring indicator for alarms */}
                     {isAlarm && (
                       <Circle

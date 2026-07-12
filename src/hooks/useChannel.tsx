@@ -1,8 +1,7 @@
 // src/hooks/useFloor.ts
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
-import { useSelector } from 'react-redux';
-import { AppDispatch, RootState, useDispatch } from 'src/store/Store';
+import { AppDispatch, useDispatch } from 'src/store/Store';
 import { metaData } from 'src/store/apps/crud/site';
 import { GetFilter, channelType, UpdateChannelMeta } from 'src/store/apps/crud/channel';
 

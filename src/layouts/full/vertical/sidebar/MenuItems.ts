@@ -258,6 +258,14 @@ const Menuitems: MenuitemsType[] = [
     href: '/master/user',
   },
 
+  //Alarm Investigation
+  {
+    id: uniqueId(),
+    title: 'Alarm Investigation',
+    icon: IconAlarm,
+    href: '/master/alarminvestigation',
+  },
+
   // {
   //   id: uniqueId(),
   //   title: 'Blog',

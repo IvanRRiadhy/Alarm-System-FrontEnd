@@ -72,6 +72,8 @@ import deviceMappingReducer from './apps/crud/deviceMapping';
 import areaReducer from './apps/crud/area';
 import scheduleReducer from './apps/crud/schedule';
 import alarmRuleReducer from './apps/crud/alarmRule';
+import alarmEventReducer from './apps/crud/alarmEvent';
+import alarmInvestigationReducer from './apps/crud/alarmInvestigation'
 // import ReaderHealthReducer from './apps/tracking/ReaderHealth';
 // import EventLogReducer from './apps/tracking/Event';
 // import SessionReducer from './apps/session';
@@ -152,6 +154,8 @@ const rootReducer = combineReducers({
   areaReducer: areaReducer,
   scheduleReducer: scheduleReducer,
   alarmRuleReducer: alarmRuleReducer,
+  alarmEventReducer: alarmEventReducer,
+  alarmInvestigationReducer: alarmInvestigationReducer,
   // ReaderHealthReducer: ReaderHealthReducer,
   InvestigateReducer: InvestigateReducer,
   // EventLogReducer: EventLogReducer,

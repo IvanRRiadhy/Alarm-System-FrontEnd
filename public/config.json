@@ -1,5 +1,5 @@
   {
-    "API_BASE_URL": "http://192.168.1.116:7050",
+    "API_BASE_URL": "https://alarm.app.bio-experience.com",
     "API_ENGINE_URL": "http://192.168.1.136:3300",
     "MQTT_URL": "mqtt://103.193.15.67:1883",
     "ALARM_TOPIC": "people_tracking/alarm/+/+/+/+/+",

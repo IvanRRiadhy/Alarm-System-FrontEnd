@@ -16,6 +16,7 @@ import {
   IconVolume,
   IconVolumeOff,
   IconMaximize,
+  IconInfoCircle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
@@ -23,36 +24,97 @@ import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 
 interface LiveCameraProps {
   selectedDevice?: DeviceMappingType | null;
+  deviceMappings?: DeviceMappingType[];
 }
 
-const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
+const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings = [] }) => {
+  if (!selectedDevice) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          bgcolor: '#111827',
+          borderRadius: 2,
+          border: '1px solid rgba(255,255,255,0.08)',
+          p: 3,
+          color: '#64748B',
+          textAlign: 'center',
+        }}
+      >
+        <IconInfoCircle size={28} />
+        <Typography sx={{ mt: 1.5, fontSize: 12, fontWeight: 500 }}>
+          Pilih Device untuk melihat tayangan kamera.
+        </Typography>
+      </Box>
+    );
+  }
+
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const isCCTV = selectedDevice?.deviceType === 'CctvCamera';
-  const deviceId = selectedDevice?.deviceId;
+
+  const fallbackCctvs = React.useMemo(() => {
+    if (!selectedDevice || !deviceMappings || isCCTV) return [];
+    return deviceMappings.filter(
+      (dm) => dm.areaId === selectedDevice.areaId && dm.deviceType === 'CctvCamera'
+    );
+  }, [selectedDevice, deviceMappings, isCCTV]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [fallbackCctvs.length]);
+
+  useEffect(() => {
+    if (fallbackCctvs.length <= 1 || isHovered) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % fallbackCctvs.length);
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [fallbackCctvs.length, currentIndex, isHovered]);
+
+  const activeDevice = isCCTV 
+    ? selectedDevice 
+    : fallbackCctvs.length > 0 
+      ? fallbackCctvs[currentIndex] 
+      : null;
+
+  const activeDeviceId = activeDevice?.deviceId;
 
   // Fetch full device details to get the RTSP URL
   const { data: deviceDetail, isLoading } = useQuery({
-    queryKey: ['device-detail-camera', deviceId],
+    queryKey: ['device-detail-camera', activeDeviceId],
     queryFn: async () => {
-      if (!deviceId) return null;
+      if (!activeDeviceId) return null;
       try {
-        const response = await axiosServices.get(`/api/devices/${deviceId}`);
+        const response = await axiosServices.get(`/api/devices/${activeDeviceId}`);
         return response.data?.collection?.data || response.data?.collection || response.data?.data || response.data || null;
       } catch (err) {
         console.error('Error fetching device detail for camera:', err);
         return null;
       }
     },
-    enabled: isCCTV && !!deviceId,
+    enabled: !!activeDeviceId,
   });
 
   const rtspUrl = deviceDetail?.rtspUrl || '';
-  const cameraName = selectedDevice ? (selectedDevice.label || selectedDevice.deviceName) : 'CAM 05 - Ruang Teller';
-  console.log("DEvice", selectedDevice)
+  const cameraName = activeDevice 
+    ? (activeDevice.label || activeDevice.deviceName) 
+    : 'No CCTV Camera';
+
   // Update live clock overlay
   useEffect(() => {
     const updateTime = () => {
@@ -90,6 +152,8 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
 
   return (
     <Box
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -133,18 +197,20 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
         <Typography noWrap sx={{ color: '#E2E8F0', fontSize: 12, fontWeight: 600 }}>
           {cameraName}
         </Typography>
-        <Chip
-          label="● LIVE"
-          size="small"
-          sx={{
-            height: 20,
-            fontSize: 10,
-            fontWeight: 700,
-            bgcolor: '#22C55E20',
-            color: '#22C55E',
-            border: '1px solid #22C55E40',
-          }}
-        />
+        {activeDevice && (
+          <Chip
+            label="● LIVE"
+            size="small"
+            sx={{
+              height: 20,
+              fontSize: 10,
+              fontWeight: 700,
+              bgcolor: '#22C55E20',
+              color: '#22C55E',
+              border: '1px solid #22C55E40',
+            }}
+          />
+        )}
       </Box>
 
       {/* Camera Feed Container */}
@@ -166,7 +232,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
       >
         {isLoading ? (
           <CircularProgress size={24} sx={{ color: '#60A5FA', zIndex: 3 }} />
-        ) : (
+        ) : activeDevice ? (
           <>
             <img
               src={isPlaying ? simulatedFeedUrl : ''}
@@ -278,6 +344,26 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice }) => {
               {currentTime}
             </Typography>
           </>
+        ) : (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 2,
+              color: '#64748B',
+              textAlign: 'center',
+            }}
+          >
+            <IconVolumeOff size={28} />
+            <Typography sx={{ mt: 1, fontSize: 11, fontWeight: 500 }}>
+              Tidak ada CCTV di area ini
+            </Typography>
+            <Typography sx={{ fontSize: 9, opacity: 0.7 }}>
+              No CCTV in this area
+            </Typography>
+          </Box>
         )}
       </Box>
 
