@@ -48,20 +48,15 @@ const generateClientId = () => {
 // IMPORTANT: Broker_URL must be read dynamically
 let Broker_URL = '';
 export function updateMQTTBrokerURL() {
-  Broker_URL = MQTT_URL;
+  let url = MQTT_URL;
+  if (url.startsWith('ws://') || url.startsWith('wss://')) {
+    const tempUrl = url.replace('ws://', '').replace('wss://', '');
+    if (!tempUrl.includes('/')) {
+      url = url.endsWith('/') ? `${url}ws` : `${url}/ws`;
+    }
+  }
+  Broker_URL = url;
 }
-
-// MQTT connection options
-const options = {
-  clientId: generateClientId(),
-  username: MQTT_USERNAME,
-  password: MQTT_PASSWORD,
-  // username: 'bio_mqtt',
-  // password: 'P@ssw0rd',
-  //   username: 'gNWx6jIp9X',
-  // password: 'Fx6co2iTPy',
-  clean: true,
-};
 
 let client: mqtt.MqttClient | null = null;
 let subscribedTopics: Set<string> = new Set();
@@ -76,8 +71,14 @@ export function startMQTTclient(messagecallback: any, topic: string) {
   }
 
   if (!client) {
-    // 🚀 Use updated dynamic Broker_URL
-    client = mqtt.connect(Broker_URL, options);
+    const connectionOptions = {
+      clientId: generateClientId(),
+      username: MQTT_USERNAME,
+      password: MQTT_PASSWORD,
+      clean: true,
+    };
+    // 🚀 Use updated dynamic Broker_URL and dynamic options
+    client = mqtt.connect(Broker_URL, connectionOptions);
 
     client.on('connect', () => {
       Object.keys(messageCallbacks).forEach((t) => {
@@ -100,7 +101,7 @@ export function startMQTTclient(messagecallback: any, topic: string) {
 
       try {
         data = JSON.parse(message_str);
-        // console.log(`[MQTT] Message received on topic "${msgTopic}":`, data);
+        console.log(`[MQTT] Message received on topic "${msgTopic}":`, data);
         Object.keys(messageCallbacks).forEach((subscribedTopic) => {
           const isMatch = matchTopic(subscribedTopic, msgTopic);
 

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import {
   Box,
   Typography,
   IconButton,
   Paper,
+  Tooltip,
   lighten,
   darken,
 } from '@mui/material';
@@ -78,8 +80,15 @@ const legendItems = [
 ];
 
 const FloorPlan = () => {
+  const navigate = useNavigate();
   const [showSiteSelector, setShowSiteSelector] = useState(false);
   const [selectedFloorplan, setSelectedFloorplan] = useState<FloorplanType | null>(null);
+
+  const handleGoToMonitor = () => {
+    navigate('/dashboards/monitoring', {
+      state: { floorplanId: selectedFloorplan?.id },
+    });
+  };
 
   // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
   const { data: siteResponse } = useSiteLookup();
@@ -564,19 +573,22 @@ const FloorPlan = () => {
             >
               <IconArrowsMinimize size={14} />
             </IconButton>
-            <IconButton
-              size="small"
-              sx={{
-                bgcolor: 'rgba(17,24,39,0.85)',
-                color: '#E2E8F0',
-                border: '1px solid rgba(255,255,255,0.1)',
-                width: 30,
-                height: 30,
-                '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
-              }}
-            >
-              <IconMaximize size={14} />
-            </IconButton>
+            <Tooltip title="Go to Monitor">
+              <IconButton
+                size="small"
+                onClick={handleGoToMonitor}
+                sx={{
+                  bgcolor: 'rgba(17,24,39,0.85)',
+                  color: '#E2E8F0',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  width: 30,
+                  height: 30,
+                  '&:hover': { bgcolor: 'rgba(17,24,39,0.95)' },
+                }}
+              >
+                <IconMapPin size={14} />
+              </IconButton>
+            </Tooltip>
           </Box>
         )}
 

@@ -218,7 +218,7 @@ const DeviceLog: React.FC<DeviceLogProps> = ({ selectedDevice, events, selectedL
       ? events
           .filter((e) => matchEventToDevice(e, selectedDevice))
           .map((e) => ({
-            id: e.id.toString(),
+            id: e.rawId || e.id.toString(),
             time: e.time,
             message: e.title,
             type: e.severity === 'Critical' ? 'Alarm' as const : 'Event' as const,

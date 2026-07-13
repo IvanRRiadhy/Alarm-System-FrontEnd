@@ -74,12 +74,19 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
         errors.port = 'Port is required and must be a number';
       }
       if (!formData.hardwareId?.trim()) errors.hardwareId = 'Hardware ID is required';
-      if (formData.channelCount === undefined || formData.channelCount === null || isNaN(Number(formData.channelCount))) {
-        errors.channelCount = 'Channel Count is required and must be a number';
-      } else if (Number(formData.channelCount) > 64) {
-        errors.channelCount = 'Channel Count cannot be more than 64';
-      } else if (Number(formData.channelCount) < 0) {
-        errors.channelCount = 'Channel Count cannot be less than 0';
+      if (formData.inputCount === undefined || formData.inputCount === null || isNaN(Number(formData.inputCount))) {
+        errors.inputCount = 'Input Count is required and must be a number';
+      } else if (Number(formData.inputCount) > 64) {
+        errors.inputCount = 'Input Count cannot be more than 64';
+      } else if (Number(formData.inputCount) < 0) {
+        errors.inputCount = 'Input Count cannot be less than 0';
+      }
+      if (formData.outputCount === undefined || formData.outputCount === null || isNaN(Number(formData.outputCount))) {
+        errors.outputCount = 'Output Count is required and must be a number';
+      } else if (Number(formData.outputCount) > 64) {
+        errors.outputCount = 'Output Count cannot be more than 64';
+      } else if (Number(formData.outputCount) < 0) {
+        errors.outputCount = 'Output Count cannot be less than 0';
       }
       if (!formData.macAddress?.trim()) errors.macAddress = 'MAC Address is required';
 
@@ -104,7 +111,8 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
           name: formData.name,
           ipAddress: formData.ipAddress,
           port: Number(formData.port),
-          channelCount: formData.channelCount,
+          inputCount: Number(formData.inputCount),
+          outputCount: Number(formData.outputCount),
           macAddress: formData.macAddress,
           firmwareVersion: formData.firmwareVersion,
           alarmMode: formData.alarmMode,
@@ -280,19 +288,39 @@ const AddEditController = ({ type = 'add', controller }: FormType) => {
                             />
                         </Grid>
 
-                        {/* Channel Count */}
+                        {/* Input Count */}
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            <CustomFormLabel htmlFor="channelCount">Channel Count</CustomFormLabel>
+                            <CustomFormLabel htmlFor="inputCount">Input Count</CustomFormLabel>
                             <CustomTextField
-                                id="channelCount"
+                                id="inputCount"
                                 type="number"
-                                value={formData.channelCount ?? 0}
+                                value={formData.inputCount ?? 0}
                                 onChange={handleNumberInputChange}
                                 fullWidth
                                 variant="outlined"
-                                placeholder="Enter Channel Count"
-                                error={!!formErrors.channelCount}
-                                helperText={formErrors.channelCount}
+                                placeholder="Enter Input Count"
+                                error={!!formErrors.inputCount}
+                                helperText={formErrors.inputCount}
+                                required
+                                slotProps={{
+                                    htmlInput: { min: 0, max: 64 }
+                                }}
+                            />
+                        </Grid>
+
+                        {/* Output Count */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <CustomFormLabel htmlFor="outputCount">Output Count</CustomFormLabel>
+                            <CustomTextField
+                                id="outputCount"
+                                type="number"
+                                value={formData.outputCount ?? 0}
+                                onChange={handleNumberInputChange}
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Enter Output Count"
+                                error={!!formErrors.outputCount}
+                                helperText={formErrors.outputCount}
                                 required
                                 slotProps={{
                                     htmlInput: { min: 0, max: 64 }

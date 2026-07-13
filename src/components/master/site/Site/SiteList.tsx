@@ -38,6 +38,9 @@ import { defaultSiteFilter } from 'src/store/apps/defaultForm';
 import { useDeleteSite, useSiteList } from 'src/hooks/useSite';
 import AddEditSite from './AddEditSite';
 import { toastError } from 'src/utils/errors';
+import { BuildingType, SelectBuilding } from 'src/store/apps/crud/building';
+import { useAllBuilding, useBuildingList, useDeleteBuilding } from 'src/hooks/useBuilding';
+import AddEditBuilding from 'src/components/master/site/Building/AddEditBuilding';
 
 const columns = [
   { label: 'Site Name', field: 'name', sortAble: true },
@@ -45,6 +48,109 @@ const columns = [
   { label: 'Site Address', field: 'address', sortAble: false },
   { label: 'Site Phone Number', field: 'phone', sortAble: false },
 ];
+
+const BuildingTable = ({
+  buildings,
+  onDeleteClick,
+}: {
+  buildings: BuildingType[];
+  onDeleteClick: (building: BuildingType) => void;
+}) => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  return (
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 600, width: 80 }}>No</TableCell>
+          <TableCell sx={{ fontWeight: 600 }}>Building Name</TableCell>
+          <TableCell align="right" sx={{ fontWeight: 600, width: 120 }}>Actions</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {buildings.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={3}>
+              <Typography variant="body2" color="text.secondary">
+                No buildings registered for this site.
+              </Typography>
+            </TableCell>
+          </TableRow>
+        ) : (
+          buildings.map((building, i) => (
+            <TableRow key={building.id}>
+              <TableCell>{i + 1}</TableCell>
+              <TableCell>{building.name}</TableCell>
+              <TableCell align="right">
+                <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1}>
+                  <AddEditBuilding type="edit" building={building} fixedSiteId={building.siteId} />
+                  <Tooltip title="View Building" arrow>
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      onClick={() => {
+                        dispatch(SelectBuilding(building.id));
+                        navigate('/master/site/building', { state: { expandBuildingId: building.id, buildingName: building.name } });
+                      }}
+                    >
+                      <IconExternalLink size={18} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Building" arrow>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      onClick={() => onDeleteClick(building)}
+                    >
+                      <IconTrash size={18} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
+  );
+};
+
+const SiteAccordionContent = ({
+  buildings,
+  siteId,
+  onDeleteClick,
+}: {
+  buildings: BuildingType[];
+  siteId: string;
+  onDeleteClick: (building: BuildingType) => void;
+}) => {
+  return (
+    <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover', my: 1 }}>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Typography variant="subtitle1" fontWeight={700}>
+          Buildings
+        </Typography>
+        <AddEditBuilding
+          type="add"
+          fixedSiteId={siteId}
+          trigger={(onClick) => (
+            <Button
+              variant="contained"
+              color="primary"
+              size="small"
+              startIcon={<IconPlus size={16} />}
+              onClick={onClick}
+            >
+              Add Building
+            </Button>
+          )}
+        />
+      </Box>
+      <BuildingTable buildings={buildings} onDeleteClick={onDeleteClick} />
+    </Paper>
+  );
+};
 
 const SKELETON_ROWS = 5;
 
@@ -66,6 +172,9 @@ const SiteList = () => {
         const siteData = data?.data || [];
         const siteFilteredCount = data?.meta?.totalItems || 0;
         const siteTotalCount = data?.meta?.totalItems || 0; 
+        
+        const { data: buildingResponse } = useBuildingList();
+        const buildingData = buildingResponse?.data || []; 
 
           // Pagination State
           const {siteMeta} = useSelector((state: RootState) => state.siteReducer)
@@ -145,6 +254,34 @@ const SiteList = () => {
         }
       }
       handleCloseDeleteDialog();
+    };
+
+    // Delete Building Dialog State
+    const [deleteBuildingDialogOpen, setDeleteBuildingDialogOpen] = useState(false);
+    const [selectedBuilding, setSelectedBuilding] = useState<BuildingType | null>(null);
+    const deleteBuildingMutation = useDeleteBuilding();
+
+    const handleOpenDeleteBuildingDialog = (building: BuildingType) => {
+      setSelectedBuilding(building);
+      setDeleteBuildingDialogOpen(true);
+    };
+
+    const handleCloseDeleteBuildingDialog = () => {
+      setDeleteBuildingDialogOpen(false);
+      setSelectedBuilding(null);
+    };
+
+    const handleConfirmDeleteBuilding = async () => {
+      if (selectedBuilding) {
+        try {
+          await deleteBuildingMutation.mutateAsync(selectedBuilding.id);
+          toast.success('Building deleted successfully');
+        } catch (error) {
+          toastError(error, 'Delete failed');
+          console.error(error);
+        }
+      }
+      handleCloseDeleteBuildingDialog();
     };
 
     console.log("Data", data)
@@ -267,9 +404,9 @@ const SiteList = () => {
                     ? renderSkeletonRows(rowsPerPage || SKELETON_ROWS)
                     : siteData.map((site, index) => {
                         const isOpen = expandedSiteId === site.id;
-                        // const buildingFloors = (floorData || []).filter(
-                        //   (f) => f.buildingId === building.id,
-                        // );
+                        const siteBuildings = (buildingData || []).filter(
+                          (b) => b.siteId === site.id,
+                        );
                         return (
                           <React.Fragment key={site.id || index}>
                             <TableRow hover>
@@ -331,7 +468,7 @@ const SiteList = () => {
                                     </IconButton>
                                   </Tooltip> */}
                                   {isChildShown && (
-                                      <Tooltip title={isOpen ? 'Hide Floors' : 'Show Floors'} arrow>
+                                      <Tooltip title={isOpen ? 'Hide Buildings' : 'Show Buildings'} arrow>
                                           <IconButton size="small" onClick={() => toggleExpand(site.id)}>
                                             {isOpen ? <IconChevronDown size={20} /> : <IconChevronRight size={20} />}
                                           </IconButton>
@@ -343,14 +480,14 @@ const SiteList = () => {
                             {/* ACCORDION ROW */}
                             {isChildShown && (
                               <TableRow>
-                                <TableCell colSpan={5} sx={{ p: 0, borderBottom: 0 }}>
+                                <TableCell colSpan={6} sx={{ p: 0, borderBottom: 0 }}>
                                   <Collapse in={isOpen} timeout="auto" unmountOnExit>
                                     <Box pl={6} pr={2} pb={2}>
-                                      {/* <BuildingAccordionContent
-                                        floors={buildingFloors}
-                                        buildingId={building.id}
-                                        onDeleteClick={handleOpenDeleteFloorDialog}
-                                      /> */}
+                                      <SiteAccordionContent
+                                        buildings={siteBuildings}
+                                        siteId={site.id}
+                                        onDeleteClick={handleOpenDeleteBuildingDialog}
+                                      />
                                     </Box>
                                   </Collapse>
                                 </TableCell>
@@ -397,28 +534,28 @@ const SiteList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Delete Floor Confirmation Dialog */}
-      {/* <Dialog open={deleteFloorDialogOpen} onClose={handleCloseDeleteFloorDialog}>
+      {/* Delete Building Confirmation Dialog */}
+      <Dialog open={deleteBuildingDialogOpen} onClose={handleCloseDeleteBuildingDialog}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete the floor <strong>{selectedFloor?.name}</strong>?
+            Are you sure you want to delete the building <strong>{selectedBuilding?.name}</strong>?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteFloorDialog} color="primary">
+          <Button onClick={handleCloseDeleteBuildingDialog} color="primary">
             Cancel
           </Button>
           <Button
-            onClick={handleConfirmDeleteFloor}
-            color={deleteFloorMutation.isPending ? 'primary' : 'error'}
-            disabled={deleteFloorMutation.isPending}
-            startIcon={deleteFloorMutation.isPending ? <CircularProgress size={20} /> : null}
+            onClick={handleConfirmDeleteBuilding}
+            color={deleteBuildingMutation.isPending ? 'primary' : 'error'}
+            disabled={deleteBuildingMutation.isPending}
+            startIcon={deleteBuildingMutation.isPending ? <CircularProgress size={20} /> : null}
           >
-            {deleteFloorMutation.isPending ? 'Deleting...' : 'Delete'}
+            {deleteBuildingMutation.isPending ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
-      </Dialog> */}
+      </Dialog>
     </Grid>
         )
 }

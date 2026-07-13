@@ -28,6 +28,7 @@ import {
 import { Stage, Layer, Image as KonvaImage, Rect, Text, Group, Circle, Line } from 'react-konva';
 import Konva from 'konva';
 import SiteSelector from './SiteSelector';
+import { useLocation } from 'react-router';
 import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import { useAreaList } from 'src/hooks/useArea';
@@ -145,6 +146,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     if (s === 'critical') return '#EF4444';
     return '#EF4444';
   };
+  const location = useLocation();
   const [showSiteSelector, setShowSiteSelector] = useState(true);
   const [modeEdit, setModeEdit] = useState(false);
   const [localSelectedFloorplan, setLocalSelectedFloorplan] = useState<FloorplanType | null>(null);
@@ -170,6 +172,15 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     const floorplanData = floorplanResponse?.data || [];
 
     if (sites.length > 0 && floorData.length > 0 && floorplanData.length > 0) {
+      const passedFloorplanId = location.state?.floorplanId;
+      if (passedFloorplanId) {
+        const match = floorplanData.find((fp) => fp.id === passedFloorplanId);
+        if (match) {
+          setSelectedFloorplan(match);
+          return;
+        }
+      }
+
       const firstSite = sites[0];
       const siteFloors = floorData.filter((f) => f.siteId === firstSite.id);
       

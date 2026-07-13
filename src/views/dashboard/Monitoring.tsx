@@ -26,7 +26,9 @@ import { useControllerList } from 'src/hooks/useController';
 import { useChannel } from 'src/hooks/useChannel';
 import { useDeviceList } from 'src/hooks/useDevice';
 import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
-import { useAlarmEventList, AlarmEvent } from 'src/hooks/useAlarmEvent';
+import { useAlarmEventList } from 'src/hooks/useAlarmEvent';
+import { AlarmEvent } from 'src/store/apps/crud/alarmEvent';
+import { startMQTTclient } from 'src/utils/MQTT';
 
 // Helper function to map AlarmEvent to EventItem
 const mapAlarmEventToEventItem = (event: AlarmEvent): EventItem => {
@@ -35,9 +37,14 @@ const mapAlarmEventToEventItem = (event: AlarmEvent): EventItem => {
     hash = (hash * 33) ^ event.id.charCodeAt(i);
   }
   const numericId = Math.abs(hash);
-
+  // const eventTime = event.createdAt.endsWith("Z") ? event.createdAt : `${event.createdAt}Z`;
   const dateObj = new Date(event.createdAt);
-  const timeStr = isNaN(dateObj.getTime()) ? '' : dateObj.toLocaleTimeString('it-IT');
+  let timeStr = '';
+  if (!isNaN(dateObj.getTime())) {
+    const datePart = dateObj.toLocaleDateString('en-GB'); // "DD/MM/YYYY"
+    const timePart = dateObj.toLocaleTimeString('it-IT'); // "HH:mm:ss"
+    timeStr = `${datePart} ${timePart}`;
+  }
 
   let severity: Severity = 'Low';
   const sevLower = (event.severity || '').toLowerCase();
@@ -63,6 +70,7 @@ const mapAlarmEventToEventItem = (event: AlarmEvent): EventItem => {
     floorplanId: event.floorplanId,
     statusAlarm: event.statusAlarm,
     rawId: event.id,
+    createdAt: event.createdAt,
   };
 };
 
@@ -83,9 +91,9 @@ const Monitoring = () => {
 
   const handleSelectEvent = useCallback((event: EventItem) => {
     const matchingDevice = deviceMappingResponse?.data?.find(
-      (dm) => event.deviceId && (dm.id === event.deviceId || dm.deviceId === event.deviceId)
+      (dm) => event.deviceId && (dm.id?.toLowerCase() === event.deviceId?.toLowerCase() || dm.deviceId?.toLowerCase() === event.deviceId?.toLowerCase())
     );
-
+    
     if (matchingDevice) {
       setSelectedDevice(matchingDevice);
 
@@ -139,36 +147,34 @@ const Monitoring = () => {
     };
   }, [controllerResponse, channelResponse, deviceResponse, deviceMappingResponse]);
 
-  // Stable MQTT message handler that reads from lookupRef
-  // const handleMqttMessage = useCallback((data: any) => {
-  //   console.log('[MQTT] Received alarm message:', data);
+  // Stable MQTT message handler that reads direct AlarmEvent payload
+  const handleMqttMessage = useCallback((data: any) => {
+    console.log('[MQTT] Received alarm message:', data);
 
-  //   const message = data as MqttAlarmMessage;
+    const message = data as AlarmEvent;
 
-  //   // Validate that the message has the expected structure
-  //   if (!message.site_id || !message.client_id || !message.zones || !message.relays) {
-  //     console.warn('[MQTT] Message does not match expected alarm structure, skipping:', data);
-  //     return;
-  //   }
+    // Validate that the message has the expected structure
+    if (!message.id || !message.deviceId || !message.message) {
+      console.warn('[MQTT] Message does not match expected alarm structure, skipping:', data);
+      return;
+    }
 
-  //   const newEvents = mapAlarmMessageToEvents(message, lookupRef.current);
-  //   console.log(`[MQTT] Mapped ${newEvents.length} events from alarm message`);
+    const newEvent = mapAlarmEventToEventItem(message);
+    console.log(`[MQTT] Mapped event from alarm message`, newEvent);
 
-  //   if (newEvents.length > 0) {
-  //     setEvents((prev) => [...newEvents, ...prev]);
-  //   }
-  // }, []);
+    setEvents((prev) => [newEvent, ...prev]);
+  }, []);
 
-  // useEffect(() => {
-  //   console.log('[MQTT] Connecting & subscribing to alarm/events/');
-  //   const unsubscribe = startMQTTclient(handleMqttMessage, 'alarm/events/');
+  useEffect(() => {
+    console.log('[MQTT] Connecting & subscribing to event/alarm');
+    const unsubscribe = startMQTTclient(handleMqttMessage, 'event/alarm');
 
-  //   return () => {
-  //     if (unsubscribe) {
-  //       unsubscribe();
-  //     }
-  //   };
-  // }, [handleMqttMessage]);
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [handleMqttMessage]);
 
   return (
     <PageContainer title="Monitoring" description="Security Monitoring Dashboard">

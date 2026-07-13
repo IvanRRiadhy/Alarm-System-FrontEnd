@@ -86,11 +86,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
   const severityColor = severityColors[severity] || '#3B82F6';
 
   const details = [
-    { label: 'Lokasi', value: selectedLog.site || 'KCP Surabaya Diponegoro' },
-    { label: 'Lantai', value: selectedLog.floorplanName || 'Lantai 1' },
-    { label: 'Zona', value: selectedLog.area || 'Zona 1' },
+    { label: 'Lokasi', value: selectedLog.site || 'Unknown Site' },
+    { label: 'Lantai', value: selectedLog.floorplanName || 'Unknown Floorplan' },
+    { label: 'Zona', value: selectedLog.area || 'Unknown Area' },
     { label: 'Device', value: selectedLog.deviceName || 'Unknown Device' },
-    { label: 'Deskripsi', value: selectedLog.description || selectedLog.message || 'Tidak ada deskripsi' },
+    { label: 'Deskripsi', value: selectedLog.description || selectedLog.message || 'No Message Available' },
   ];
 
   const handleOpen = () => {

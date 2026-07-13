@@ -46,7 +46,7 @@ import { toastError } from 'src/utils/errors';
 
 const columns = [
   { label: 'Building Name', field: 'name', sortAble: true },
-  { label: 'Building Tag', field: 'tag', sortAble: false },
+  { label: 'Site Name', field: 'siteName', sortAble: false },
   { label: 'Building Image', field: '', sortAble: false },
 ];
 
@@ -100,7 +100,7 @@ const FloorTable = ({
                     size="small"
                     onClick={() => {
                       dispatch(SetSelectedFloor(floor));
-                      navigate('/master/floor', { state: { expandFloorId: floor.id, floorName: floor.name } });
+                      navigate('/master/site/floor', { state: { expandFloorId: floor.id, floorName: floor.name } });
                     }}
                   >
                     <IconExternalLink size={18} />

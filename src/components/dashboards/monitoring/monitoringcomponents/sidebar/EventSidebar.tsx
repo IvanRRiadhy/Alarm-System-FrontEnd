@@ -38,6 +38,7 @@ export interface EventItem {
   floorplanId?: string | null;
   statusAlarm?: string;
   rawId?: string;
+  createdAt?: string;
 }
 
 export const dummyEvents: EventItem[] = [
@@ -227,6 +228,17 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
     ? baseFilteredEvents.filter((e) => e.floorplanId === currentFloorplanId)
     : baseFilteredEvents;
 
+  const sortedFilteredEvents = React.useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (timeA && timeB) {
+        return timeB - timeA;
+      }
+      return b.time.localeCompare(a.time);
+    });
+  }, [filteredEvents]);
+
   const filters: { label: string; value: FilterType; count?: number; color?: string }[] = [
     { label: 'Semua', value: 'Semua' },
     { label: `Critical (${criticalCount})`, value: 'Critical', color: '#EF4444' },
@@ -345,8 +357,9 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
           '&::-webkit-scrollbar-thumb': { background: '#334155', borderRadius: 10 },
         }}
       >
-        {filteredEvents.map((event, index) => {
+        {sortedFilteredEvents.map((event, index) => {
           const isSelected = selectedEventId === event.id;
+          console.log("Events: ", event)
           return (
             <React.Fragment key={event.id}>
               <Box
@@ -423,7 +436,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                   </Box>
                 </Box>
               </Box>
-              {index < filteredEvents.length - 1 && (
+              {index < sortedFilteredEvents.length - 1 && (
                 <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
               )}
             </React.Fragment>

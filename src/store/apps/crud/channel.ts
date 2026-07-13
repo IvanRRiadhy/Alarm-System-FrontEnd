@@ -29,6 +29,7 @@ export interface channelType {
     controllerId: string,
     controllerName: string,
     channelNo: number,
+    type: "Input" | "Output",
     isEnabled: boolean,
     isUsed?: boolean,
 

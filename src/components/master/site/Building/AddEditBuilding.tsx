@@ -38,6 +38,8 @@ import { toastError } from 'src/utils/errors';
 interface FormType {
   type?: string;
   building?: BuildingType;
+  fixedSiteId?: string;
+  trigger?: (onClick: () => void) => React.ReactNode;
 }
 
 const getCdnUrl = (url?: string | null) => {
@@ -46,7 +48,7 @@ const getCdnUrl = (url?: string | null) => {
   return `https://ble-cdn.tunnel.piranticerdasindonesia.com/${url}`;
 };
 
-const AddEditBuilding = ({ type, building }: FormType) => {
+const AddEditBuilding = ({ type, building, fixedSiteId, trigger }: FormType) => {
   const [open, setOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [image, setImage] = React.useState<File | null>(null);
@@ -55,6 +57,7 @@ const AddEditBuilding = ({ type, building }: FormType) => {
   const [formData, setFormData] = React.useState({
     ...defaultBuildingForm,
     ...building,
+    ...(fixedSiteId ? { siteId: fixedSiteId } : {}),
   });
   const {data: siteResponse} = useSiteLookup();
   const siteData = siteResponse?.data || [];
@@ -77,7 +80,7 @@ const AddEditBuilding = ({ type, building }: FormType) => {
       
       setPreview(building?.imageUrl || null);
     } else {
-      setFormData({ ...defaultBuildingForm });
+      setFormData({ ...defaultBuildingForm, ...(fixedSiteId ? { siteId: fixedSiteId } : {}) });
       setImage(null);
       setPreview(null);
     }
@@ -200,24 +203,30 @@ const AddEditBuilding = ({ type, building }: FormType) => {
   };
   return (
     <>
-      {type === 'edit' && (
-        <Tooltip title="Edit Building">
-          <IconButton color="primary" size="small" onClick={handleClickOpen}>
-            <IconPencil size={20} />
-          </IconButton>
-        </Tooltip>
-      )}
-      {type === 'add' && (
-        <Tooltip title="Add Building">
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{ p: 0.5, minWidth: 40, minHeight: 40 }}
-            onClick={handleClickOpen}
-          >
-            <IconPlus size={20} />
-          </Button>
-        </Tooltip>
+      {trigger ? (
+        trigger(handleClickOpen)
+      ) : (
+        <>
+          {type === 'edit' && (
+            <Tooltip title="Edit Building">
+              <IconButton color="primary" size="small" onClick={handleClickOpen}>
+                <IconPencil size={20} />
+              </IconButton>
+            </Tooltip>
+          )}
+          {type === 'add' && (
+            <Tooltip title="Add Building">
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ p: 0.5, minWidth: 40, minHeight: 40 }}
+                onClick={handleClickOpen}
+              >
+                <IconPlus size={20} />
+              </Button>
+            </Tooltip>
+          )}
+        </>
       )}
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
           <DialogTitle>

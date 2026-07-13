@@ -106,10 +106,10 @@ const Header = () => {
 
             <Box width={30} />
 
-            <HeaderRegion
+            {/* <HeaderRegion
               region={region}
               onChange={setRegion}
-            />
+            /> */}
 
             <Box width={20} />
 
