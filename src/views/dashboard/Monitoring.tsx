@@ -56,6 +56,16 @@ const mapAlarmEventToEventItem = (event: AlarmEvent): EventItem => {
 
   const { icon, color } = getEventIconAndColor(event.deviceType || event.message);
 
+  let statusAlarm = event.statusAlarm;
+  if (event.statusEvents && typeof event.statusEvents === 'object') {
+    const eventType = event.statusEvents.event_type || event.statusEvents.eventType;
+    if (eventType === 'TRIGGER') {
+      statusAlarm = 'ON';
+    } else if (eventType === 'RELEASE') {
+      statusAlarm = 'OFF';
+    }
+  }
+
   return {
     id: numericId,
     time: timeStr,
@@ -68,7 +78,7 @@ const mapAlarmEventToEventItem = (event: AlarmEvent): EventItem => {
     deviceId: event.deviceId,
     deviceName: event.deviceName,
     floorplanId: event.floorplanId,
-    statusAlarm: event.statusAlarm,
+    statusAlarm,
     rawId: event.id,
     createdAt: event.createdAt,
   };

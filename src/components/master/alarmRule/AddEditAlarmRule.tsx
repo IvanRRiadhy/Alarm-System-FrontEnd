@@ -103,7 +103,6 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
     const errors: Record<string, string> = {};
     if (!formData.name?.trim()) errors.name = 'Alarm Rule Name is required';
     if (!formData.siteId) errors.siteId = 'Site selection is required';
-    if (!formData.scheduleTemplateId) errors.scheduleTemplateId = 'Schedule Template is required';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -253,7 +252,7 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
             </Grid>
 
             <Grid size={{ xs: 12, md: 4 }}>
-              <CustomFormLabel htmlFor="scheduleTemplateId" sx={{ mt: 0 }}>Schedule Template</CustomFormLabel>
+              <CustomFormLabel htmlFor="scheduleTemplateId" sx={{ mt: 0 }}>Schedule Template (Optional)</CustomFormLabel>
               <CustomAutocomplete<ScheduleDataType>
                 multiple={false}
                 label="Schedule Template"
@@ -265,17 +264,11 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                     scheduleTemplateId: val?.id ?? '',
                     scheduleTemplateName: val?.name ?? '',
                   }));
-                  setFormErrors((prev) => {
-                    const next = { ...prev };
-                    delete next.scheduleTemplateId;
-                    return next;
-                  });
+
                 }}
                 getOptionLabel={(o) => o?.name ?? ''}
                 isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                required
-                error={!!formErrors.scheduleTemplateId}
-                helperText={formErrors.scheduleTemplateId}
+
               />
             </Grid>
 

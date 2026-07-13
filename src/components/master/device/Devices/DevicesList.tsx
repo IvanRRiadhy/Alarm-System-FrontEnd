@@ -278,7 +278,7 @@ const DevicesList = () => {
                                 <TableCell>{device.name}</TableCell>
                                 <TableCell>{device.serialNumber}</TableCell>
                                 <TableCell>{device.deviceType}</TableCell>
-                                <TableCell>{device.AlarmSeverity}</TableCell>
+                                <TableCell>{device.alarmSeverity}</TableCell>
                                 <TableCell>{device.alarmMode}</TableCell>
                                 <TableCell
                                   sx={{

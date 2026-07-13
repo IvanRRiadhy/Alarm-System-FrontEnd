@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import Hls from 'hls.js';
 import {
   Box,
   Typography,
@@ -182,6 +183,48 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
     return () => clearInterval(interval);
   }, []);
 
+  // Static camera feed for IP Webcam / HLS stream
+  const simulatedFeedUrl = "http://192.168.1.151:8083/stream/wuching/channel/0/hls/live/index.m3u8";
+
+  const isHls = simulatedFeedUrl.toLowerCase().includes('.m3u8');
+
+  // Handle HLS playback
+  useEffect(() => {
+    let hls: Hls | null = null;
+    const video = videoRef.current;
+
+    if (isHls && video) {
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          maxMaxBufferLength: 10,
+          enableWorker: true,
+          lowLatencyMode: true,
+        });
+        hls.loadSource(simulatedFeedUrl);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (isPlaying) {
+            video.play().catch((err) => console.log('Hls autoplay failed:', err));
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS support (Safari)
+        video.src = simulatedFeedUrl;
+        video.addEventListener('loadedmetadata', () => {
+          if (isPlaying) {
+            video.play().catch((err) => console.log('Native Hls play failed:', err));
+          }
+        });
+      }
+    }
+
+    return () => {
+      if (hls) {
+        hls.destroy();
+      }
+    };
+  }, [simulatedFeedUrl, isPlaying, isHls, activeDevice?.deviceId]);
+
   const handleTogglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -210,9 +253,6 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
     }
     setOpenedCameraIds((prev) => [...prev, activeDevice.deviceId]);
   };
-
-  // Static camera feed for IP Webcam / MJPEG stream
-  const simulatedFeedUrl = "http://192.168.1.218:8080/video";
 
   return (
     <Box
@@ -363,17 +403,32 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
           </Box>
         ) : activeDevice ? (
           <>
-            <img
-              src={isPlaying ? simulatedFeedUrl : ''}
-              alt="Live Camera Feed"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                opacity: isPlaying ? 0.85 : 0.25,
-                transition: 'opacity 0.3s ease',
-              }}
-            />
+            {isHls ? (
+              <video
+                ref={videoRef}
+                muted={isMuted}
+                playsInline
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: isPlaying ? 0.85 : 0.25,
+                  transition: 'opacity 0.3s ease',
+                }}
+              />
+            ) : (
+              <img
+                src={isPlaying ? simulatedFeedUrl : ''}
+                alt="Live Camera Feed"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: isPlaying ? 0.85 : 0.25,
+                  transition: 'opacity 0.3s ease',
+                }}
+              />
+            )}
 
             {/* Scan lines & digital noise effect */}
             <Box
@@ -436,9 +491,9 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
                     fontFamily: 'monospace',
                     letterSpacing: '0.2px',
                   }}
-                  title={rtspUrl}
+                  title={simulatedFeedUrl}
                 >
-                  RTSP: {rtspUrl}
+                  RTSP: {simulatedFeedUrl}
                 </Typography>
               </Box>
             )}

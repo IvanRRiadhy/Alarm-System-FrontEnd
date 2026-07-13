@@ -22,8 +22,8 @@ export const Profile = () => {
           <Avatar alt="Remy Sharp" src={img1} />
 
           <Box>
-            <Typography variant="h6">Mathew </Typography>
-            <Typography variant="caption">Designer</Typography>
+            <Typography variant="h6">Tommy</Typography>
+            <Typography variant="caption">Super Admin</Typography>
           </Box>
           <Box sx={{ ml: 'auto' }}>
             <Tooltip title="Logout" placement="top">

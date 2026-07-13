@@ -235,7 +235,7 @@ const Menuitems: MenuitemsType[] = [
     // Scheduler
   {
     id: uniqueId(),
-    title: 'Schedule',
+    title: 'Time Table',
     icon: IconCalendar,
     // chip: '2',
     // chipColor: 'secondary',

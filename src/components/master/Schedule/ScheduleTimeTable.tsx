@@ -152,7 +152,7 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
       }
       if (selectedSchedule.items && selectedSchedule.items.length > 0) {
         const initialWeek = emptyWeek();
-        selectedSchedule.items.forEach((item) => {
+        selectedSchedule.items.forEach((item: any) => {
           const dayIdx = getDayIndex(item.dayOfWeek);
           const match = initialWeek.find((d) => d.dayOfWeek === dayIdx);
           if (match) {

@@ -49,6 +49,7 @@
     "framer-motion": "^10.16.4",
     "fslightbox-react": "^1.7.6",
     "gray-matter": "^4.0.3",
+    "hls.js": "^1.6.16",
     "i18next": "^23.5.1",
     "jwt-decode": "^4.0.0",
     "konva": "^10.3.0",

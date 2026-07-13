@@ -108,7 +108,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
           manufacturer: formData.manufacturer,
           model: formData.model,
           deviceType: formData.deviceType,
-          AlarmSeverity: formData.AlarmSeverity,
+          alarmSeverity: formData.alarmSeverity,
           alarmMode: formData.alarmMode,
           isNormalyClose: formData.isNormalyClose,
           is24H: formData.is24H,
@@ -350,16 +350,16 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
                                     <CustomTextField
                                         id="AlarmSeverity"
                                         name="AlarmSeverity"
-                                        value={formData.AlarmSeverity}
+                                        value={formData.alarmSeverity}
                                         onChange={handleInputChange}
                                         fullWidth
                                         select
                                         variant="outlined"
                                     >
-                                        <MenuItem value="low">Low</MenuItem>
-                                        <MenuItem value="medium">Medium</MenuItem>
-                                        <MenuItem value="high">High</MenuItem>
-                                        <MenuItem value="critical">Critical</MenuItem>
+                                        <MenuItem value="Low">Low</MenuItem>
+                                        <MenuItem value="Medium">Medium</MenuItem>
+                                        <MenuItem value="High">High</MenuItem>
+                                        <MenuItem value="Critical">Critical</MenuItem>
                                     </CustomTextField>
                                 </Grid>
 
@@ -521,7 +521,6 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
                                                 <CustomFormLabel htmlFor="password" sx={{ mt: 1 }}>Password</CustomFormLabel>
                                                 <CustomTextField
                                                     id="password"
-                                                    type="password"
                                                     value={formData.password ?? ''}
                                                     onChange={handleInputChange}
                                                     fullWidth

@@ -203,7 +203,7 @@ const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
           center={[-2.5, 118]}
           zoom={5}
           minZoom={5}
-          maxZoom={8}
+          maxZoom={15}
           maxBounds={bounds}
           maxBoundsViscosity={1}
           style={{

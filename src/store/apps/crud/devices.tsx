@@ -31,7 +31,7 @@ export interface deviceType {
     manufacturer: string,
     model: string,
     deviceType: 'Other' | 'MotionSensor' | 'DoorSensor' | 'GlassBreakSensor' | 'BeamSensor' | 'VibrationSensor' | 'CctvCamera' | 'DoorLock' | 'Siren' | 'StrobeLight' | 'PanicButton',
-    AlarmSeverity: 'low' | 'medium' | 'high' | 'critical',
+    alarmSeverity: 'low' | 'medium' | 'high' | 'critical',
     alarmMode: string,
     isNormalyClose: boolean,
     is24H: boolean,

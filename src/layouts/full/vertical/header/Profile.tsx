@@ -75,10 +75,10 @@ const Profile = () => {
           <Avatar src={ProfileImg} alt={ProfileImg} sx={{ width: 95, height: 95 }} />
           <Box>
             <Typography variant="subtitle2" color="textPrimary" fontWeight={600}>
-              Mathew Anderson
+              Tommy May
             </Typography>
             <Typography variant="subtitle2" color="textSecondary">
-              Designer
+              Super Admin
             </Typography>
             <Typography
               variant="subtitle2"
@@ -88,12 +88,12 @@ const Profile = () => {
               gap={1}
             >
               <IconMail width={15} height={15} />
-              info@modernize.com
+              superadmin@email.com
             </Typography>
           </Box>
         </Stack>
         <Divider />
-        {dropdownData.profile.map((profile) => (
+        {/* {dropdownData.profile.map((profile) => (
           <Box key={profile.title}>
             <Box sx={{ py: 2, px: 0 }} className="hover-text-primary">
               <Link to={profile.href}>
@@ -144,22 +144,8 @@ const Profile = () => {
               </Link>
             </Box>
           </Box>
-        ))}
+        ))} */}
         <Box mt={2}>
-          <Box bgcolor="primary.light" p={3} mb={3} overflow="hidden" position="relative">
-            <Box display="flex" justifyContent="space-between">
-              <Box>
-                <Typography variant="h5" mb={2}>
-                  Unlimited <br />
-                  Access
-                </Typography>
-                <Button variant="contained" color="primary">
-                  Upgrade
-                </Button>
-              </Box>
-              <img src={unlimitedImg} alt="unlimited" className="signup-bg"></img>
-            </Box>
-          </Box>
           <Button to="/auth/login" variant="outlined" color="primary" component={Link} fullWidth>
             Logout
           </Button>

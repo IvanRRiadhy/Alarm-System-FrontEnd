@@ -42,7 +42,7 @@ const HeaderLogo = () => {
               lineHeight: 1.2,
             }}
           >
-            Bionics Alarm Monitoring System
+            Bionic Alarm Monitoring System
           </Typography>
 
           <Typography

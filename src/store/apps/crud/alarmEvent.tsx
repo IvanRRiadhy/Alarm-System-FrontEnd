@@ -26,6 +26,7 @@ export interface AlarmEvent {
   siteName: string;
   buildingName: string | null;
   floorName: string | null;
+  statusEvents?: any;
 }
 
 export type GetFilter = {
