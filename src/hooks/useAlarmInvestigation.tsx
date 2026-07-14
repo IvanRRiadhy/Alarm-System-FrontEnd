@@ -17,17 +17,23 @@ interface PaginatedResponse<T> {
 
 export interface AlarmInvestigationCreatePayload {
     alarmEventId: string;
-    personnelId: string;
+    personnelId?: string;
     note: string;
 }
 
 export interface AlarmInvestigationUpdatePayload {
-    personnelId: string;
-    note: string;
-    status: string;
-    result: string;
-    postponedUntil: string;
+    // personnelId: string;
+    note?: string;
+    // status: string;
+    result?: string;
+    isNoAction: boolean;
+    // postponedUntil: string;
     attachments: AttachmentsType[];
+}
+
+export interface AlarmInvestigationPostponePayload {
+    postponedUntil: string;
+    note?: string;
 }
 
 export function useAlarmInvestigationList(filter?: GetFilter) {
@@ -67,6 +73,58 @@ export function useUpdateAlarmInvestigation(id: string, body: AlarmInvestigation
     return useMutation({
         mutationFn: async () => {
             const response = await axiosServices.put(`${API_URL}/${id}`, body);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+        },
+    });
+}
+
+export function useAcknowledgeInvestigation(id: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const response = await axiosServices.put(`${API_URL}/${id}/acknowledge`);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+        },
+    });
+}
+
+export function useDispatchInvestigation(id: string, personnelId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const response = await axiosServices.put(`${API_URL}/${id}/dispatch`, {personnelId});
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+        },
+    });
+}
+
+export function useResolveInvestigation(id: string, body: AlarmInvestigationUpdatePayload) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const response = await axiosServices.put(`${API_URL}/${id}/resolve`, body);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+        },
+    });  
+}
+
+export function usePostponeInvestigation(id: string, body: AlarmInvestigationPostponePayload) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const response = await axiosServices.put(`${API_URL}/${id}/postpone`, body);
             return response.data;
         },
         onSuccess: () => {

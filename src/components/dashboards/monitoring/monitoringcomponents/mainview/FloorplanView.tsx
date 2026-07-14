@@ -108,19 +108,14 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
   const alarmEvents = useSelector((state: RootState) => state.alarmEventReducer.alarmEventList);
 
   const [pulseValue, setPulseValue] = useState(1);
-  const pulseDirectionRef = useRef(1);
 
   useEffect(() => {
     let animId: number;
     const tick = () => {
       setPulseValue((prev) => {
-        let next = prev + pulseDirectionRef.current * 0.02;
+        let next = prev + 0.02;
         if (next >= 1.6) {
-          next = 1.6;
-          pulseDirectionRef.current = -1;
-        } else if (next <= 0.8) {
           next = 0.8;
-          pulseDirectionRef.current = 1;
         }
         return next;
       });
@@ -131,20 +126,33 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
   }, []);
 
   const getActiveAlarm = (mappingId: string, deviceId: string | null) => {
-    if (!alarmEvents) return undefined;
-    // console.log("AlarmEvent: ", alarmEvents)
-    return alarmEvents.find(
-      (evt) =>
-        evt.statusAlarm?.toLowerCase() === 'on' &&
-        ((deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId)
+    if (!alarmEvents || alarmEvents.length === 0) return undefined;
+    
+    const deviceEvents = alarmEvents.filter(
+      (evt) => (deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId
     );
+    
+    if (deviceEvents.length === 0) return undefined;
+    
+    const newestEvent = deviceEvents.reduce((latest, current) => {
+      const latestTime = latest.createdAt ? new Date(latest.createdAt).getTime() : 0;
+      const currentTime = current.createdAt ? new Date(current.createdAt).getTime() : 0;
+      return currentTime > latestTime ? current : latest;
+    }, deviceEvents[0]);
+    
+    if (newestEvent && newestEvent.statusAlarm?.toLowerCase() === 'on') {
+      return newestEvent;
+    }
+    
+    return undefined;
   };
 
   const getSeverityColor = (severity?: string) => {
     const s = (severity || '').toLowerCase();
-    if (s === 'low') return '#3B82F6';
-    if (s === 'high') return '#F59E0B';
-    if (s === 'critical') return '#EF4444';
+    if (s === 'low') return '#EAB308';
+    if (s === 'medium') return '# ';
+    if (s === 'high') return '#EF4444';
+    if (s === 'critical') return '#991B1B';
     return '#EF4444';
   };
   const location = useLocation();
@@ -266,6 +274,11 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     selectedFloorplan?.id ? filter : undefined
   );
   const mappings = selectedFloorplan ? (mappingResponse?.data || []) : [];
+
+  const hasCriticalAlarm = mappings.some((mapping) => {
+    const activeAlarm = getActiveAlarm(mapping.id, mapping.deviceId);
+    return activeAlarm && activeAlarm.severity?.toLowerCase() === 'critical';
+  });
 
   const { data: areaResponse } = useAreaList(
     selectedFloorplan?.id
@@ -400,6 +413,28 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
         overflow: 'hidden',
       }}
     >
+      {/* Critical Alarm Vignette Overlay */}
+      {hasCriticalAlarm && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 10,
+            boxShadow: 'inset 0 0 60px rgba(153, 27, 27, 0.8)',
+            animation: 'vignetteBreath 2s infinite ease-in-out',
+            '@keyframes vignetteBreath': {
+              '0%, 100%': {
+                boxShadow: 'inset 0 0 40px rgba(153, 27, 27, 0.4)',
+              },
+              '50%': {
+                boxShadow: 'inset 0 0 100px rgba(153, 27, 27, 0.95)',
+              },
+            },
+          }}
+        />
+      )}
+
       {/* Header */}
       <Box
         sx={{
@@ -554,7 +589,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                 const activeAlarm = getActiveAlarm(mapping.id, mapping.deviceId);
                 const isBlinking = !!activeAlarm;
                 const blinkColor = activeAlarm ? getSeverityColor(activeAlarm.severity) : '#EF4444';
-
+                // if(isBlinking) console.log("ActiveAlarm: ", activeAlarm)
                 return (
                   <Group
                     key={mapping.id}
@@ -574,9 +609,9 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                     {/* Pulsing alarm ring */}
                     {isBlinking && (
                       <Circle
-                        radius={(isSelected ? 13.5 : 11) * pulseValue}
+                        radius={(isSelected ? 30.5 : 25) * pulseValue}
                         fill={blinkColor}
-                        opacity={Math.max(0, 1.8 - pulseValue) * 0.45}
+                        opacity={Math.max(0, 1.8 - pulseValue) * 0.65}
                         stroke={blinkColor}
                         strokeWidth={1.5}
                       />
@@ -812,7 +847,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
           );
         })}
 
-        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+        {/* <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
           <FormControlLabel
             control={
               <Switch
@@ -834,7 +869,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
             }
             sx={{ m: 0 }}
           />
-        </Box>
+        </Box> */}
       </Box>
     </Box>
   );

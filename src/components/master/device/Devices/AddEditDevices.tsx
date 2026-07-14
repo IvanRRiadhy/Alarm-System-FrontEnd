@@ -346,10 +346,10 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
 
                                 {/* Alarm Severity Select */}
                                 <Grid size={{ xs: 12, sm: 6 }}>
-                                    <CustomFormLabel htmlFor="AlarmSeverity">Alarm Severity</CustomFormLabel>
+                                    <CustomFormLabel htmlFor="alarmSeverity">Alarm Severity</CustomFormLabel>
                                     <CustomTextField
-                                        id="AlarmSeverity"
-                                        name="AlarmSeverity"
+                                        id="alarmSeverity"
+                                        name="alarmSeverity"
                                         value={formData.alarmSeverity}
                                         onChange={handleInputChange}
                                         fullWidth

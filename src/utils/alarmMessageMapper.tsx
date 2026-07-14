@@ -79,7 +79,7 @@ function mapSeverity(deviceSeverity: string | undefined): Severity {
     case 'high':
       return 'High';
     case 'medium':
-      return 'High'; // "medium" maps to "High" since EventItem only has Critical/High/Low
+      return 'Medium';
     case 'low':
     default:
       return 'Low';
@@ -131,6 +131,23 @@ export function mapAlarmMessageToEvents(
   const zonesCount = message.zones?.length || 0;
   const now = new Date().toLocaleTimeString('it-IT'); // HH:mm:ss format
 
+  let createdAtIso = new Date().toISOString();
+  if (message.timestamp) {
+    const parsedNum = Number(message.timestamp);
+    if (!isNaN(parsedNum)) {
+      if (parsedNum < 10000000000) {
+        createdAtIso = new Date(parsedNum * 1000).toISOString();
+      } else {
+        createdAtIso = new Date(parsedNum).toISOString();
+      }
+    } else {
+      const parsedDate = new Date(message.timestamp);
+      if (!isNaN(parsedDate.getTime())) {
+        createdAtIso = parsedDate.toISOString();
+      }
+    }
+  }
+
   // 1. Find the controller by matching device_id to hardwareId
   const controller = controllers.find(
     (c) => c.hardwareId === message.device_id,
@@ -175,12 +192,13 @@ export function mapAlarmMessageToEvents(
         time: now,
         title: message.alarm_state,
         site: device?.siteName || controllerSite,
-        severity: device ? mapSeverity(device.AlarmSeverity) : 'Low',
+        severity: device ? mapSeverity(device.alarmSeverity) : 'Low',
         area: mapping?.areaName || `Zone ${zone.id}`,
         icon,
         iconColor: color,
         deviceId: device?.id,
         deviceName: device?.name || `Zone ${zone.id} - ${zone.type}`,
+        createdAt: createdAtIso,
       };
 
       events.push(event);
@@ -205,12 +223,13 @@ export function mapAlarmMessageToEvents(
         time: now,
         title: message.alarm_state,
         site: device?.siteName || controllerSite,
-        severity: device ? mapSeverity(device.AlarmSeverity) : 'Low',
+        severity: device ? mapSeverity(device.alarmSeverity) : 'Low',
         area: mapping?.areaName || `Relay ${relay.id}`,
         icon,
         iconColor: color,
         deviceId: device?.id,
         deviceName: device?.name || `Relay ${relay.id} - ${relay.rule}`,
+        createdAt: createdAtIso,
       };
 
       events.push(event);
@@ -252,8 +271,10 @@ export function mapAlarmEventToEventItem(event: AlarmEvent): EventItem {
   const sevLower = (event.severity || '').toLowerCase();
   if (sevLower === 'critical') {
     severity = 'Critical';
-  } else if (sevLower === 'high' || sevLower === 'medium') {
+  } else if (sevLower === 'high') {
     severity = 'High';
+  } else if (sevLower === 'medium') {
+    severity = 'Medium';
   }
 
   const { icon, color } = getEventIconAndColor(event.deviceType || event.message);

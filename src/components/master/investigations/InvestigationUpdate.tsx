@@ -15,35 +15,35 @@ import {
   MenuItem,
   Box,
   Stack,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
-import { IconPencil, IconX, IconUpload, IconTrash, IconPaperclip } from '@tabler/icons-react';
+import { IconPencil, IconX, IconUpload, IconTrash, IconPaperclip, IconChevronLeft } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
 import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
-import { useUpdateAlarmInvestigation } from 'src/hooks/useAlarmInvestigation';
-import { usePersonnelList, usePersonnelLookup } from 'src/hooks/usePersonnel';
+import {
+  useAcknowledgeInvestigation,
+  useDispatchInvestigation,
+  useResolveInvestigation,
+  usePostponeInvestigation,
+} from 'src/hooks/useAlarmInvestigation';
+import { usePersonnelLookup } from 'src/hooks/usePersonnel';
 import { useUploadCDN } from 'src/hooks/useCDN';
 import { AlarmInvestigationType, AttachmentsType } from 'src/store/apps/crud/alarmInvestigation';
-import { investigationResultType } from 'src/types/crud/input';
 
 interface InvestigationUpdateProps {
   device: AlarmInvestigationType;
 }
 
-const statusOptions = [
-  { label: 'New', value: 'New' },
-  { label: 'In Progress', value: 'InProgress' },
-  { label: 'Postponed', value: 'Postponed' },
-  { label: 'Done', value: 'Done' },
-];
-
 const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => {
-  // Hide the Update Button for investigation that are done
-  if (device.status === 'Done') {
+  // Hide the Update Button for investigations that are done or resolved
+  if (device.status === 'Done' || device.status === 'Resolved') {
     return null;
   }
 
   const [open, setOpen] = useState(false);
+  const [showPostponeForm, setShowPostponeForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -56,8 +56,8 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   const [formData, setFormData] = useState({
     personnelId: device.personnelId || '',
     note: device.note || '',
-    status: device.status || '',
     result: device.result || '',
+    isNoAction: false,
     postponedUntil: formatDateTimeLocal(device.postponedUntil),
     attachments: device.attachments || [],
   });
@@ -67,29 +67,30 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
 
   const uploadMutation = useUploadCDN();
 
-  const payload = {
-    personnelId: formData.personnelId,
+  const acknowledgeMutation = useAcknowledgeInvestigation(device.id);
+  const dispatchMutation = useDispatchInvestigation(device.id, formData.personnelId);
+  const resolveMutation = useResolveInvestigation(device.id, {
     note: formData.note,
-    status: formData.status,
     result: formData.result,
-    postponedUntil: formData.status === 'Postponed' && formData.postponedUntil
-      ? dayjs(formData.postponedUntil).toISOString()
-      : '',
+    isNoAction: formData.isNoAction,
     attachments: formData.attachments,
-  };
-
-  const updateMutation = useUpdateAlarmInvestigation(device.id, payload);
+  });
+  const postponeMutation = usePostponeInvestigation(device.id, {
+    postponedUntil: formData.postponedUntil ? dayjs(formData.postponedUntil).toISOString() : '',
+    note: formData.note,
+  });
 
   useEffect(() => {
     if (open) {
       setFormData({
         personnelId: device.personnelId || '',
         note: device.note || '',
-        status: device.status || '',
         result: device.result || '',
+        isNoAction: false,
         postponedUntil: formatDateTimeLocal(device.postponedUntil),
         attachments: device.attachments || [],
       });
+      setShowPostponeForm(false);
     }
   }, [open, device]);
 
@@ -108,6 +109,14 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: checked,
     }));
   };
 
@@ -151,24 +160,65 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
     }));
   };
 
-  const handleSave = async () => {
-    if (!formData.personnelId) {
-      toast.error('Please select a personnel.');
-      return;
-    }
-    if (!formData.status) {
-      toast.error('Please select a status.');
-      return;
-    }
-
+  const handleAcknowledge = async () => {
     try {
       setIsSaving(true);
-      await updateMutation.mutateAsync();
-      toast.success('Investigation updated successfully!');
+      await acknowledgeMutation.mutateAsync();
+      toast.success('Investigation acknowledged successfully!');
       handleClose();
     } catch (error) {
-      console.error('Error saving investigation:', error);
-      toast.error('Failed to update investigation.');
+      console.error('Error acknowledging investigation:', error);
+      toast.error('Failed to acknowledge investigation.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDispatch = async () => {
+    if (!formData.personnelId) {
+      toast.error('Please select personnel to dispatch.');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await dispatchMutation.mutateAsync();
+      toast.success('Personnel dispatched successfully!');
+      handleClose();
+    } catch (error) {
+      console.error('Error dispatching investigation:', error);
+      toast.error('Failed to dispatch personnel.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResolve = async () => {
+    try {
+      setIsSaving(true);
+      await resolveMutation.mutateAsync();
+      toast.success('Investigation resolved successfully!');
+      handleClose();
+    } catch (error) {
+      console.error('Error resolving investigation:', error);
+      toast.error('Failed to resolve investigation.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePostpone = async () => {
+    if (!formData.postponedUntil) {
+      toast.error('Please select postponed date and time.');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await postponeMutation.mutateAsync();
+      toast.success('Investigation postponed successfully!');
+      handleClose();
+    } catch (error) {
+      console.error('Error postponing investigation:', error);
+      toast.error('Failed to postpone investigation.');
     } finally {
       setIsSaving(false);
     }
@@ -185,7 +235,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5" fontWeight="bold">
-            Update Alarm Investigation
+            Update Investigation Stage
           </Typography>
           <IconButton onClick={handleClose} size="small" sx={{ color: 'text.secondary' }}>
             <IconX size={20} />
@@ -193,55 +243,13 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
         </DialogTitle>
         <Divider />
         <DialogContent sx={{ p: 3 }}>
-          <Grid container spacing={2}>
-            {/* Personnel Name Select */}
-            <Grid size={6}>
-              <CustomFormLabel htmlFor="personnelId">Personnel Name</CustomFormLabel>
-              <CustomTextField
-                id="personnelId"
-                name="personnelId"
-                select
-                fullWidth
-                value={formData.personnelId}
-                onChange={handleInputChange}
-              >
-                <MenuItem value="" disabled>
-                  Select Personnel
-                </MenuItem>
-                {personnelList.map((p) => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.name}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-            </Grid>
-
-            {/* Status Select */}
-            <Grid size={6}>
-              <CustomFormLabel htmlFor="status">Status</CustomFormLabel>
-              <CustomTextField
-                id="status"
-                name="status"
-                select
-                fullWidth
-                value={formData.status}
-                onChange={handleInputChange}
-              >
-                <MenuItem value="" disabled>
-                  Select Status
-                </MenuItem>
-                {statusOptions.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-            </Grid>
-
-
-
-            {/* Postponed Until Date Input */}
-            {formData.status === 'Postponed' && (
+          {showPostponeForm ? (
+            <Grid container spacing={2}>
+              <Grid size={12}>
+                <Typography variant="subtitle1" fontWeight="semibold" mb={1} color="warning.main">
+                  Postpone Investigation
+                </Typography>
+              </Grid>
               <Grid size={12}>
                 <CustomFormLabel htmlFor="postponedUntil">Postponed Until</CustomFormLabel>
                 <CustomTextField
@@ -258,87 +266,293 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
                   }}
                 />
               </Grid>
-            )}
-
-            {/* Operator Note Text Field */}
-            <Grid size={12}>
-              <CustomFormLabel htmlFor="result">Result</CustomFormLabel>
-              <CustomTextField
-                id="result"
-                name="result"
-                multiline
-                rows={3}
-                fullWidth
-                placeholder="Enter result..."
-                value={formData.result}
-                onChange={handleInputChange}
-              />
+              <Grid size={12}>
+                <CustomFormLabel htmlFor="note">Postpone Note</CustomFormLabel>
+                <CustomTextField
+                  id="note"
+                  name="note"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  placeholder="Enter postponement reason/note..."
+                  value={formData.note}
+                  onChange={handleInputChange}
+                />
+              </Grid>
             </Grid>
+          ) : (
+            <Grid container spacing={2}>
+              <Grid size={12}>
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, mb: 1 }}>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography variant="body2" color="text.secondary">Current Status:</Typography>
+                    <Typography variant="body2" fontWeight="bold" color="primary.main">{device.status}</Typography>
+                  </Stack>
+                </Box>
+              </Grid>
 
-            {/* Attachment Uploader */}
-            <Grid size={12}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
-                <CustomFormLabel>Attachments</CustomFormLabel>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  size="small"
-                  startIcon={isUploading ? <CircularProgress size={16} /> : <IconUpload size={16} />}
-                  disabled={isUploading}
-                >
-                  {isUploading ? 'Uploading...' : 'Upload'}
-                  <input type="file" hidden onChange={handleFileUpload} />
-                </Button>
-              </Box>
-
-              <Stack gap={1} mt={1}>
-                {formData.attachments.map((att, idx) => (
-                  <Box
-                    key={idx}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    p={1.5}
-                    border="1px solid"
-                    borderColor="divider"
-                    borderRadius="8px"
+              {/* Status specific fields */}
+              {(device.status === 'Acknowledged' || device.status === 'Postponed') && (
+                <Grid size={12}>
+                  <CustomFormLabel htmlFor="personnelId">Select Personnel for Dispatch</CustomFormLabel>
+                  <CustomTextField
+                    id="personnelId"
+                    name="personnelId"
+                    select
+                    fullWidth
+                    value={formData.personnelId}
+                    onChange={handleInputChange}
                   >
-                    <Box display="flex" alignItems="center" gap={1} overflow="hidden">
-                      <IconPaperclip size={18} style={{ flexShrink: 0 }} />
-                      <Typography
-                        variant="body2"
-                        noWrap
-                        sx={{ maxWidth: '350px' }}
-                        title={att.fileUrl}
+                    <MenuItem value="" disabled>
+                      Select Personnel
+                    </MenuItem>
+                    {personnelList.map((p) => (
+                      <MenuItem key={p.id} value={p.id}>
+                        {p.name}
+                      </MenuItem>
+                    ))}
+                  </CustomTextField>
+                </Grid>
+              )}
+
+              {device.status === 'Dispatched' && (
+                <>
+                  <Grid size={12}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.isNoAction}
+                          onChange={handleCheckboxChange}
+                          name="isNoAction"
+                          color="primary"
+                        />
+                      }
+                      label="No Action Required (False Alarm)"
+                    />
+                  </Grid>
+
+                  <Grid size={12}>
+                    <CustomFormLabel htmlFor="result">Investigation Result / Findings</CustomFormLabel>
+                    <CustomTextField
+                      id="result"
+                      name="result"
+                      multiline
+                      rows={3}
+                      fullWidth
+                      placeholder="Enter investigation details and findings..."
+                      value={formData.result}
+                      onChange={handleInputChange}
+                    />
+                  </Grid>
+
+                  <Grid size={12}>
+                    <CustomFormLabel htmlFor="note">Resolution Note</CustomFormLabel>
+                    <CustomTextField
+                      id="note"
+                      name="note"
+                      multiline
+                      rows={2}
+                      fullWidth
+                      placeholder="Additional resolution notes..."
+                      value={formData.note}
+                      onChange={handleInputChange}
+                    />
+                  </Grid>
+
+                  <Grid size={12}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+                      <CustomFormLabel>Attachments (Photos/Files)</CustomFormLabel>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        size="small"
+                        startIcon={isUploading ? <CircularProgress size={16} /> : <IconUpload size={16} />}
+                        disabled={isUploading}
                       >
-                        {att.fileUrl.split('/').pop() || 'Attachment'}
-                      </Typography>
+                        {isUploading ? 'Uploading...' : 'Upload'}
+                        <input type="file" hidden onChange={handleFileUpload} />
+                      </Button>
                     </Box>
-                    <IconButton
-                      color="error"
-                      size="small"
-                      onClick={() => handleRemoveAttachment(idx)}
-                    >
-                      <IconTrash size={16} />
-                    </IconButton>
-                  </Box>
-                ))}
-              </Stack>
+
+                    <Stack gap={1} mt={1}>
+                      {formData.attachments.map((att, idx) => (
+                        <Box
+                          key={idx}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          p={1.5}
+                          border="1px solid"
+                          borderColor="divider"
+                          borderRadius="8px"
+                        >
+                          <Box display="flex" alignItems="center" gap={1} overflow="hidden">
+                            <IconPaperclip size={18} style={{ flexShrink: 0 }} />
+                            <Typography
+                              variant="body2"
+                              noWrap
+                              sx={{ maxWidth: '350px' }}
+                              title={att.fileUrl}
+                            >
+                              {att.fileUrl.split('/').pop() || 'Attachment'}
+                            </Typography>
+                          </Box>
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => handleRemoveAttachment(idx)}
+                          >
+                            <IconTrash size={16} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Grid>
+                </>
+              )}
+
+              {device.status === 'Idle' && (
+                <Grid size={12}>
+                  <Typography variant="body2" textAlign="center" color="text.secondary" my={2}>
+                    This investigation is currently <strong>Idle</strong>. Click the Acknowledge button below to acknowledge the alarm and proceed to the next stage.
+                  </Typography>
+                </Grid>
+              )}
             </Grid>
-          </Grid>
+          )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button variant="outlined" color="error" onClick={handleClose} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSave}
-            disabled={isSaving || isUploading}
-          >
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </Button>
+
+        <Divider />
+
+        <DialogActions sx={{ p: 3 }}>
+          {showPostponeForm ? (
+            <>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<IconChevronLeft size={16} />}
+                onClick={() => setShowPostponeForm(false)}
+                disabled={isSaving}
+              >
+                Back
+              </Button>
+              <Box sx={{ flexGrow: 1 }} />
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={handlePostpone}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Postponing...' : 'Confirm Postpone'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outlined" color="error" onClick={handleClose} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Box sx={{ flexGrow: 1 }} />
+
+              {/* Stage Specific Buttons */}
+              {device.status === 'Idle' && (
+                <Button
+                  variant="contained"
+                  color="warning"
+                  onClick={handleAcknowledge}
+                  disabled={isSaving}
+                  sx={{
+                    px: 3,
+                    fontWeight: 'bold',
+                    boxShadow: '0px 4px 10px rgba(245, 158, 11, 0.3)',
+                    '&:hover': {
+                      backgroundColor: 'warning.dark',
+                    }
+                  }}
+                >
+                  {isSaving ? 'Acknowledging...' : 'Acknowledge'}
+                </Button>
+              )}
+
+              {device.status === 'Acknowledged' && (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => setShowPostponeForm(true)}
+                    disabled={isSaving}
+                  >
+                    Postpone
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleDispatch}
+                    disabled={isSaving || !formData.personnelId}
+                    sx={{
+                      px: 3,
+                      fontWeight: 'bold',
+                      boxShadow: '0px 4px 10px rgba(25, 118, 210, 0.3)',
+                    }}
+                  >
+                    {isSaving ? 'Dispatching...' : 'Dispatch'}
+                  </Button>
+                </Stack>
+              )}
+
+              {device.status === 'Dispatched' && (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => setShowPostponeForm(true)}
+                    disabled={isSaving}
+                  >
+                    Postpone
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={handleResolve}
+                    disabled={isSaving}
+                    sx={{
+                      px: 3,
+                      fontWeight: 'bold',
+                      color: 'white',
+                      boxShadow: '0px 4px 10px rgba(46, 125, 50, 0.3)',
+                      '&:hover': {
+                        backgroundColor: 'success.dark',
+                      }
+                    }}
+                  >
+                    {isSaving ? 'Resolving...' : 'Resolve'}
+                  </Button>
+                </Stack>
+              )}
+
+              {device.status === 'Postponed' && (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    onClick={handleAcknowledge}
+                    disabled={isSaving}
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    {isSaving ? 'Acknowledging...' : 'Acknowledge'}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleDispatch}
+                    disabled={isSaving || !formData.personnelId}
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    {isSaving ? 'Dispatching...' : 'Dispatch'}
+                  </Button>
+                </Stack>
+              )}
+            </>
+          )}
         </DialogActions>
       </Dialog>
     </>

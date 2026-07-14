@@ -21,7 +21,7 @@ import {
   IconFingerprint,
 } from '@tabler/icons-react';
 
-export type Severity = 'Critical' | 'High' | 'Low';
+export type Severity = 'Critical' | 'High' | 'Medium' | 'Low';
 export type FilterType = 'Semua' | Severity;
 
 export interface EventItem {
@@ -45,6 +45,7 @@ export interface EventItem {
   buildingId?: string | null;
   floorId?: string | null;
   siteId?: string;
+  seenStatus?: boolean;
 }
 
 export const dummyEvents: EventItem[] = [
@@ -178,9 +179,10 @@ export const getEventIconAndColor = (eventType: string) => {
 };
 
 const severityColors: Record<Severity, string> = {
-  Critical: '#EF4444',
-  High: '#F59E0B',
-  Low: '#3B82F6',
+  Critical: '#991B1B',
+  High: '#EF4444',
+  Medium: '#F97316',
+  Low: '#EAB308',
 };
 
 interface EventSidebarProps {
@@ -223,6 +225,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
 
   const criticalCount = baseEventsForCount.filter((e) => e.severity === 'Critical').length;
   const highCount = baseEventsForCount.filter((e) => e.severity === 'High').length;
+  const mediumCount = baseEventsForCount.filter((e) => e.severity === 'Medium').length;
   const lowCount = baseEventsForCount.filter((e) => e.severity === 'Low').length;
 
   const baseFilteredEvents =
@@ -247,9 +250,10 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
 
   const filters: { label: string; value: FilterType; count?: number; color?: string }[] = [
     { label: 'Semua', value: 'Semua' },
-    { label: `Critical (${criticalCount})`, value: 'Critical', color: '#EF4444' },
-    { label: `High (${highCount})`, value: 'High', color: '#F59E0B' },
-    { label: `Low (${lowCount})`, value: 'Low', color: '#3B82F6' },
+    { label: `CRITICAL (${criticalCount})`, value: 'Critical', color: '#991B1B' },
+    { label: `High (${highCount})`, value: 'High', color: '#EF4444' },  
+    { label: `Medium (${mediumCount})`, value: 'Medium', color:  '#F97316'},
+    { label: `Low (${lowCount})`, value: 'Low', color: '#EAB308' },
   ];
 
   return (
@@ -365,7 +369,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
       >
         {sortedFilteredEvents.map((event, index) => {
           const isSelected = selectedEventId === event.id;
-          console.log("Events: ", event)
+          // console.log("Events: ", event)
           return (
             <React.Fragment key={event.id}>
               <Box
@@ -425,7 +429,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                     }}
                   >
                     <Chip
-                      label={event.severity}
+                      label={event.severity === "Critical" ? event.severity.toUpperCase() : event.severity}
                       size="small"
                       sx={{
                         height: 20,

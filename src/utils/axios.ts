@@ -123,7 +123,7 @@ function createAxiosService({ getBaseUrl }: AxiosServiceOptions): AxiosInstance 
           const accessToken = localStorage.getItem('token');
 
           const response = await axios.post(
-            `${getBaseUrl()}/api/Auth/refresh/`,
+            `${getBaseUrl()}/api/auth/refresh/`,
             { refreshToken, accessToken },
             {
               headers: {
@@ -132,7 +132,7 @@ function createAxiosService({ getBaseUrl }: AxiosServiceOptions): AxiosInstance 
             }
           );
 
-          const { token } = response.data.collection.data;
+          const { token } = response.data.data;
 
           localStorage.setItem('token', token);
           originalRequest.headers['Authorization'] = `Bearer ${token}`;

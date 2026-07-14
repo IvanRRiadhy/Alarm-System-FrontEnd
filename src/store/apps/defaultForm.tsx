@@ -413,7 +413,7 @@ export const defaultDeviceForm: deviceType = {
     manufacturer: '',
     model: '',
     deviceType: 'Other',
-    AlarmSeverity: 'low',
+    alarmSeverity: 'low',
     alarmMode: 'Disarmed',
     isNormalyClose: false,
     is24H: false,

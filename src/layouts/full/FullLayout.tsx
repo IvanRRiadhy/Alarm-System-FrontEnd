@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { styled, Container, Box, useTheme } from '@mui/material';
 import { useSelector, useDispatch } from 'src/store/Store';
 import { Outlet } from 'react-router';
@@ -16,6 +16,7 @@ import { AddAlarmEvent, AlarmEvent } from 'src/store/apps/crud/alarmEvent';
 import toast from 'react-hot-toast';
 import { useAlarmEventList } from 'src/hooks/useAlarmEvent';
 import { mapAlarmEventToEventItem } from 'src/utils/alarmMessageMapper';
+import AlarmPopup from 'src/utils/AlarmPopup';
 
 const MainWrapper = styled('div')(() => ({
   display: 'flex',
@@ -37,6 +38,8 @@ const FullLayout: FC = () => {
   const customizer = useSelector((state: RootState) => state.customizer);
   const theme = useTheme();
   const dispatch = useDispatch();
+  const [criticalAlarm, setCriticalAlarm] = useState<AlarmEvent | null>(null);
+
   useAlarmEventList({ page: 1, limit: 100 });
   useEffect(() => {
     console.log('[MQTT] Connected to global event/alarm subscription');
@@ -57,16 +60,29 @@ const FullLayout: FC = () => {
 
       // Trigger standard toast notification
       const sev = (message.severity || '').toLowerCase();
+      const isOnDashboard = window.location.pathname.includes('/dashboards/');
       if (sev === 'critical') {
         toast.error(`CRITICAL ALARM: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+        if (isOnDashboard) {
+          setCriticalAlarm(message);
+        }
       } else if (sev === 'high' || sev === 'medium') {
         toast.error(`Alarm: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
       } else {
         toast.success(`Info: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
       }
+
+      // Post message for Notification.tsx to trigger bubble and bell animation
+      window.postMessage(
+        {
+          type: 'app:new-alarm',
+          detail: { alarm: eventItem },
+        },
+        '*'
+      );
     };
 
-    const unsubscribe = startMQTTclient(handleMqttMessage, 'event/alarm');
+    const unsubscribe = startMQTTclient(handleMqttMessage, 'event/alarm/#');
 
     return () => {
       if (unsubscribe) {
@@ -132,7 +148,8 @@ const FullLayout: FC = () => {
           {/* <Customizer /> */}
         </PageWrapper>
       </MainWrapper>
-            <Toaster
+            <AlarmPopup alarm={criticalAlarm} onClose={() => setCriticalAlarm(null)} />
+      <Toaster
         position="top-center"
         containerStyle={{
           fontSize: '1.15rem',

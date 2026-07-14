@@ -25,9 +25,10 @@ interface EventDetailProps {
 }
 
 const severityColors: Record<string, string> = {
-  Critical: '#EF4444',
-  High: '#F59E0B',
-  Low: '#3B82F6',
+  Critical: '#991B1B',
+  High: '#EF4444',
+  Medium: '#F97316',
+  Low: '#EAB308',
 };
 
 const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
@@ -83,7 +84,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
   }
 
   const severity = selectedLog.severity || 'Low';
-  const severityColor = severityColors[severity] || '#3B82F6';
+  const severityColor = severityColors[severity] || '#EAB308';
 
   const details = [
     { label: 'Lokasi', value: selectedLog.site || 'Unknown Site' },
@@ -252,7 +253,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
         </Box>
 
         {/* Event Thumbnail */}
-        <Box
+        {/* <Box
           sx={{
             bgcolor: '#0a0e1a',
             borderRadius: 1.5,
@@ -275,7 +276,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
             }}
           />
           <IconCamera size={24} color="#334155" style={{ position: 'relative', zIndex: 1 }} />
-        </Box>
+        </Box> */}
       </Box>
 
       {/* Acknowledge Button */}

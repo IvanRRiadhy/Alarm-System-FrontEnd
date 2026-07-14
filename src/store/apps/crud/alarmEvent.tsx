@@ -3,7 +3,6 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 import { metaData } from "./site";
 import { EventItem } from "src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar";
 
-
 export interface AlarmEvent {
   id: string;
   deviceId: string;
@@ -38,7 +37,6 @@ export type GetFilter = {
   severity?: string;
   siteId?: string;
 };
-
 
 export interface DeviceGrouped {
   [deviceId: string]: {
@@ -82,7 +80,11 @@ const AlarmEventSlice = createSlice({
     initialState,
     reducers: {
         SetAlarmEvents: (state, action: PayloadAction<EventItem[]>) => {
-            state.alarmEventList = action.payload;
+            const mapped = action.payload.map(e => ({
+                ...e,
+                seenStatus: e.seenStatus !== undefined ? e.seenStatus : true
+            }));
+            state.alarmEventList = mapped;
 
             const controllerMap: { 
               [controllerId: string]: { 
@@ -96,7 +98,7 @@ const AlarmEventSlice = createSlice({
               } 
             } = {};
 
-            for (const event of action.payload) {
+            for (const event of mapped) {
                 const cId = event.controllerId || 'unknown_controller';
                 const cName = event.controllerName || 'Unknown Controller';
                 const dId = event.deviceId || 'unknown_device';
@@ -139,14 +141,14 @@ const AlarmEventSlice = createSlice({
                     }
                 });
             }
-            console.log("Events", result)
             state.AlarmEventsList = result;
         },
         AddAlarmEvent: (state, action: PayloadAction<EventItem>) => {
             if (state.alarmEventList.some(e => e.id === action.payload.id || (e.rawId && e.rawId === action.payload.rawId))) {
                 return;
             }
-            const updatedList = [action.payload, ...state.alarmEventList];
+            const newEvent = { ...action.payload, seenStatus: action.payload.seenStatus !== undefined ? action.payload.seenStatus : false };
+            const updatedList = [newEvent, ...state.alarmEventList];
             state.alarmEventList = updatedList;
 
             const controllerMap: { 
@@ -208,9 +210,20 @@ const AlarmEventSlice = createSlice({
         },
         UpdateAlarmEventMeta: (state, action: PayloadAction<metaData>) => {
             state.metadata = action.payload;
+        },
+        MarkAlarmEventSeen: (state, action: PayloadAction<number>) => {
+            const event = state.alarmEventList.find(e => e.id === action.payload);
+            if (event) {
+                event.seenStatus = true;
+            }
+        },
+        MarkAllAlarmEventsSeen: (state) => {
+            state.alarmEventList.forEach(e => {
+                e.seenStatus = true;
+            });
         }
     }
 });
 
-export const { SetAlarmEvents, UpdateAlarmEventMeta, AddAlarmEvent } = AlarmEventSlice.actions;
+export const { SetAlarmEvents, UpdateAlarmEventMeta, AddAlarmEvent, MarkAlarmEventSeen, MarkAllAlarmEventsSeen } = AlarmEventSlice.actions;
 export default AlarmEventSlice.reducer;
