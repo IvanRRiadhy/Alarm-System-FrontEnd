@@ -19,7 +19,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { IconBellRinging, IconChecks, IconAlertTriangle } from '@tabler/icons-react';
 import Scrollbar from 'src/components/custom-scroll/Scrollbar';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { AppDispatch, RootState, useDispatch, useSelector } from 'src/store/Store';
 import { EventItem } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
 import { MarkAlarmEventSeen, MarkAllAlarmEventsSeen } from 'src/store/apps/crud/alarmEvent';
@@ -49,6 +49,12 @@ const severityColors: Record<string, string> = {
 };
 
 const Notifications = () => {
+  const location = useLocation();
+
+  if (location.pathname.includes('/monitoring')) {
+    return null;
+  }
+
   const dispatch: AppDispatch = useDispatch();
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
