@@ -67,8 +67,8 @@ const DevicesList = () => {
 
     // Pagination State
     const { deviceMeta } = useSelector((state: RootState) => state.deviceReducer);
-    const page = deviceMeta.page;
-    const rowsPerPage = deviceMeta.limit;
+    const page = deviceFilter.page;
+    const rowsPerPage = deviceFilter.limit;
     const orderBy = deviceFilter.sortBy;
     const order = deviceFilter.sortOrder;
 

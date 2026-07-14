@@ -17,6 +17,8 @@ type ActiveAlarmSitesProps = {
 };
 
 const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite = [] }) => {
+  const isFloorplanMode = activeAlarmsBySite.length > 0 && ('floorplanName' in activeAlarmsBySite[0]);
+
   return (
     <Paper
       sx={{
@@ -42,7 +44,7 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
             fontSize: 16,
           }}
         >
-          SITE DENGAN ALARM AKTIF
+          {isFloorplanMode ? 'FLOOR PLAN DENGAN ALARM AKTIF' : 'SITE DENGAN ALARM AKTIF'}
         </Typography>
       </Box>
 
@@ -60,8 +62,8 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
                 },
               }}
             >
-              <TableCell>SITE</TableCell>
-              <TableCell>REGION</TableCell>
+              <TableCell>{isFloorplanMode ? 'BUILDING / FLOOR' : 'SITE'}</TableCell>
+              <TableCell>{isFloorplanMode ? 'FLOOR PLAN' : 'REGION'}</TableCell>
               <TableCell align="center">ALARM AKTIF</TableCell>
               <TableCell align="center">SEVERITY</TableCell>
               <TableCell align="center">STATUS</TableCell>
@@ -70,6 +72,7 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
 
           <TableBody>
             {activeAlarmsBySite.map((row) => {
+              console.log("Severity: ", row)
               const severityLower = (row.severity || '').toLowerCase();
               let chipBg = 'rgba(56,189,248,.15)';
               let chipColor = '#38BDF8';
@@ -80,11 +83,12 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
                 chipBg = 'rgba(245,158,11,.15)';
                 chipColor = '#F59E0B';
               }
-              if (!row.severity) return
-
+              
+              const isNormal = (row.status || '').toLowerCase() === 'normal';
+              
               return (
                 <TableRow
-                  key={row.siteId || row.siteName}
+                  key={isFloorplanMode ? (row.floorplanId || row.floorplanName) : (row.siteId || row.siteName)}
                   hover
                   sx={{
                     transition: '.2s',
@@ -100,30 +104,38 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
                     },
                   }}
                 >
-                  <TableCell>{row.siteName}</TableCell>
+                  <TableCell>
+                    {isFloorplanMode ? `${row.buildingName || ''} - ${row.floorName || ''}` : row.siteName}
+                  </TableCell>
 
-                  <TableCell>{row.region}</TableCell>
+                  <TableCell>
+                    {isFloorplanMode ? row.floorplanName : row.region}
+                  </TableCell>
 
                   <TableCell align="center">
                     {row.totalAlarms}
                   </TableCell>
 
                   <TableCell align="center">
-                    <Chip
-                      size="small"
-                      label={row.severity}
-                      sx={{
-                        bgcolor: chipBg,
-                        color: chipColor,
-                        fontWeight: 600,
-                      }}
-                    />
+                    {row.severity ? (
+                      <Chip
+                        size="small"
+                        label={row.severity}
+                        sx={{
+                          bgcolor: chipBg,
+                          color: chipColor,
+                          fontWeight: 600,
+                        }}
+                      />
+                    ) : (
+                      '-'
+                    )}
                   </TableCell>
 
                   <TableCell
                     align="center"
                     sx={{
-                      color: '#EF4444 !important',
+                      color: isNormal ? '#10B981 !important' : '#EF4444 !important',
                       fontWeight: 600,
                     }}
                   >

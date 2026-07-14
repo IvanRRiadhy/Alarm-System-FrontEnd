@@ -15,6 +15,7 @@ type MultiSelectProps<T> = {
 };
 
 export type CustomAutocompleteProps<T> = {
+  id?: string;
   label?: string;
   placeholder?: string;
   options: T[];
@@ -34,6 +35,7 @@ export type CustomAutocompleteProps<T> = {
 
 export default function CustomAutocomplete<T>(props: CustomAutocompleteProps<T>) {
   const {
+    id,
     label,
     placeholder,
     options,
@@ -50,6 +52,7 @@ export default function CustomAutocomplete<T>(props: CustomAutocompleteProps<T>)
   } = props;
   return (
     <Autocomplete
+      id={id}
       multiple={props.multiple}
       options={options}
       value={props.value as any}

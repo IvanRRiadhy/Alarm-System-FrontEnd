@@ -120,10 +120,11 @@ function createAxiosService({ getBaseUrl }: AxiosServiceOptions): AxiosInstance 
 
         try {
           const refreshToken = localStorage.getItem('refreshToken');
+          const accessToken = localStorage.getItem('token');
 
           const response = await axios.post(
             `${getBaseUrl()}/api/Auth/refresh/`,
-            { refreshToken },
+            { refreshToken, accessToken },
             {
               headers: {
                 'X-BIOPEOPLETRACKING-API-KEY': getConfig().API_KEY,

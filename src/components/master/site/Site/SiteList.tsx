@@ -26,7 +26,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
-import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload } from '@tabler/icons-react';
+import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload, IconUserPlus } from '@tabler/icons-react';
 import { useNavigate, useLocation } from 'react-router';
 import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Store';
 import toast from 'react-hot-toast';
@@ -35,12 +35,15 @@ import {
   UpdateFilter,
 } from 'src/store/apps/crud/site';
 import { defaultSiteFilter } from 'src/store/apps/defaultForm';
-import { useDeleteSite, useSiteList } from 'src/hooks/useSite';
+import { useDeleteSite, useSiteList, useAssignUser } from 'src/hooks/useSite';
 import AddEditSite from './AddEditSite';
 import { toastError } from 'src/utils/errors';
 import { BuildingType, SelectBuilding } from 'src/store/apps/crud/building';
 import { useAllBuilding, useBuildingList, useDeleteBuilding } from 'src/hooks/useBuilding';
 import AddEditBuilding from 'src/components/master/site/Building/AddEditBuilding';
+import { useAllUsers } from 'src/hooks/useUser';
+import { userType } from 'src/store/apps/crud/users';
+import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 
 const columns = [
   { label: 'Site Name', field: 'name', sortAble: true },
@@ -160,6 +163,10 @@ const SiteList = () => {
       const isChildShown = useSelector((state: RootState) => state.customizer.isChildShown);
       const siteFilter = useSelector((state: RootState) => state.siteReducer.siteFilter);
 
+      const responseStr = localStorage.getItem('response');
+      const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
+      const userRole = loggedInUser?.role || localStorage.getItem('role') || '';
+
         useEffect(() => {
           const initialFilter = location.state?.siteName
             ? { ...defaultSiteFilter, SearchValue: location.state.siteName }
@@ -175,6 +182,9 @@ const SiteList = () => {
         
         const { data: buildingResponse } = useBuildingList();
         const buildingData = buildingResponse?.data || []; 
+
+        const { data: userResponse} = useAllUsers();
+        const userDatas = userResponse?.data || [];
 
           // Pagination State
           const {siteMeta} = useSelector((state: RootState) => state.siteReducer)
@@ -282,6 +292,40 @@ const SiteList = () => {
         }
       }
       handleCloseDeleteBuildingDialog();
+    };
+
+    // Assign User Dialog State
+    const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [selectedSiteForAssign, setSelectedSiteForAssign] = useState<SiteType | null>(null);
+    const [selectedUserForAssign, setSelectedUserForAssign] = useState<userType | null>(null);
+    const assignUserMutation = useAssignUser();
+
+    const handleOpenAssignDialog = (site: SiteType) => {
+      setSelectedSiteForAssign(site);
+      setSelectedUserForAssign(null);
+      setAssignDialogOpen(true);
+    };
+
+    const handleCloseAssignDialog = () => {
+      setAssignDialogOpen(false);
+      setSelectedSiteForAssign(null);
+      setSelectedUserForAssign(null);
+    };
+
+    const handleConfirmAssign = async () => {
+      if (selectedSiteForAssign && selectedUserForAssign) {
+        try {
+          await assignUserMutation.mutateAsync({
+            userId: selectedUserForAssign.id,
+            siteId: selectedSiteForAssign.id,
+          });
+          toast.success('User assigned successfully');
+          handleCloseAssignDialog();
+        } catch (error) {
+          toastError(error, 'Assignment failed');
+          console.error(error);
+        }
+      }
     };
 
     console.log("Data", data)
@@ -446,6 +490,17 @@ const SiteList = () => {
                               >
                                 <Box display="flex" alignItems="center" gap={1}>
                                   <AddEditSite type="edit" site={site} />
+                                  {userRole === 'SuperAdmin' && (
+                                    <Tooltip title="Assign User" arrow>
+                                      <IconButton
+                                        color="primary"
+                                        size="small"
+                                        onClick={() => handleOpenAssignDialog(site)}
+                                      >
+                                        <IconUserPlus size={20} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
                                   <IconButton
                                     color="error"
                                     size="small"
@@ -553,6 +608,38 @@ const SiteList = () => {
             startIcon={deleteBuildingMutation.isPending ? <CircularProgress size={20} /> : null}
           >
             {deleteBuildingMutation.isPending ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Assign User Confirmation Dialog */}
+      <Dialog open={assignDialogOpen} onClose={handleCloseAssignDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Assign User to Site</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 3 }}>
+            Select a user to assign to <strong>{selectedSiteForAssign?.name}</strong>.
+          </DialogContentText>
+          <CustomAutocomplete<userType>
+            label="User"
+            placeholder="Search and select a user..."
+            options={userDatas}
+            value={selectedUserForAssign}
+            onChange={(val) => setSelectedUserForAssign(val)}
+            getOptionLabel={(option) => option.fullName || option.username || ''}
+            isOptionEqualToValue={(option, val) => option.id === val.id}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAssignDialog} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmAssign}
+            color="primary"
+            variant="contained"
+            disabled={assignUserMutation.isPending || !selectedUserForAssign}
+            startIcon={assignUserMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {assignUserMutation.isPending ? 'Assigning...' : 'Assign'}
           </Button>
         </DialogActions>
       </Dialog>

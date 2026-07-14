@@ -35,6 +35,7 @@ import { userType, UpdateFilter } from 'src/store/apps/crud/users';
 import { toastError } from 'src/utils/errors';
 import { useAllUsers, useDeleteUser } from 'src/hooks/useUser';
 import AddEditUser from './AddEditUser';
+import { useSiteLookup } from 'src/hooks/useSite';
 
 const columns = [
   { label: 'Photo', field: 'profilePicture', sortAble: false },
@@ -42,6 +43,7 @@ const columns = [
   { label: 'Full Name', field: 'fullName', sortAble: true },
   { label: 'Email', field: 'email', sortAble: true },
   { label: 'Role', field: 'role', sortAble: true },
+  { label: 'Sites', field: 'siteIds', sortAble: false },
   { label: 'Status', field: 'status', sortAble: false },
 ];
 
@@ -64,6 +66,33 @@ const UserList = () => {
     const { data, isLoading } = useAllUsers(userFilter);
     const userData = data?.data || [];
     const userFilteredCount = data?.meta?.totalItems || 0;
+
+    const { data: siteLookupResponse } = useSiteLookup();
+    const siteDataList = siteLookupResponse?.data || [];
+
+    const renderUserSites = (userSiteIds: string[] = []) => {
+      if (!userSiteIds || userSiteIds.length === 0) {
+        return '-';
+      }
+      const matchedSites = userSiteIds
+        .map((id) => siteDataList.find((s) => s.id === id))
+        .filter(Boolean);
+
+      if (matchedSites.length === 0) {
+        return '-';
+      }
+
+      const names = matchedSites.map((s) => s!.name);
+      const firstThree = names.slice(0, 3).join(', ');
+      const hasMore = names.length > 3;
+      const displayText = hasMore ? `${firstThree}...` : firstThree;
+
+      return (
+        <Tooltip title={names.join(', ')} arrow>
+          <span>{displayText}</span>
+        </Tooltip>
+      );
+    };
 
     // Pagination State
     // const { userMeta } = useSelector((state: RootState) => state.userReducer);
@@ -173,6 +202,9 @@ const UserList = () => {
             </TableCell>
             <TableCell>
               <Skeleton variant="text" width={80} height={22} />
+            </TableCell>
+            <TableCell>
+              <Skeleton variant="text" width={100} height={22} />
             </TableCell>
             <TableCell>
               <Skeleton variant="text" width={80} height={22} />
@@ -290,6 +322,7 @@ const UserList = () => {
                                 <TableCell>{user.fullName}</TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>{user.role}</TableCell>
+                                <TableCell>{renderUserSites(user.siteIds)}</TableCell>
                                 <TableCell>{user.isActive == 1 ? 'Active' : 'Inactive'}</TableCell>
                                 <TableCell
                                   sx={{

@@ -162,11 +162,11 @@ const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
       }))
     : sites;
 
-  const filtered =
-    region === 'Semua Region'
-      ? displaySites
-      : displaySites.filter((x) => x.region === region);
-
+  // const filtered =
+  //   region === 'Semua Region'
+  //     ? displaySites
+  //     : displaySites.filter((x) => x.region === region);
+  console.log("SItem",displaySites)
   return (
     <Paper
       sx={{
@@ -216,7 +216,7 @@ const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {filtered.map((site) => (
+          {displaySites.map((site) => (
             <Marker
               key={site.id}
               position={[site.lat, site.lng]}

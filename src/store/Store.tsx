@@ -180,7 +180,16 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: [
+          'persist/PERSIST',
+          'persist/REHYDRATE',
+          'alarmEvent/SetAlarmEvents',
+          'alarmEvent/AddAlarmEvent'
+        ],
+        ignoredPaths: [
+          'alarmEventReducer.alarmEventList',
+          'alarmEventReducer.AlarmEventsList'
+        ],
       },
     }),
 });

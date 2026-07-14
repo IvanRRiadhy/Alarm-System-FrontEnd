@@ -1,28 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
-import Hls from 'hls.js';
 import {
   Box,
   Typography,
-  IconButton,
   Chip,
   CircularProgress,
   Button,
 } from '@mui/material';
 import {
-  IconLayoutGrid,
-  IconCamera,
-  IconVideo,
-  IconPlayerPlay,
-  IconPlayerPause,
-  IconScreenshot,
-  IconVolume,
-  IconVolumeOff,
   IconMaximize,
   IconInfoCircle,
+  IconVolumeOff,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import axiosServices from 'src/utils/axios';
+import axiosServices, { BASE_URL } from 'src/utils/axios';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
+import UniversalVideoPlayer from 'src/utils/UniversalPlayer';
 
 interface LiveCameraProps {
   selectedDevice?: DeviceMappingType | null;
@@ -55,13 +47,22 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
     );
   }
 
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState('');
-  const videoRef = useRef<HTMLVideoElement>(null);
   const openedWindowsRef = useRef<Record<string, Window | null>>({});
 
   const isCCTV = selectedDevice?.deviceType === 'CctvCamera';
+
+  const getEngineWsUrl = (baseUrl: string) => {
+    if (!baseUrl) return 'ws://localhost:8283';
+    try {
+      const parsedUrl = new URL(baseUrl.includes('//') ? baseUrl : `//${baseUrl}`);
+      // return `ws://${parsedUrl.hostname}:8283`;
+      return "ws://192.168.1.116:8283"
+    } catch (e) {
+      console.error("Error parsing BASE_URL for engineWsUrl:", e);
+      return 'ws://localhost:8283';
+    }
+  };
 
   const [openedCameraIds, setOpenedCameraIds] = useState<string[]>([]);
 
@@ -183,69 +184,9 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
     return () => clearInterval(interval);
   }, []);
 
-  // Static camera feed for IP Webcam / HLS stream
-  const simulatedFeedUrl = "http://192.168.1.151:8083/stream/wuching/channel/0/hls/live/index.m3u8";
-
-  const isHls = simulatedFeedUrl.toLowerCase().includes('.m3u8');
-
-  // Handle HLS playback
-  useEffect(() => {
-    let hls: Hls | null = null;
-    const video = videoRef.current;
-
-    if (isHls && video) {
-      if (Hls.isSupported()) {
-        hls = new Hls({
-          maxMaxBufferLength: 10,
-          enableWorker: true,
-          lowLatencyMode: true,
-        });
-        hls.loadSource(simulatedFeedUrl);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (isPlaying) {
-            video.play().catch((err) => console.log('Hls autoplay failed:', err));
-          }
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Native HLS support (Safari)
-        video.src = simulatedFeedUrl;
-        video.addEventListener('loadedmetadata', () => {
-          if (isPlaying) {
-            video.play().catch((err) => console.log('Native Hls play failed:', err));
-          }
-        });
-      }
-    }
-
-    return () => {
-      if (hls) {
-        hls.destroy();
-      }
-    };
-  }, [simulatedFeedUrl, isPlaying, isHls, activeDevice?.deviceId]);
-
-  const handleTogglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play().catch(e => console.log(e));
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleToggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
   const handleOpenNewWindow = () => {
     if (!activeDevice) return;
-    const feedUrl = simulatedFeedUrl;
+    const feedUrl = rtspUrl;
     const winName = `CCTV_${activeDevice.deviceId}`;
     const newWin = window.open(feedUrl, winName, 'width=800,height=600,scrollbars=yes,resizable=yes');
     if (newWin) {
@@ -403,31 +344,40 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
           </Box>
         ) : activeDevice ? (
           <>
-            {isHls ? (
-              <video
-                ref={videoRef}
-                muted={isMuted}
-                playsInline
+            {rtspUrl ? (
+              <UniversalVideoPlayer
+                streamUrl={rtspUrl}
+                engineWsUrl={getEngineWsUrl(BASE_URL)}
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
-                  opacity: isPlaying ? 0.85 : 0.25,
-                  transition: 'opacity 0.3s ease',
+                  aspectRatio: 'auto',
+                  borderRadius: '0px',
+                  boxShadow: 'none',
                 }}
               />
             ) : (
-              <img
-                src={isPlaying ? simulatedFeedUrl : ''}
-                alt="Live Camera Feed"
-                style={{
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  p: 2,
+                  color: '#64748B',
+                  textAlign: 'center',
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
-                  opacity: isPlaying ? 0.85 : 0.25,
-                  transition: 'opacity 0.3s ease',
                 }}
-              />
+              >
+                <IconInfoCircle size={28} />
+                <Typography sx={{ mt: 1, fontSize: 11, fontWeight: 500 }}>
+                  Kamera tidak memiliki URL RTSP
+                </Typography>
+                <Typography sx={{ fontSize: 9, opacity: 0.7 }}>
+                  Camera does not have RTSP URL
+                </Typography>
+              </Box>
             )}
 
             {/* Scan lines & digital noise effect */}
@@ -491,9 +441,9 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
                     fontFamily: 'monospace',
                     letterSpacing: '0.2px',
                   }}
-                  title={simulatedFeedUrl}
+                  title={rtspUrl}
                 >
-                  RTSP: {simulatedFeedUrl}
+                  RTSP: {rtspUrl}
                 </Typography>
               </Box>
             )}

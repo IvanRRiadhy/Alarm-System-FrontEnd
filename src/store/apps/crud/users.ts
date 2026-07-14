@@ -25,6 +25,7 @@ export type userType = {
     role: string,
     isActive: number,
     profilePicture: string,
+    siteIds: string[],
 };
 export type userRegistrationType = {
     username: string,
@@ -32,6 +33,7 @@ export type userRegistrationType = {
     password: string,
     fullName: string,
     profilePicture?: string,
+    siteIds?: string[],
 };
 
 interface StateType {

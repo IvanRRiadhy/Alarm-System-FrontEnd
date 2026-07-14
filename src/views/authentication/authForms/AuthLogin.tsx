@@ -106,7 +106,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       console.log("Result: ", data)
       if (data?.token) {
         localStorage.setItem('token', data.token);
-
+        
         // ✅ decode JWT
         const decoded = jwtDecode<JwtPayload>(data.token);
 
@@ -146,7 +146,13 @@ const handleSubmit = async (e: React.FormEvent) => {
           localStorage.setItem('rememberMePreference', 'false');
         }
       }
-
+      if (data?.role === 'Admin'){
+        localStorage.setItem('role', 'Admin');
+        // localStorage.setItem('siteId', 'd612e6ce-028a-419c-a568-d053fb281efc')
+      }
+      if (data?.siteIds && data.siteIds.length > 0) {
+        localStorage.setItem('siteIds', JSON.stringify(data.siteIds));
+      }
       if (data?.refreshToken) {
         localStorage.setItem('refreshToken', data.refreshToken);
       }

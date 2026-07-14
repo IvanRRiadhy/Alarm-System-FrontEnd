@@ -1,6 +1,6 @@
-import { FC } from 'react';
+import { FC, useEffect } from 'react';
 import { styled, Container, Box, useTheme } from '@mui/material';
-import { useSelector } from 'src/store/Store';
+import { useSelector, useDispatch } from 'src/store/Store';
 import { Outlet } from 'react-router';
 import { RootState, AppDispatch } from 'src/store/Store';
 import Header from './vertical/header/Header';
@@ -11,6 +11,11 @@ import HorizontalHeader from '../full/horizontal/header/Header';
 import ScrollToTop from '../../components/shared/ScrollToTop';
 import LoadingBar from '../../LoadingBar';
 import { Toaster } from 'react-hot-toast';
+import { startMQTTclient } from 'src/utils/MQTT';
+import { AddAlarmEvent, AlarmEvent } from 'src/store/apps/crud/alarmEvent';
+import toast from 'react-hot-toast';
+import { useAlarmEventList } from 'src/hooks/useAlarmEvent';
+import { mapAlarmEventToEventItem } from 'src/utils/alarmMessageMapper';
 
 const MainWrapper = styled('div')(() => ({
   display: 'flex',
@@ -30,8 +35,45 @@ const PageWrapper = styled('div')(() => ({
 
 const FullLayout: FC = () => {
   const customizer = useSelector((state: RootState) => state.customizer);
-
   const theme = useTheme();
+  const dispatch = useDispatch();
+  useAlarmEventList({ page: 1, limit: 100 });
+  useEffect(() => {
+    console.log('[MQTT] Connected to global event/alarm subscription');
+    
+    const handleMqttMessage = (data: any) => {
+      console.log('[MQTT] Global received alarm message:', data);
+      const message = data as AlarmEvent;
+
+      if (!message.id || !message.deviceId || !message.message) {
+        console.warn('[MQTT] Message does not match expected alarm structure, skipping:', data);
+        return;
+      }
+
+      const eventItem = mapAlarmEventToEventItem(message);
+
+      // Dispatch mapped event to Redux store
+      dispatch(AddAlarmEvent(eventItem));
+
+      // Trigger standard toast notification
+      const sev = (message.severity || '').toLowerCase();
+      if (sev === 'critical') {
+        toast.error(`CRITICAL ALARM: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+      } else if (sev === 'high' || sev === 'medium') {
+        toast.error(`Alarm: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+      } else {
+        toast.success(`Info: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+      }
+    };
+
+    const unsubscribe = startMQTTclient(handleMqttMessage, 'event/alarm');
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [dispatch]);
 
   return (
     <>

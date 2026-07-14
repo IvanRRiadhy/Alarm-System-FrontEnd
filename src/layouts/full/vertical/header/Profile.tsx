@@ -1,7 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import React, { useState } from 'react';
-import { Link } from 'react-router';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router';
 import {
   Box,
   Menu,
@@ -18,9 +16,54 @@ import { IconMail } from '@tabler/icons-react';
 
 import ProfileImg from 'src/assets/images/profile/user-1.jpg';
 import unlimitedImg from 'src/assets/images/backgrounds/unlimited-bg.png';
+import axiosServices from 'src/utils/axios';
 
 const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
+  const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState({ name: 'User', role: 'Staff' });
+
+  useEffect(() => {
+    const responseStr = localStorage.getItem('response');
+    if (responseStr) {
+      try {
+        const data = JSON.parse(responseStr);
+        setUserInfo({
+          name: data?.fullName || data?.username || localStorage.getItem('fullName') || 'User',
+          role: data?.role || localStorage.getItem('role') || 'Staff',
+        });
+      } catch (e) {
+        setUserInfo({
+          name: localStorage.getItem('fullName') || 'User',
+          role: localStorage.getItem('role') || 'Staff',
+        });
+      }
+    } else {
+      setUserInfo({
+        name: localStorage.getItem('fullName') || 'User',
+        role: localStorage.getItem('role') || 'Staff',
+      });
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        await axiosServices.post('/api/auth/revoke', { refreshToken });
+      }
+    } catch (error) {
+      console.error('Failed to revoke token:', error);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('role');
+      localStorage.removeItem('siteIds');
+      localStorage.removeItem('response');
+      navigate('/auth/login');
+    }
+  };
+
   const handleClick2 = (event: any) => {
     setAnchorEl2(event.currentTarget);
   };
@@ -44,13 +87,23 @@ const Profile = () => {
         onClick={handleClick2}
       >
         <Avatar
-          src={ProfileImg}
-          alt={ProfileImg}
           sx={{
             width: 35,
             height: 35,
+            bgcolor: '#0d233a',
+            color: '#4ea5ff',
           }}
-        />
+        >
+          <svg
+            width={20}
+            height={20}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <circle cx="12" cy="8.5" r="3.5" />
+            <path d="M12 13.5c-3.8 0-6.5 2-6.5 4.5v1.2c0 .4.3.8.8.8h11.4c.5 0 .8-.4.8-.8v-1.2c0-2.5-2.7-4.5-6.5-4.5z" />
+          </svg>
+        </Avatar>
       </IconButton>
       {/* ------------------------------------------- */}
       {/* Message Dropdown */}
@@ -72,23 +125,30 @@ const Profile = () => {
       >
         <Typography variant="h5">User Profile</Typography>
         <Stack direction="row" py={3} spacing={2} alignItems="center">
-          <Avatar src={ProfileImg} alt={ProfileImg} sx={{ width: 95, height: 95 }} />
+          <Avatar
+            sx={{
+              width: 95,
+              height: 95,
+              bgcolor: '#0d233a',
+              color: '#4ea5ff',
+            }}
+          >
+            <svg
+              width={52}
+              height={52}
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <circle cx="12" cy="8.5" r="3.5" />
+              <path d="M12 13.5c-3.8 0-6.5 2-6.5 4.5v1.2c0 .4.3.8.8.8h11.4c.5 0 .8-.4.8-.8v-1.2c0-2.5-2.7-4.5-6.5-4.5z" />
+            </svg>
+          </Avatar>
           <Box>
             <Typography variant="subtitle2" color="textPrimary" fontWeight={600}>
-              Tommy May
+              {userInfo.name}
             </Typography>
             <Typography variant="subtitle2" color="textSecondary">
-              Super Admin
-            </Typography>
-            <Typography
-              variant="subtitle2"
-              color="textSecondary"
-              display="flex"
-              alignItems="center"
-              gap={1}
-            >
-              <IconMail width={15} height={15} />
-              superadmin@email.com
+              {userInfo.role}
             </Typography>
           </Box>
         </Stack>
@@ -146,7 +206,7 @@ const Profile = () => {
           </Box>
         ))} */}
         <Box mt={2}>
-          <Button to="/auth/login" variant="outlined" color="primary" component={Link} fullWidth>
+          <Button onClick={handleLogout} variant="outlined" color="primary" fullWidth>
             Logout
           </Button>
         </Box>

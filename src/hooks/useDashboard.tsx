@@ -9,6 +9,7 @@ export const useDashboardSummary = (filter: any)=>{
         queryKey: ["dashboard-summary",filter],
         queryFn: async () => {
             const response = await axiosServices.get(API_DASHBOARD,{params:filter});
+            console.log("Response", response);
             return response.data;
         },
                 placeholderData: keepPreviousData,

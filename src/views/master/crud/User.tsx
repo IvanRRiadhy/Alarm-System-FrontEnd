@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import SiteList from 'src/components/master/site/Site/SiteList';
 import AddEditSite from 'src/components/master/site/Site/AddEditSite';
 import AddEditUser from 'src/components/master/user/AddEditUser';
-import UserList from 'src/components/master/user/userList';
+import UserList from 'src/components/master/user/UserList';
 
 interface cardType {
   icon?: string;
@@ -92,7 +92,7 @@ const Site = () => {
             [`& .MuiDrawer-paper`]: { width: '100%', position: 'relative' },
           }}
         >
-          <ParentCard title="Site List" codeModel={[
+          <ParentCard title="User List" codeModel={[
             <AddEditUser type='add' />
             ]}>
             <UserList />

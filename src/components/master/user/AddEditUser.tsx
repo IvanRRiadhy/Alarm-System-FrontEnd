@@ -23,6 +23,9 @@ import toast from 'react-hot-toast';
 import { useUploadCDN } from 'src/hooks/useCDN';
 import { BASE_URL } from 'src/utils/axios';
 import { toastError } from 'src/utils/errors';
+import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
+import { useSiteLookup } from 'src/hooks/useSite';
+import { SiteType } from 'src/store/apps/crud/site';
 
 interface AddEditUserProps {
   user?: userType;
@@ -37,6 +40,7 @@ const defaultUserForm: userRegistrationType = {
   email: '',
   fullName: '',
   profilePicture: '',
+  siteIds: [],
 };
 
 const AddEditUser: React.FC<AddEditUserProps> = ({ user, type }) => {
@@ -51,6 +55,7 @@ const AddEditUser: React.FC<AddEditUserProps> = ({ user, type }) => {
         email: user.email || '',
         password: '', // blank by default on edit
         profilePicture: user.profilePicture || '',
+        siteIds: user.siteIds || [],
       };
     }
     return { ...defaultUserForm };
@@ -73,6 +78,8 @@ const AddEditUser: React.FC<AddEditUserProps> = ({ user, type }) => {
   const registerMutation = useRegisterUser();
   const editMutation = useEditUser();
   const uploadMutation = useUploadCDN();
+  const { data: siteLookupResponse, isLoading: isLoadingSites } = useSiteLookup();
+  const sites = siteLookupResponse?.data || [];
 
   const handleOpen = () => {
     setFormData(getInitialFormData());
@@ -228,6 +235,7 @@ const AddEditUser: React.FC<AddEditUserProps> = ({ user, type }) => {
       fullName: formData.fullName,
       email: formData.email,
       profilePicture: finalProfilePicture,
+      siteIds: formData.siteIds || [],
     } as any;
 
     if (type === 'add' || formData.password) {
@@ -337,6 +345,26 @@ const AddEditUser: React.FC<AddEditUserProps> = ({ user, type }) => {
                   helperText={formErrors.password}
                   fullWidth
                   required={type === 'add'}
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <CustomFormLabel htmlFor="siteIds">Accessible Sites</CustomFormLabel>
+                <CustomAutocomplete<SiteType>
+                  multiple
+                  id="siteIds"
+                  placeholder="Select Sites"
+                  options={sites}
+                  loading={isLoadingSites}
+                  value={sites.filter((s) => formData.siteIds?.includes(s.id))}
+                  onChange={(selectedSites) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      siteIds: selectedSites.map((s) => s.id),
+                    }));
+                  }}
+                  getOptionLabel={(option) => option.name}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  filterSelectedOptions
                 />
               </Grid>
             </Grid>

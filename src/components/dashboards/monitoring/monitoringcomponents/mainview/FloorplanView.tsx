@@ -132,9 +132,10 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
 
   const getActiveAlarm = (mappingId: string, deviceId: string | null) => {
     if (!alarmEvents) return undefined;
+    // console.log("AlarmEvent: ", alarmEvents)
     return alarmEvents.find(
       (evt) =>
-        evt.statusAlarm.toLowerCase() === 'on' &&
+        evt.statusAlarm?.toLowerCase() === 'on' &&
         ((deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId)
     );
   };

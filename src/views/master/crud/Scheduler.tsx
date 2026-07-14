@@ -91,7 +91,7 @@ const Scheduler = () => {
           }}
         >
           <ParentCard
-            title="Schedule List"
+            title="Time Table List"
             codeModel={[
               <Button
                 key="add-btn"

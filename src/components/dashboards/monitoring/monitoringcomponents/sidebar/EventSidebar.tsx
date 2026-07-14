@@ -39,6 +39,12 @@ export interface EventItem {
   statusAlarm?: string;
   rawId?: string;
   createdAt?: string;
+
+  controllerId?: string;
+  controllerName?: string;
+  buildingId?: string | null;
+  floorId?: string | null;
+  siteId?: string;
 }
 
 export const dummyEvents: EventItem[] = [

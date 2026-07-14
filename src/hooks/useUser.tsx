@@ -19,7 +19,7 @@ export interface PaginatedResponse<T> {
 // -----------------------------------------------------------------------------
 // ✅ FETCH ALL USERS (for dropdowns, etc.)
 // -----------------------------------------------------------------------------
-export function useAllUsers(filter: GetFilter) {
+export function useAllUsers(filter?: GetFilter) {
   return useQuery({
     queryKey: ['user-all', filter],
     queryFn: async () => {

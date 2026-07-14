@@ -32,6 +32,18 @@ export function useSiteList(filter?: GetFilter) {
     })
 }
 
+export function useSiteById(id: string) {
+    return useQuery({
+        queryKey: ['site-by-id', id],
+        queryFn: async() => {
+            const response = await axiosServices.get<PaginatedResponse<SiteType>>(`${Site_API_URL}${id}`);
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000
+    })
+}
+
 export function useSiteLookup() {
     return useQuery({
         queryKey: ['site-lookup'],
@@ -87,3 +99,17 @@ export function useDeleteSite() {
     })
 }
 
+
+export function useAssignUser() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: {userId: string, siteId: string}) => {
+            const { userId, siteId } = payload;
+            const response = await axiosServices.post(`${Site_API_URL}${siteId}/assign-users`, { userId })
+            return response.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["site-list"] })
+        }
+    })
+}

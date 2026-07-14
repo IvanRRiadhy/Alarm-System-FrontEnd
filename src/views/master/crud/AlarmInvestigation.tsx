@@ -89,7 +89,7 @@ const AlarmInvestigations = () => {
           }}
         >
           <ParentCard 
-            title="Device List" 
+            title="Investigation List" 
             codeModel={[
             ]}
           >

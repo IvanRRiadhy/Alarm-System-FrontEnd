@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Grid2 as Grid } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
 import AlarmHeader from 'src/components/dashboards/alarm/AlarmHeader';
@@ -13,13 +13,72 @@ import RecentEvents from 'src/components/dashboards/alarm/RecentEvents';
 import SystemHealth from 'src/components/dashboards/alarm/SystemHealth';
 import QuickActions from 'src/components/dashboards/alarm/QuickActions';
 import { useDashboardSummary } from 'src/hooks/useDashboard';
+import { useSiteById } from 'src/hooks/useSite';
 
 const Modern = () => {
-  const [region, setRegion] = useState<string>('Semua Region');
-  const filter = region !== 'Semua Region' ? { region } : {};
+  const [siteId, setSiteId] = useState<string | null>(() => localStorage.getItem('selectedSiteId'));
+
+  useEffect(() => {
+    const handleSiteChange = () => {
+      setSiteId(localStorage.getItem('selectedSiteId'));
+    };
+
+    window.addEventListener('siteChanged', handleSiteChange);
+    return () => {
+      window.removeEventListener('siteChanged', handleSiteChange);
+    };
+  }, []);
+
+  const region = 'All';
+  const filter = siteId ? { siteId } : {};
   const { data: summaryResponse, isLoading } = useDashboardSummary(filter);
   const dashboardData = summaryResponse?.data;
+  console.log("DATA: ", dashboardData)
 
+  const { data: singleSiteResponse } = useSiteById(siteId || '');
+  const siteObj = singleSiteResponse?.data
+    ? (Array.isArray(singleSiteResponse.data) ? singleSiteResponse.data[0] : (singleSiteResponse.data as any))
+    : null;
+  console.log("Site", siteObj)
+  // Determine what to pass as activeAlarmsBySite to SiteMap
+  const mapAlarmsBySite = siteId && siteObj
+    ? [
+        {
+          siteId: siteObj.id,
+          siteName: siteObj.name,
+          region: siteObj.region,
+          latitude: Number(siteObj.latitude),
+          longitude: Number(siteObj.longitude),
+          status: dashboardData?.activeAlarmsByFloorplan?.some((fp: any) => fp.status?.toLowerCase() === 'alarm')
+            ? 'Alarm'
+            : dashboardData?.activeAlarmsByFloorplan?.some((fp: any) => fp.status?.toLowerCase() === 'trouble')
+            ? 'Trouble'
+            : 'Normal',
+          severity: dashboardData?.activeAlarmsByFloorplan?.reduce((maxSev: string, fp: any) => {
+            if (!fp.severity) return maxSev;
+            const fpSev = fp.severity;
+            const sevPriority: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+            const currentPri = sevPriority[fpSev.toLowerCase()] || 0;
+            const maxPri = sevPriority[maxSev.toLowerCase()] || 0;
+            return currentPri > maxPri ? fpSev : maxSev;
+          }, '') || null,
+          totalAlarms: dashboardData?.activeAlarmsByFloorplan?.reduce((sum: number, fp: any) => sum + (fp.totalAlarms || 0), 0) || 0,
+          totalDeviceOn: dashboardData?.activeAlarmsByFloorplan?.reduce((sum: number, fp: any) => sum + (fp.totalDeviceOn || 0), 0) || 0,
+          totalDeviceOff: dashboardData?.activeAlarmsByFloorplan?.reduce((sum: number, fp: any) => sum + (fp.totalDeviceOff || 0), 0) || 0,
+          totalAlarmOn: dashboardData?.activeAlarmsByFloorplan?.reduce((sum: number, fp: any) => sum + (fp.totalAlarmOn || 0), 0) || 0,
+          totalAlarmOff: dashboardData?.activeAlarmsByFloorplan?.reduce((sum: number, fp: any) => sum + (fp.totalAlarmOff || 0), 0) || 0,
+          lastAlarmAt: dashboardData?.activeAlarmsByFloorplan?.reduce((latest: string | null, fp: any) => {
+            if (!fp.lastAlarmAt) return latest;
+            if (!latest) return fp.lastAlarmAt;
+            return new Date(fp.lastAlarmAt) > new Date(latest) ? fp.lastAlarmAt : latest;
+          }, null as string | null) || null,
+        }
+      ]
+    : dashboardData?.activeAlarmsBySite;
+
+  const activeAlarmsSitesData = siteId 
+    ? (dashboardData?.activeAlarmsByFloorplan || [])
+    : (dashboardData?.activeAlarmsBySite || []);
 
   return (
     <PageContainer title="SOC Dashboard" description="Security Operations Center Dashboard">
@@ -50,7 +109,7 @@ const Modern = () => {
               md: 12,
               lg: 5
             }}>
-            <SiteMap region={region} activeAlarmsBySite={dashboardData?.activeAlarmsBySite} />
+            <SiteMap region={region} activeAlarmsBySite={mapAlarmsBySite} />
           </Grid>
 
           {/* FloorPlan */}
@@ -73,7 +132,7 @@ const Modern = () => {
               md: 12,
               lg: 4
             }}>
-            <ActiveAlarmSites activeAlarmsBySite={dashboardData?.activeAlarmsBySite} />
+            <ActiveAlarmSites activeAlarmsBySite={activeAlarmsSitesData} />
           </Grid>
           {/* Status + Trend */}
           <Grid

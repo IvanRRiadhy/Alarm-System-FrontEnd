@@ -93,7 +93,7 @@ const AlarmRule = () => {
           }}
         >
           <ParentCard 
-            title="Device List" 
+            title="Alarm Rule List" 
             codeModel={[
               <AddEditAlarmRule type='add' key="add-alarm-rule-trigger" />
             ]}

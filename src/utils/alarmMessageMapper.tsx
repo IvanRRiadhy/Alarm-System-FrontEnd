@@ -4,6 +4,7 @@ import { channelType } from 'src/store/apps/crud/channel';
 import { deviceType } from 'src/store/apps/crud/devices';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import type { Severity } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
+import { AlarmEvent } from 'src/store/apps/crud/alarmEvent';
 
 // ── MQTT Message Types ──────────────────────────────────────────────────
 
@@ -231,4 +232,63 @@ function hashStringToNumber(str: string): number {
     hash = (hash * 33) ^ str.charCodeAt(i);
   }
   return Math.abs(hash);
+}
+
+export function mapAlarmEventToEventItem(event: AlarmEvent): EventItem {
+  let hash = 5381;
+  for (let i = 0; i < event.id.length; i++) {
+    hash = (hash * 33) ^ event.id.charCodeAt(i);
+  }
+  const numericId = Math.abs(hash);
+  const dateObj = new Date(event.createdAt);
+  let timeStr = '';
+  if (!isNaN(dateObj.getTime())) {
+    const datePart = dateObj.toLocaleDateString('en-GB'); // "DD/MM/YYYY"
+    const timePart = dateObj.toLocaleTimeString('it-IT'); // "HH:mm:ss"
+    timeStr = `${datePart} ${timePart}`;
+  }
+
+  let severity: Severity = 'Low';
+  const sevLower = (event.severity || '').toLowerCase();
+  if (sevLower === 'critical') {
+    severity = 'Critical';
+  } else if (sevLower === 'high' || sevLower === 'medium') {
+    severity = 'High';
+  }
+
+  const { icon, color } = getEventIconAndColor(event.deviceType || event.message);
+
+  let statusAlarm = event.statusAlarm;
+  if (event.statusEvents && typeof event.statusEvents === 'object') {
+    const eventType = event.statusEvents.event_type || event.statusEvents.eventType;
+    if (eventType === 'TRIGGER') {
+      statusAlarm = 'ON';
+    } else if (eventType === 'RELEASE') {
+      statusAlarm = 'OFF';
+    }
+  }
+
+  return {
+    id: numericId,
+    time: timeStr,
+    title: event.message,
+    site: event.siteName || 'Unknown Site',
+    severity,
+    area: event.floorName || event.buildingName || event.siteRegion || 'Unknown Area',
+    icon,
+    iconColor: color,
+    deviceId: event.deviceId,
+    deviceName: event.deviceName,
+    floorplanId: event.floorplanId,
+    statusAlarm,
+    rawId: event.id,
+    createdAt: event.createdAt,
+    
+    // Original IDs for Redux store grouping/lookup
+    controllerId: event.controllerId,
+    controllerName: event.controllerName,
+    buildingId: event.buildingId,
+    floorId: event.floorId,
+    siteId: event.siteId,
+  };
 }

@@ -44,6 +44,7 @@
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.21",
     "emoji-picker-react": "^4.12.0",
+    "flv.js": "^1.6.2",
     "formik": "^2.4.5",
     "formik-mui": "^5.0.0-alpha.0",
     "framer-motion": "^10.16.4",
