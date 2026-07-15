@@ -85,6 +85,7 @@ const Pricing = Loadable(lazy(() => import('../views/pages/pricing/Pricing')));
 const AccountSetting = Loadable(
   lazy(() => import('../views/pages/account-setting/AccountSetting')),
 );
+const CameraPopup = Loadable(lazy(() => import('../views/pages/CameraPopup')));
 
 // charts
 const AreaChart = Loadable(lazy(() => import('../views/charts/AreaChart')));
@@ -354,6 +355,7 @@ const Router = [
       { path: '/frontend-pages/pricing', element: <PagePricing /> },
       { path: '/frontend-pages/blog', element: <BlogPage /> },
       { path: '/frontend-pages/blog/detail/:id', element: <BlogPost /> },
+      { path: '/camera-popup', element: <CameraPopup /> },
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },

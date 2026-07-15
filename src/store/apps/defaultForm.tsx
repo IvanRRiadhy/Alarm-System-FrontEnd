@@ -407,7 +407,7 @@ export const defaultDeviceForm: deviceType = {
     siteId: '',
     siteName: '',
     name: '',
-    channelId: '',
+    channelId: null,
     hardwareId: '',
     serialNumber: '',
     manufacturer: '',

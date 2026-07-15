@@ -11,6 +11,7 @@ export interface AlarmEvent {
   buildingId: string | null;
   floorId: string | null;
   floorplanId: string | null;
+  alarmCaseId: string| null;
   statusDevice: string;
   statusAlarm: string;
   posPxX: number | null;

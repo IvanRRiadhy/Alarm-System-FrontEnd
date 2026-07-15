@@ -1,22 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   Box,
   Button,
   Typography,
-  MenuItem,
   CircularProgress,
   IconButton,
   Divider,
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 import { useCreateAlarmInvestigation } from 'src/hooks/useAlarmInvestigation';
-import { usePersonnelLookup } from 'src/hooks/usePersonnel';
-import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
-import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
 import { AlarmEvent } from 'src/store/apps/crud/alarmEvent';
 import { alpha, useTheme } from '@mui/material/styles';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -28,54 +24,18 @@ interface AlarmPopupProps {
 const AlarmPopup: React.FC<AlarmPopupProps> = ({ alarm, onClose }) => {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const [showInvestigatePanel, setShowInvestigatePanel] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
-    personnelId: '',
-    note: '',
-  });
-
-  const { data: personnelResponse } = usePersonnelLookup({
-    page: 1,
-    limit: 100,
-    sortBy: 'name',
-    sortOrder: 'asc',
-    search: '',
-  });
-  const personnelList = personnelResponse?.data || [];
-
   const createMutation = useCreateAlarmInvestigation({
-    alarmEventId: alarm?.id ? String(alarm.id) : '',
-    personnelId: formData.personnelId,
-    note: formData.note,
+    AlarmCaseId: alarm?.alarmCaseId ? String(alarm.alarmCaseId) : '',
+    note: 'Case investigation started.',
   });
-
-  useEffect(() => {
-    if (alarm) {
-      setShowInvestigatePanel(false);
-      setFormData({
-        personnelId: '',
-        note: '',
-      });
-    }
-  }, [alarm]);
 
   if (!alarm) return null;
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSave = async () => {
-    if (!formData.personnelId) {
-      toast.error('Please select personnel.');
+  const handleInvestigate = async () => {
+    if (!alarm.alarmCaseId) {
+      toast.error('No case associated with this alarm.');
       return;
     }
 
@@ -83,11 +43,11 @@ const AlarmPopup: React.FC<AlarmPopupProps> = ({ alarm, onClose }) => {
       setIsSaving(true);
       await createMutation.mutateAsync();
       queryClient.invalidateQueries({ queryKey: ['alarm-event-list'] });
-      toast.success('Investigation created successfully!');
+      toast.success('Investigation started successfully!');
       onClose();
     } catch (error) {
-      console.error('Error creating alarm investigation:', error);
-      toast.error('Failed to create investigation.');
+      console.error('Error starting alarm investigation:', error);
+      toast.error('Failed to start investigation.');
     } finally {
       setIsSaving(false);
     }
@@ -191,7 +151,8 @@ const AlarmPopup: React.FC<AlarmPopupProps> = ({ alarm, onClose }) => {
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 'auto' }}>
               <Button
                 variant="contained"
-                onClick={() => setShowInvestigatePanel((prev) => !prev)}
+                onClick={handleInvestigate}
+                disabled={isSaving}
                 sx={{
                   backgroundColor: '#ffffff',
                   color: priorityColor,
@@ -208,157 +169,11 @@ const AlarmPopup: React.FC<AlarmPopupProps> = ({ alarm, onClose }) => {
                   },
                 }}
               >
-                Investigate
+                {isSaving ? <CircularProgress size={20} color="inherit" /> : 'Investigate'}
               </Button>
             </Box>
           </Box>
         </motion.div>
-
-        {/* ========= INVESTIGATE PANEL (RIGHT) ========= */}
-        <AnimatePresence>
-          {showInvestigatePanel && (
-            <motion.div
-              initial={{ opacity: 0, x: -30, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -30, scale: 0.95 }}
-              transition={{ duration: 0.25 }}
-            >
-              <Box
-                sx={{
-                  background: '#1e293b',
-                  color: 'white',
-                  borderRadius: 4,
-                  p: 4,
-                  width: { xs: '90vw', sm: 400 },
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: '100%',
-                  minHeight: 380,
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box>
-                  <Typography variant="h5" fontWeight="bold" sx={{ color: '#38bdf8', mb: 2 }}>
-                    Assign Investigation
-                  </Typography>
-                  <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mb: 3 }} />
-
-                  {/* Personnel Select */}
-                  <Box sx={{ mb: 3 }}>
-                    <CustomFormLabel htmlFor="personnelId" sx={{ color: '#94a3b8' }}>
-                      Assign Personnel
-                    </CustomFormLabel>
-                    <CustomTextField
-                      id="personnelId"
-                      name="personnelId"
-                      select
-                      fullWidth
-                      value={formData.personnelId}
-                      onChange={handleInputChange}
-                      slotProps={{
-                        select: {
-                          MenuProps: {
-                            PaperProps: {
-                              sx: {
-                                bgcolor: '#1e293b',
-                                color: 'white',
-                                '& .MuiMenuItem-root': {
-                                  '&:hover': { bgcolor: '#334155' },
-                                  '&.Mui-selected': { bgcolor: '#0284c7' },
-                                },
-                              },
-                            },
-                          },
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: 'white',
-                          '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
-                          '&:hover fieldset': { borderColor: '#38bdf8' },
-                          '&.Mui-focused fieldset': { borderColor: '#38bdf8' },
-                        },
-                      }}
-                    >
-                      <MenuItem value="" disabled>
-                        Select Personnel
-                      </MenuItem>
-                      {personnelList.map((p: any) => (
-                        <MenuItem key={p.id} value={p.id}>
-                          {p.name}
-                        </MenuItem>
-                      ))}
-                    </CustomTextField>
-                  </Box>
-
-                  {/* Notes */}
-                  <Box sx={{ mb: 3 }}>
-                    <CustomFormLabel htmlFor="note" sx={{ color: '#94a3b8' }}>
-                      Notes
-                    </CustomFormLabel>
-                    <CustomTextField
-                      id="note"
-                      name="note"
-                      multiline
-                      rows={3}
-                      fullWidth
-                      placeholder="Enter investigation details/notes..."
-                      value={formData.note}
-                      onChange={handleInputChange}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: 'white',
-                          '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
-                          '&:hover fieldset': { borderColor: '#38bdf8' },
-                          '&.Mui-focused fieldset': { borderColor: '#38bdf8' },
-                        },
-                      }}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 2, mt: 'auto' }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={() => setShowInvestigatePanel(false)}
-                    disabled={isSaving}
-                    sx={{
-                      color: '#94a3b8',
-                      borderColor: '#475569',
-                      textTransform: 'none',
-                      '&:hover': {
-                        borderColor: '#94a3b8',
-                        bgcolor: 'rgba(255,255,255,0.05)',
-                      },
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    sx={{
-                      bgcolor: '#0284c7',
-                      color: 'white',
-                      textTransform: 'none',
-                      fontWeight: 'bold',
-                      '&:hover': {
-                        bgcolor: '#0369a1',
-                      },
-                    }}
-                  >
-                    {isSaving ? <CircularProgress size={20} color="inherit" /> : 'Submit'}
-                  </Button>
-                </Box>
-              </Box>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </Box>
     </Dialog>
   );

@@ -27,6 +27,7 @@ import {
   useDispatchInvestigation,
   useResolveInvestigation,
   usePostponeInvestigation,
+  useCreateAlarmInvestigation,
 } from 'src/hooks/useAlarmInvestigation';
 import { usePersonnelLookup } from 'src/hooks/usePersonnel';
 import { useUploadCDN } from 'src/hooks/useCDN';
@@ -47,7 +48,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const formatDateTimeLocal = (dateStr: string) => {
+  const formatDateTimeLocal = (dateStr: string | null) => {
     if (!dateStr) return '';
     const parsed = dayjs(dateStr);
     return parsed.isValid() ? parsed.format('YYYY-MM-DDTHH:mm') : '';
@@ -66,6 +67,11 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   const personnelList = personnelResponse?.data || [];
 
   const uploadMutation = useUploadCDN();
+
+  const createInvestigationMutation = useCreateAlarmInvestigation({
+    AlarmCaseId: device.id,
+    note: 'Case investigation started.',
+  });
 
   const acknowledgeMutation = useAcknowledgeInvestigation(device.id);
   const dispatchMutation = useDispatchInvestigation(device.id, formData.personnelId);
@@ -224,11 +230,37 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
     }
   };
 
+  let tooltipTitle = "Update Investigation";
+  if (!device.status) {
+    tooltipTitle = "Investigate";
+  } else if (device.status === 'Acknowledged') {
+    tooltipTitle = "Dispatch Personnel";
+  } else if (device.status === 'Dispatched') {
+    tooltipTitle = "Resolve Case";
+  }
+
+  const handleActionClick = async () => {
+    if (!device.status) {
+      try {
+        setIsSaving(true);
+        await createInvestigationMutation.mutateAsync();
+        toast.success('Investigation started successfully!');
+      } catch (error) {
+        console.error('Error starting investigation:', error);
+        toast.error('Failed to start investigation.');
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      setOpen(true);
+    }
+  };
+
   return (
     <>
-      <Tooltip title="Update Investigation">
-        <IconButton onClick={handleClickOpen} color="primary" size="small">
-          <IconPencil size={20} />
+      <Tooltip title={tooltipTitle}>
+        <IconButton onClick={handleActionClick} color="primary" size="small" disabled={isSaving}>
+          {isSaving && !open ? <CircularProgress size={20} /> : <IconPencil size={20} />}
         </IconButton>
       </Tooltip>
 

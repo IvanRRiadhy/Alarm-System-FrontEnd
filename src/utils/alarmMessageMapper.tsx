@@ -32,6 +32,7 @@ export interface MqttAlarmMessage {
   device_id: string;
   controller_id: string;
   client_id: string;
+  alarm_case_id: string;
   fw: string;
   online: boolean;
   alarm_state: string;
@@ -194,6 +195,7 @@ export function mapAlarmMessageToEvents(
         site: device?.siteName || controllerSite,
         severity: device ? mapSeverity(device.alarmSeverity) : 'Low',
         area: mapping?.areaName || `Zone ${zone.id}`,
+        alarmCaseId: message.alarm_case_id,
         icon,
         iconColor: color,
         deviceId: device?.id,
@@ -225,6 +227,7 @@ export function mapAlarmMessageToEvents(
         site: device?.siteName || controllerSite,
         severity: device ? mapSeverity(device.alarmSeverity) : 'Low',
         area: mapping?.areaName || `Relay ${relay.id}`,
+        alarmCaseId: message.alarm_case_id,
         icon,
         iconColor: color,
         deviceId: device?.id,
@@ -304,7 +307,7 @@ export function mapAlarmEventToEventItem(event: AlarmEvent): EventItem {
     statusAlarm,
     rawId: event.id,
     createdAt: event.createdAt,
-    
+    alarmCaseId: event.alarmCaseId,
     // Original IDs for Redux store grouping/lookup
     controllerId: event.controllerId,
     controllerName: event.controllerName,

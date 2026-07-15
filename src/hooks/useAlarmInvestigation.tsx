@@ -16,12 +16,13 @@ interface PaginatedResponse<T> {
 }
 
 export interface AlarmInvestigationCreatePayload {
-    alarmEventId: string;
+    AlarmCaseId?: string;
+    alarmEventId?: string;
     personnelId?: string;
     note: string;
 }
 
-export interface AlarmInvestigationUpdatePayload {
+export interface AlarmInvestigationResolvePayload {
     // personnelId: string;
     note?: string;
     // status: string;
@@ -64,11 +65,12 @@ export function useCreateAlarmInvestigation(body: AlarmInvestigationCreatePayloa
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+            queryClient.invalidateQueries({ queryKey: ["alarm-case-list"] });
         },
     });
 }
 
-export function useUpdateAlarmInvestigation(id: string, body: AlarmInvestigationUpdatePayload) {
+export function useUpdateAlarmInvestigation(id: string, body: AlarmInvestigationResolvePayload) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async () => {
@@ -77,6 +79,7 @@ export function useUpdateAlarmInvestigation(id: string, body: AlarmInvestigation
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+            queryClient.invalidateQueries({ queryKey: ["alarm-case-list"] });
         },
     });
 }
@@ -90,6 +93,7 @@ export function useAcknowledgeInvestigation(id: string) {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+            queryClient.invalidateQueries({ queryKey: ["alarm-case-list"] });
         },
     });
 }
@@ -103,11 +107,12 @@ export function useDispatchInvestigation(id: string, personnelId: string) {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+            queryClient.invalidateQueries({ queryKey: ["alarm-case-list"] });
         },
     });
 }
 
-export function useResolveInvestigation(id: string, body: AlarmInvestigationUpdatePayload) {
+export function useResolveInvestigation(id: string, body: AlarmInvestigationResolvePayload) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async () => {
@@ -116,6 +121,7 @@ export function useResolveInvestigation(id: string, body: AlarmInvestigationUpda
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+            queryClient.invalidateQueries({ queryKey: ["alarm-case-list"] });
         },
     });  
 }
@@ -129,6 +135,7 @@ export function usePostponeInvestigation(id: string, body: AlarmInvestigationPos
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+            queryClient.invalidateQueries({ queryKey: ["alarm-case-list"] });
         },
     });
 }

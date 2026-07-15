@@ -4,21 +4,12 @@ import {
   Typography,
   Button,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Divider,
-  MenuItem,
-  IconButton,
 } from '@mui/material';
-import { IconCamera, IconInfoCircle, IconX } from '@tabler/icons-react';
+import { IconCamera, IconInfoCircle } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
-import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
 import { useCreateAlarmInvestigation } from 'src/hooks/useAlarmInvestigation';
-import { usePersonnelLookup } from 'src/hooks/usePersonnel';
 
 interface EventDetailProps {
   selectedLog: any;
@@ -40,20 +31,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
     day: 'numeric',
   });
 
-  const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    personnelId: '',
-    note: '',
-  });
-
-  const { data: personnelResponse } = usePersonnelLookup({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc', search: '' });
-  const personnelList = personnelResponse?.data || [];
 
   const createMutation = useCreateAlarmInvestigation({
-    alarmEventId: selectedLog?.id ? String(selectedLog.id) : '',
-    personnelId: formData.personnelId,
-    note: formData.note,
+    AlarmCaseId: selectedLog?.alarmCaseId ? String(selectedLog.alarmCaseId) : '',
+    note: 'Case investigation started.',
   });
 
   const queryClient = useQueryClient();
@@ -94,31 +76,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
     { label: 'Deskripsi', value: selectedLog.description || selectedLog.message || 'No Message Available' },
   ];
 
-  const handleOpen = () => {
-    setFormData({
-      personnelId: '',
-      note: '',
-    });
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSave = async () => {
-    if (!formData.personnelId) {
-      toast.error('Please select a personnel.');
+  const handleInvestigate = async () => {
+    if (!selectedLog.alarmCaseId) {
+      toast.error('No case associated with this event.');
       return;
     }
 
@@ -126,11 +86,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
       setIsSaving(true);
       await createMutation.mutateAsync();
       queryClient.invalidateQueries({ queryKey: ['alarm-event-list'] });
-      toast.success('Event acknowledged and investigation created successfully!');
-      handleClose();
+      toast.success('Investigation started successfully!');
     } catch (error) {
-      console.error('Error creating alarm investigation:', error);
-      toast.error('Failed to acknowledge event.');
+      console.error('Error starting alarm investigation:', error);
+      toast.error('Failed to start investigation.');
     } finally {
       setIsSaving(false);
     }
@@ -279,13 +238,14 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
         </Box> */}
       </Box>
 
-      {/* Acknowledge Button */}
-      {selectedLog.statusAlarm?.toLowerCase() !== 'on' && selectedLog.statusAlarm?.toLowerCase() !== 'active' && (
+      {/* Investigate Button */}
+      {selectedLog.alarmCaseId && selectedLog.statusAlarm?.toLowerCase() !== 'on' && selectedLog.statusAlarm?.toLowerCase() !== 'active' && (
         <Box sx={{ p: 1.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <Button
             fullWidth
             variant="contained"
-            onClick={handleOpen}
+            onClick={handleInvestigate}
+            disabled={isSaving}
             sx={{
               bgcolor: '#2563EB',
               color: '#fff',
@@ -301,76 +261,10 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
               },
             }}
           >
-            Acknowledge
+            {isSaving ? 'Starting Investigation...' : 'Investigate'}
           </Button>
         </Box>
       )}
-
-      {/* Acknowledge Event / Create Investigation Dialog */}
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" fontWeight="bold">
-            Acknowledge Event
-          </Typography>
-          <IconButton onClick={handleClose} size="small" sx={{ color: 'text.secondary' }}>
-            <IconX size={20} />
-          </IconButton>
-        </DialogTitle>
-        <Divider />
-        <DialogContent sx={{ p: 3 }}>
-          <Box display="flex" flexDirection="column" gap={2}>
-            {/* Personnel Select */}
-            <Box>
-              <CustomFormLabel htmlFor="personnelId">Assign Personnel</CustomFormLabel>
-              <CustomTextField
-                id="personnelId"
-                name="personnelId"
-                select
-                fullWidth
-                value={formData.personnelId}
-                onChange={handleInputChange}
-              >
-                <MenuItem value="" disabled>
-                  Select Personnel
-                </MenuItem>
-                {personnelList.map((p: any) => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.name}
-                  </MenuItem>
-                ))}
-              </CustomTextField>
-            </Box>
-
-            {/* Notes input */}
-            <Box>
-              <CustomFormLabel htmlFor="note">Notes</CustomFormLabel>
-              <CustomTextField
-                id="note"
-                name="note"
-                multiline
-                rows={3}
-                fullWidth
-                placeholder="Enter notes for this investigation..."
-                value={formData.note}
-                onChange={handleInputChange}
-              />
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button variant="outlined" color="error" onClick={handleClose} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Submitting...' : 'Submit'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

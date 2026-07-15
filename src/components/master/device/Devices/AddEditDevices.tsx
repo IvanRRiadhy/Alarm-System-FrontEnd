@@ -102,7 +102,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
           id: formData.id,
           siteId: formData.siteId,
           name: formData.name,
-          channelId: null,
+          channelId: formData.channelId,
           hardwareId: formData.hardwareId,
           serialNumber: formData.serialNumber,
           manufacturer: formData.manufacturer,

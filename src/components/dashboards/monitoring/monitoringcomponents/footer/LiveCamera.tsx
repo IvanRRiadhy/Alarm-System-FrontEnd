@@ -53,14 +53,14 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
   const isCCTV = selectedDevice?.deviceType === 'CctvCamera';
 
   const getEngineWsUrl = (baseUrl: string) => {
-    if (!baseUrl) return 'ws://localhost:8283';
+    if (!baseUrl) return 'ws://localhost:8282';
     try {
       const parsedUrl = new URL(baseUrl.includes('//') ? baseUrl : `//${baseUrl}`);
       // return `ws://${parsedUrl.hostname}:8283`;
-      return "ws://192.168.1.116:8283"
+      return "ws://localhost:8282"
     } catch (e) {
       console.error("Error parsing BASE_URL for engineWsUrl:", e);
-      return 'ws://localhost:8283';
+      return 'ws://localhost:8282';
     }
   };
 
@@ -186,7 +186,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
 
   const handleOpenNewWindow = () => {
     if (!activeDevice) return;
-    const feedUrl = rtspUrl;
+    const feedUrl = `${window.location.origin}/camera-popup?streamUrl=${encodeURIComponent(rtspUrl)}&name=${encodeURIComponent(cameraName)}&engineWsUrl=${encodeURIComponent(getEngineWsUrl(BASE_URL))}`;
     const winName = `CCTV_${activeDevice.deviceId}`;
     const newWin = window.open(feedUrl, winName, 'width=800,height=600,scrollbars=yes,resizable=yes');
     if (newWin) {

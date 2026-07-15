@@ -39,7 +39,7 @@ export interface EventItem {
   statusAlarm?: string;
   rawId?: string;
   createdAt?: string;
-
+  alarmCaseId: string | null;
   controllerId?: string;
   controllerName?: string;
   buildingId?: string | null;

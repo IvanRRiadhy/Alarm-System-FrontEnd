@@ -62,14 +62,14 @@ const FullLayout: FC = () => {
       const sev = (message.severity || '').toLowerCase();
       const isOnDashboard = window.location.pathname.includes('/dashboards/');
       if (sev === 'critical') {
-        toast.error(`CRITICAL ALARM: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+        // toast.error(`CRITICAL ALARM: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
         if (isOnDashboard) {
           setCriticalAlarm(message);
         }
       } else if (sev === 'high' || sev === 'medium') {
-        toast.error(`Alarm: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+        // toast.error(`Alarm: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
       } else {
-        toast.success(`Info: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+        // toast.success(`Info: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
       }
 
       // Post message for Notification.tsx to trigger bubble and bell animation

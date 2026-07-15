@@ -18,13 +18,22 @@
 
     export interface AlarmInvestigationType {
         id: string;
-        alarmEventId: string;
+        alarmCaseId: string;
         personnelId: string;
         personnelName: string;
         status: string;
         note: string;
         result: string;
-        postponedUntil: string;
+        postponedUntil: string | null;
+        acknowledgedAt: string | null;
+        dispatchedAt: string | null;
+        waitingAt: string | null;
+        acceptedAt: string | null;
+        arrivedAt: string | null;
+        doneInvestigatedAt: string | null;
+        doneAt: string | null;
+        noActionAt: string | null;
+        postponedAt: string | null;
         createdAt: string;
         createdBy: string;
         updatedAt: string;
