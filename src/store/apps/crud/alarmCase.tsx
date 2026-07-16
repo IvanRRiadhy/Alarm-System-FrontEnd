@@ -32,6 +32,54 @@ export interface AlarmCaseType {
     posPxY: number;
 }
 
+export interface AlarmCaseTimelineType {
+    incidentInfo: {
+        alarmCaseId: string;
+        caseNumber: string;
+        triggerTime: string;
+        alarmStatus: string;
+        actionStatus: string;
+        location: {
+            floorplanId: string;
+            floorplanName: string;
+            areaName: string;
+            position: {
+                x: number;
+                y: number;
+            };
+        };
+        dispatchedSecurities: any[];
+        attachments: any[];
+    };
+    timeline: {
+        stage: string;
+        timestamp: string;
+        actor: string | null;
+        actorId: string | null;
+        durationInSeconds: number | null;
+        durationFormatted: string | null;
+        description: string;
+    }[];
+    duration: {
+        responseTimeInSeconds: number | null;
+        responseTimeFormatted: string | null;
+        dispatchTimeInSeconds: number | null;
+        dispatchTimeFormatted: string | null;
+        resolutionTimeInSeconds: number | null;
+        resolutionTimeFormatted: string | null;
+    };
+    investigation: {
+        result: string | null;
+        dispatchedPerson: string | null;
+        dispatchedPersonId: string | null;
+        investigatedAt: string | null;
+        doneAt: string | null;
+        investigationNotes: string | null;
+        wasInvestigated: boolean;
+    };
+}
+
+
 export type GetFilter = {
     page: number;
     limit: number;
@@ -80,4 +128,4 @@ const alarmCaseSlice = createSlice({
 })
 
 export const { SetAlarmCases, SetAlarmCaseFilter, UpdateAlarmCaseMeta } = alarmCaseSlice.actions;
-export default alarmCaseSlice.reducer;
+export default alarmCaseSlice.reducer;

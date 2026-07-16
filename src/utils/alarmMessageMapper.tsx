@@ -256,7 +256,7 @@ function hashStringToNumber(str: string): number {
   return Math.abs(hash);
 }
 
-export function mapAlarmEventToEventItem(event: AlarmEvent): EventItem {
+export function mapAlarmEventToEventItem(event: AlarmEvent, alarmRules: any[] = []): EventItem {
   let hash = 5381;
   for (let i = 0; i < event.id.length; i++) {
     hash = (hash * 33) ^ event.id.charCodeAt(i);
@@ -292,6 +292,53 @@ export function mapAlarmEventToEventItem(event: AlarmEvent): EventItem {
     }
   }
 
+  // 1. Map InputDevice
+  let inputDevice: any = null;
+  const hasStatusEvents = event.statusEvents && typeof event.statusEvents === 'object';
+  const statusVal =  event.triggered ? hasStatusEvents ? 'active' : 'nonActive' : 'nonActive';
+
+  if (hasStatusEvents && event.statusEvents.source) {
+    const src = event.statusEvents.source;
+    inputDevice = {
+      deviceId: event.deviceId || '',
+      deviceName: src.deviceNameCms || event.deviceName || '',
+      deviceType: src.deviceTypeCms || event.deviceType || '',
+      status: statusVal,
+    };
+  } else {
+    inputDevice = {
+      deviceId: event.deviceId || '',
+      deviceName: event.deviceName || '',
+      deviceType: event.deviceType || '',
+      status: statusVal,
+    };
+  }
+
+  // 2. Map OutputDevices
+  const outputDevices: any[] = [];
+  if (hasStatusEvents && Array.isArray(event.statusEvents.relaysOnEvent)) {
+    for (const relay of event.statusEvents.relaysOnEvent) {
+      outputDevices.push({
+        deviceId: relay.name || relay.deviceNameCms || '',
+        deviceName: relay.deviceNameCms || relay.name || '',
+        deviceType: relay.deviceTypeCms || 'Siren',
+        status: relay.state ? 'active' : 'nonActive',
+        controllerNo: Number(relay.index),
+      });
+    }
+  }
+
+  // 3. Map StreamDevices
+  const matchingRule = alarmRules.find(
+    (rule) => rule.inputDeviceId === inputDevice.deviceId
+  );
+  const streamDevices: any[] = (matchingRule?.streams || []).map((stream: any) => ({
+    deviceId: stream.deviceId || '',
+    deviceName: stream.deviceName || '',
+    deviceType: 'CctvCamera',
+    status: 'nonActive',
+  }));
+
   return {
     id: numericId,
     time: timeStr,
@@ -314,5 +361,8 @@ export function mapAlarmEventToEventItem(event: AlarmEvent): EventItem {
     buildingId: event.buildingId,
     floorId: event.floorId,
     siteId: event.siteId,
+    inputDevice,
+    outputDevices,
+    streamDevices,
   };
 }

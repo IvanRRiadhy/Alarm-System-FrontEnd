@@ -7,6 +7,7 @@ import {
   FormControlLabel,
   lighten,
   darken,
+  Button,
 } from '@mui/material';
 import {
   IconPlus,
@@ -24,6 +25,7 @@ import {
   IconFingerprint,
   IconCircleDot,
   IconMapPin,
+  IconArrowLeft,
 } from '@tabler/icons-react';
 import { Stage, Layer, Image as KonvaImage, Rect, Text, Group, Circle, Line } from 'react-konva';
 import Konva from 'konva';
@@ -37,6 +39,10 @@ import { AppDispatch, useDispatch, useSelector, RootState } from 'src/store/Stor
 import { useSiteList } from 'src/hooks/useSite';
 import { useFloorList } from 'src/hooks/useFloor';
 import { useFloorplanList } from 'src/hooks/useFloorplan';
+import { useAlarmCaseList } from 'src/hooks/useAlarmCase';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const getCdnUrl = (url?: string | null) => {
   if (!url) return '';
@@ -91,6 +97,39 @@ const legendItems = [
   { label: 'Other', type: 'Other' },
 ];
 
+const mapBounds: [[number, number], [number, number]] = [
+  [-12, 94],
+  [8, 142],
+];
+
+const leafletColors = {
+  normal: '#10b981',
+  alarm: '#ef4444',
+  trouble: '#f59e0b',
+  offline: '#64748b',
+};
+
+const createLeafletMarker = (status: keyof typeof leafletColors, count: number) =>
+  L.divIcon({
+    className: '',
+    html: `
+        <div class="soc-marker">
+            <div
+                class="pulse"
+                style="background:${leafletColors[status]}"
+            ></div>
+            <div
+                class="core"
+                style="background:${leafletColors[status]}"
+            >
+                ${count}
+            </div>
+        </div>
+    `,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+
 interface FloorplanViewProps {
   selectedDeviceId?: string;
   onSelectDevice?: (device: DeviceMappingType) => void;
@@ -109,7 +148,18 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
 
   const [pulseValue, setPulseValue] = useState(1);
 
+  const [localSelectedFloorplan, setLocalSelectedFloorplan] = useState<FloorplanType | null>(null);
+  const selectedFloorplan = propSelectedFloorplan !== undefined ? propSelectedFloorplan : localSelectedFloorplan;
+  const setSelectedFloorplan = (fp: FloorplanType | null) => {
+    if (onSelectFloorplan) {
+      onSelectFloorplan(fp);
+    } else {
+      setLocalSelectedFloorplan(fp);
+    }
+  };
+
   useEffect(() => {
+    if (!selectedFloorplan) return;
     let animId: number;
     const tick = () => {
       setPulseValue((prev) => {
@@ -123,14 +173,34 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     };
     animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
-  }, []);
+  }, [selectedFloorplan]);
 
   const getActiveAlarm = (mappingId: string, deviceId: string | null) => {
     if (!alarmEvents || alarmEvents.length === 0) return undefined;
     
-    const deviceEvents = alarmEvents.filter(
-      (evt) => (deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId
-    );
+    const deviceEvents = alarmEvents.filter((evt) => {
+      // 1. Direct input match
+      const isInputMatch = (deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId || (evt.inputDevice && evt.inputDevice.deviceId === deviceId);
+      if (isInputMatch) return true;
+
+      // 2. Output devices match
+      if (evt.outputDevices && Array.isArray(evt.outputDevices)) {
+        const hasOutputMatch = evt.outputDevices.some(
+          (out: any) => (deviceId && out.deviceId === deviceId) || out.deviceId === mappingId || out.deviceName === mappingId
+        );
+        if (hasOutputMatch) return true;
+      }
+
+      // 3. Stream devices match
+      if (evt.streamDevices && Array.isArray(evt.streamDevices)) {
+        const hasStreamMatch = evt.streamDevices.some(
+          (str: any) => (deviceId && str.deviceId === deviceId) || str.deviceId === mappingId || str.deviceName === mappingId
+        );
+        if (hasStreamMatch) return true;
+      }
+
+      return false;
+    });
     
     if (deviceEvents.length === 0) return undefined;
     
@@ -140,8 +210,38 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
       return currentTime > latestTime ? current : latest;
     }, deviceEvents[0]);
     
-    if (newestEvent && newestEvent.statusAlarm?.toLowerCase() === 'on') {
-      return newestEvent;
+    if (newestEvent) {
+      // Check if it's the input device and is active
+      const isInputMatch = (deviceId && newestEvent.deviceId === deviceId) || newestEvent.deviceId === mappingId || (newestEvent.inputDevice && newestEvent.inputDevice.deviceId === deviceId);
+      if (isInputMatch) {
+        const statusAlarmVal = newestEvent.statusAlarm?.toLowerCase();
+        if (statusAlarmVal === 'on' || statusAlarmVal === 'active') {
+          return newestEvent;
+        }
+        if (newestEvent.inputDevice && newestEvent.inputDevice.status === 'active') {
+          return newestEvent;
+        }
+      }
+
+      // Check output devices
+      if (newestEvent.outputDevices && Array.isArray(newestEvent.outputDevices)) {
+        const matchingOutput = newestEvent.outputDevices.find(
+          (out: any) => (deviceId && out.deviceId === deviceId) || out.deviceId === mappingId || out.deviceName === mappingId
+        );
+        if (matchingOutput && matchingOutput.status === 'active') {
+          return newestEvent;
+        }
+      }
+
+      // Check stream devices
+      if (newestEvent.streamDevices && Array.isArray(newestEvent.streamDevices)) {
+        const matchingStream = newestEvent.streamDevices.find(
+          (str: any) => (deviceId && str.deviceId === deviceId) || str.deviceId === mappingId || str.deviceName === mappingId
+        );
+        if (matchingStream && matchingStream.status === 'active') {
+          return newestEvent;
+        }
+      }
     }
     
     return undefined;
@@ -150,23 +250,33 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
   const getSeverityColor = (severity?: string) => {
     const s = (severity || '').toLowerCase();
     if (s === 'low') return '#EAB308';
-    if (s === 'medium') return '# ';
+    if (s === 'medium') return '#F97316 ';
     if (s === 'high') return '#EF4444';
     if (s === 'critical') return '#991B1B';
     return '#EF4444';
   };
   const location = useLocation();
+
+  // Resolve user role
+  let role = '';
+  try {
+    const responseStr = localStorage.getItem('response');
+    const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
+    role = loggedInUser?.role || localStorage.getItem('role') || '';
+  } catch (e) {
+    role = localStorage.getItem('role') || '';
+  }
+  const isSuperAdmin = role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+
+  // Fetch alarm cases if SuperAdmin (limit 1000 to get all active cases)
+  const { data: alarmCaseResponse } = useAlarmCaseList(
+    isSuperAdmin ? { page: 1, limit: 1000, sortBy: 'triggeredAt', sortOrder: 'desc' } : undefined
+  );
+  const alarmCases = alarmCaseResponse?.data || [];
+
   const [showSiteSelector, setShowSiteSelector] = useState(true);
+  const [activePopupSiteId, setActivePopupSiteId] = useState<string | null>(null);
   const [modeEdit, setModeEdit] = useState(false);
-  const [localSelectedFloorplan, setLocalSelectedFloorplan] = useState<FloorplanType | null>(null);
-  const selectedFloorplan = propSelectedFloorplan !== undefined ? propSelectedFloorplan : localSelectedFloorplan;
-  const setSelectedFloorplan = (fp: FloorplanType | null) => {
-    if (onSelectFloorplan) {
-      onSelectFloorplan(fp);
-    } else {
-      setLocalSelectedFloorplan(fp);
-    }
-  };
 
   // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
   const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
@@ -175,6 +285,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
 
   useEffect(() => {
     if (selectedFloorplan) return;
+    if (isSuperAdmin) return; // Do not auto-select floorplan for SuperAdmin to show the map of Indonesia by default
 
     const sites = siteResponse?.data || [];
     const floorData = floorResponse?.data || [];
@@ -246,6 +357,8 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
       }
     }
   };
+
+
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -401,6 +514,8 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     }
   };
 
+  
+
   return (
     <Box
       ref={wrapperRef}
@@ -458,29 +573,57 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
               letterSpacing: '0.5px',
             }}
           >
-            MAIN VIEW - FLOORPLAN
+            {isSuperAdmin && !selectedFloorplan ? 'MAIN VIEW - MAP' : 'MAIN VIEW - FLOORPLAN'}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
             <Typography sx={{ color: '#94A3B8', fontSize: 12 }}>
-              {selectedFloorplan
+              {isSuperAdmin && !selectedFloorplan
+                ? 'Peta Sebaran Site Seluruh Indonesia'
+                : selectedFloorplan
                 ? `${selectedFloorplan.siteName} - ${selectedFloorplan.buildingName} - ${selectedFloorplan.floorName} - ${selectedFloorplan.name}`
                 : 'Silakan Pilih Layout / Floorplan'}
             </Typography>
           </Box>
         </Box>
 
-        <IconButton
-          size="small"
-          onClick={() => setShowSiteSelector(!showSiteSelector)}
-          sx={{
-            color: '#94A3B8',
-            bgcolor: 'rgba(255,255,255,0.04)',
-            borderRadius: 1,
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-          }}
-        >
-          <IconMapPin size={16} />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {isSuperAdmin && selectedFloorplan && (
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              startIcon={<IconArrowLeft size={16} />}
+              onClick={() => setSelectedFloorplan(null)}
+              sx={{
+                fontSize: 11,
+                textTransform: 'none',
+                borderColor: 'rgba(255,255,255,0.15)',
+                color: '#E2E8F0',
+                py: 0.5,
+                px: 1.5,
+                '&:hover': {
+                  borderColor: '#2563EB',
+                  bgcolor: 'rgba(37,99,235,0.1)',
+                },
+              }}
+            >
+              Back to Map
+            </Button>
+          )}
+
+          <IconButton
+            size="small"
+            onClick={() => setShowSiteSelector(!showSiteSelector)}
+            sx={{
+              color: '#94A3B8',
+              bgcolor: 'rgba(255,255,255,0.04)',
+              borderRadius: 1,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+            }}
+          >
+            <IconMapPin size={16} />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Floorplan Area */}
@@ -492,7 +635,193 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
           overflow: 'hidden',
         }}
       >
-        {image ? (
+        {isSuperAdmin && !selectedFloorplan ? (
+          <Box sx={{ width: '100%', height: '100%', position: 'relative', zIndex: 1 }}>
+            <style>
+              {`
+              .soc-marker {
+                position: relative;
+                width: 36px;
+                height: 36px;
+                cursor: pointer;
+              }
+              .soc-marker * {
+                pointer-events: none;
+              }
+
+              .soc-marker .pulse {
+                position: absolute;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                animation: markerPulse 2s infinite;
+                opacity: .35;
+              }
+              .soc-marker .core {
+                position: absolute;
+                width: 28px;
+                height: 28px;
+                left: 4px;
+                top: 4px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 11px;
+                font-weight: bold;
+                border: 2px solid white;
+                box-shadow: 0 0 12px rgba(0,0,0,.5);
+              }
+              @keyframes markerPulse {
+                0% {
+                  transform: scale(.8);
+                  opacity: .5;
+                }
+                70% {
+                  transform: scale(1.7);
+                  opacity: 0;
+                }
+                100% {
+                  transform: scale(.8);
+                  opacity: 0;
+                }
+              }
+              .leaflet-container {
+                background: #0f172a;
+              }
+              .leaflet-marker-icon {
+                pointer-events: auto !important;
+                cursor: pointer !important;
+              }
+              .leaflet-popup-content-wrapper {
+                background: #111827 !important;
+                color: white !important;
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 8px;
+              }
+              .leaflet-popup-tip {
+                background: #111827 !important;
+                border: 1px solid rgba(255,255,255,0.08);
+              }
+              `}
+            </style>
+            <MapContainer
+              center={[-2.5, 118]}
+              zoom={5}
+              minZoom={5}
+              maxZoom={15}
+              maxBounds={mapBounds}
+              maxBoundsViscosity={1}
+              style={{
+                height: '100%',
+                width: '100%',
+              }}
+            >
+              <TileLayer
+                attribution="&copy; OpenStreetMap"
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              />
+              {(siteResponse?.data || []).map((site) => {
+                const siteCases = alarmCases.filter((c) => c.siteId === site.id);
+                const activeCases = siteCases.filter((c) => {
+                  const s = c.investigationStatus?.toLowerCase();
+                  return s !== 'done' && s !== 'resolved';
+                });
+
+                let status: 'normal' | 'alarm' | 'trouble' = 'normal';
+                const count = activeCases.length;
+
+                if (count > 0) {
+                  const hasNull = activeCases.some(
+                    (c) => c.investigationStatus === null || c.investigationStatus === undefined || c.investigationStatus === ''
+                  );
+                  if (hasNull) {
+                    status = 'alarm';
+                  } else {
+                    status = 'trouble';
+                  }
+                } else {
+                  status = 'normal';
+                }
+                // Find the first floorplan of this site using Admin's logic
+                const siteFloors = (floorResponse?.data || []).filter((f) => f.siteId === site.id);
+                const floorplanData = floorplanResponse?.data || [];
+                let targetFloorplan: any = null;
+                let targetFloor = siteFloors.find((f) => f.level === 0);
+                if (!targetFloor) {
+                  const positiveFloors = siteFloors.filter((f) => f.level > 0).sort((a, b) => a.level - b.level);
+                  if (positiveFloors.length > 0) {
+                    targetFloor = positiveFloors[0];
+                  }
+                }
+                if (!targetFloor && siteFloors.length > 0) {
+                  const sortedFloors = [...siteFloors].sort((a, b) => a.level - b.level);
+                  targetFloor = sortedFloors[0];
+                }
+                if (targetFloor) {
+                  const floorplans = floorplanData.filter((fp) => fp.floorId === targetFloor.id);
+                  if (floorplans.length > 0) {
+                    targetFloorplan = floorplans[0];
+                  }
+                }
+                if (!targetFloorplan) {
+                  const siteFloorplans = floorplanData.filter((fp) => fp.siteId === site.id);
+                  if (siteFloorplans.length > 0) {
+                    targetFloorplan = siteFloorplans[0];
+                  }
+                }
+
+                return (
+                  <Marker
+                    key={site.id}
+                    position={[Number(site.latitude) || 0, Number(site.longitude) || 0]}
+                    icon={createLeafletMarker(status, count)}
+                  >
+                    <Popup>
+                      <div style={{ color: '#F8FAFC', fontSize: '12px', lineHeight: '1.6', fontFamily: 'sans-serif' }}>
+                        <b>{site.name}</b>
+                        <br />
+                        Region : {site.region}
+                        <br />
+                        Active Alarm : {count}
+                        <br />
+                        Status : {status === 'alarm' ? 'alarm' : status === 'trouble' ? 'trouble' : 'normal'}
+                        
+                        {targetFloorplan ? (
+                          <div style={{ marginTop: '12px' }}>
+                            <button
+                              onClick={() => {
+                                setSelectedFloorplan(targetFloorplan);
+                              }}
+                              style={{
+                                backgroundColor: '#2563EB',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '6px 12px',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'inline-block',
+                              }}
+                            >
+                              View Floorplan
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: '8px', color: '#64748B', fontStyle: 'italic', fontSize: '11px' }}>
+                            No floorplans available
+                          </div>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+            </MapContainer>
+          </Box>
+        ) : image ? (
           <Stage
             width={containerSize.width}
             height={containerSize.height}
@@ -703,7 +1032,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
         )}
 
         {/* Zoom Controls */}
-        {image && (
+        {image && !isSuperAdmin && (
           <Box
             sx={{
               position: 'absolute',
@@ -794,7 +1123,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
           py: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: 2,
+          gap: 2.5,
           borderTop: '1px solid rgba(255,255,255,0.06)',
           bgcolor: '#111827',
           flexShrink: 0,
@@ -803,49 +1132,72 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
           '&::-webkit-scrollbar-thumb': { background: '#334155', borderRadius: 10 },
         }}
       >
-        {legendItems.map((item) => {
-          const initials = getDeviceInitials(item.type);
-          const color = getMarkerColor(item.type, 'normal');
-
-          return (
-            <Box
-              key={item.label}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.75,
-                flexShrink: 0,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 28,
-                  height: 18,
-                  bgcolor: color,
-                  color: '#fff',
-                  fontSize: 8.5,
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '4px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                }}
-              >
-                {initials}
-              </Box>
-              <Typography
-                sx={{
-                  color: '#94A3B8',
-                  fontSize: 11,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {item.label}
+        {isSuperAdmin && !selectedFloorplan ? (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#10b981' }} />
+              <Typography sx={{ color: '#94A3B8', fontSize: 11, whiteSpace: 'nowrap' }}>
+                Normal (All alarms Done)
               </Typography>
             </Box>
-          );
-        })}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#f59e0b' }} />
+              <Typography sx={{ color: '#94A3B8', fontSize: 11, whiteSpace: 'nowrap' }}>
+                Acknowledged / Dispatched
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#ef4444' }} />
+              <Typography sx={{ color: '#94A3B8', fontSize: 11, whiteSpace: 'nowrap' }}>
+                New / Unprocessed (Status is null)
+              </Typography>
+            </Box>
+          </>
+        ) : (
+          legendItems.map((item) => {
+            const initials = getDeviceInitials(item.type);
+            const color = getMarkerColor(item.type, 'normal');
+
+            return (
+              <Box
+                key={item.label}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.75,
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 18,
+                    bgcolor: color,
+                    color: '#fff',
+                    fontSize: 8.5,
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '4px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  {initials}
+                </Box>
+                <Typography
+                  sx={{
+                    color: '#94A3B8',
+                    fontSize: 11,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {item.label}
+                </Typography>
+              </Box>
+            );
+          })
+        )}
 
         {/* <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
           <FormControlLabel

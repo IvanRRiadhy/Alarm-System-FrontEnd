@@ -75,3 +75,15 @@ export function useDeleteController() {
     })
 }
 
+export function useChangeStatusController() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: { id: string; alarmMode: string }) => {
+            const response = await axiosServices.put(`${CONTROLLER_API_URL}${payload.id}/alarm-mode`, { alarmMode: payload.alarmMode })
+            return response.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["controller-list"] })
+        }
+    })
+}

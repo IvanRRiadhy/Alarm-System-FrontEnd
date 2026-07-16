@@ -5,13 +5,16 @@ import {
   Chip,
   CircularProgress,
   Button,
+  IconButton,
 } from '@mui/material';
 import {
   IconMaximize,
   IconInfoCircle,
   IconVolumeOff,
+  IconChevronLeft,
+  IconChevronRight,
 } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import axiosServices, { BASE_URL } from 'src/utils/axios';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import UniversalVideoPlayer from 'src/utils/UniversalPlayer';
@@ -131,39 +134,32 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
     }
   }, [activeLoop.length, currentIndex]);
 
-  useEffect(() => {
-    if (activeLoop.length <= 1 || isHovered) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % activeLoop.length);
-    }, 10000);
-
-    return () => clearTimeout(timer);
-  }, [activeLoop.length, currentIndex, isHovered]);
+  // Automatic camera cycle removed per user request
 
   const activeDevice = activeLoop.length > 0 ? activeLoop[currentIndex] : null;
 
   const activeDeviceId = activeDevice?.deviceId;
 
-  // Fetch full device details to get the RTSP URL
-  const { data: deviceDetail, isLoading } = useQuery({
-    queryKey: ['device-detail-camera', activeDeviceId],
-    queryFn: async () => {
-      if (!activeDeviceId) return null;
-      try {
-        const response = await axiosServices.get(`/api/devices/${activeDeviceId}`);
-        return response.data?.collection?.data || response.data?.collection || response.data?.data || response.data || null;
-      } catch (err) {
-        console.error('Error fetching device detail for camera:', err);
-        return null;
-      }
-    },
-    enabled: !!activeDeviceId,
+  // Fetch details for all activeLoop devices using useQueries
+  const deviceQueries = useQueries({
+    queries: activeLoop.map((device) => ({
+      queryKey: ['device-detail-camera', device.deviceId],
+      queryFn: async () => {
+        if (!device.deviceId) return null;
+        try {
+          const response = await axiosServices.get(`/api/devices/${device.deviceId}`);
+          return response.data?.collection?.data || response.data?.collection || response.data?.data || response.data || null;
+        } catch (err) {
+          console.error('Error fetching device detail for camera:', err);
+          return null;
+        }
+      },
+      staleTime: 5 * 60_000,
+    })),
   });
 
-  const rtspUrl = deviceDetail?.rtspUrl || '';
+  const rtspUrl = (deviceQueries[currentIndex]?.data as any)?.rtspUrl || '';
+
   const cameraName = activeDevice 
     ? (activeDevice.label || activeDevice.deviceName) 
     : activeLoop.length === 0 && cctvLoop.length > 0
@@ -303,7 +299,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
           border: '1px solid rgba(255,255,255,0.04)',
         }}
       >
-        {isLoading ? (
+        {deviceQueries[currentIndex]?.isLoading ? (
           <CircularProgress size={24} sx={{ color: '#60A5FA', zIndex: 3 }} />
         ) : cctvLoop.length === 0 ? (
           <Box
@@ -342,43 +338,92 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
               All Camera is opened in other window
             </Typography>
           </Box>
-        ) : activeDevice ? (
+        ) : (
           <>
-            {rtspUrl ? (
-              <UniversalVideoPlayer
-                streamUrl={rtspUrl}
-                engineWsUrl={getEngineWsUrl(BASE_URL)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  aspectRatio: 'auto',
-                  borderRadius: '0px',
-                  boxShadow: 'none',
-                }}
-              />
-            ) : (
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  p: 2,
-                  color: '#64748B',
-                  textAlign: 'center',
-                  width: '100%',
-                  height: '100%',
-                }}
-              >
-                <IconInfoCircle size={28} />
-                <Typography sx={{ mt: 1, fontSize: 11, fontWeight: 500 }}>
-                  Kamera tidak memiliki URL RTSP
-                </Typography>
-                <Typography sx={{ fontSize: 9, opacity: 0.7 }}>
-                  Camera does not have RTSP URL
-                </Typography>
-              </Box>
-            )}
+            {activeLoop.map((device, index) => {
+              const deviceRtspUrl = (deviceQueries[index]?.data as any)?.rtspUrl || '';
+              const isCurrent = currentIndex === index;
+              return (
+                <Box
+                  key={device.deviceId}
+                  sx={{
+                    display: isCurrent ? 'block' : 'none',
+                    width: '100%',
+                    height: '100%',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                  }}
+                >
+                  {deviceRtspUrl ? (
+                    <UniversalVideoPlayer
+                      streamUrl={deviceRtspUrl}
+                      engineWsUrl={getEngineWsUrl(BASE_URL)}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        aspectRatio: 'auto',
+                        borderRadius: '0px',
+                        boxShadow: 'none',
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        p: 2,
+                        color: '#64748B',
+                        textAlign: 'center',
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    >
+                      <IconInfoCircle size={28} />
+                      <Typography sx={{ mt: 1, fontSize: 11, fontWeight: 500 }}>
+                        Kamera tidak memiliki URL RTSP
+                      </Typography>
+                      <Typography sx={{ fontSize: 9, opacity: 0.7 }}>
+                        Camera does not have RTSP URL
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* RTSP stream metadata overlay */}
+                  {deviceRtspUrl && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 10,
+                        bgcolor: 'rgba(15, 23, 42, 0.85)',
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 0.5,
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        zIndex: 3,
+                        maxWidth: '60%',
+                      }}
+                    >
+                      <Typography
+                        noWrap
+                        sx={{
+                          color: '#60A5FA',
+                          fontSize: 8.5,
+                          fontFamily: 'monospace',
+                          letterSpacing: '0.2px',
+                        }}
+                        title={deviceRtspUrl}
+                      >
+                        RTSP: {deviceRtspUrl}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
 
             {/* Scan lines & digital noise effect */}
             <Box
@@ -417,37 +462,6 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
               Open Window
             </Button>
 
-            {/* RTSP stream metadata overlay */}
-            {rtspUrl && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 10,
-                  right: 10,
-                  bgcolor: 'rgba(15, 23, 42, 0.85)',
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 0.5,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  zIndex: 3,
-                  maxWidth: '60%',
-                }}
-              >
-                <Typography
-                  noWrap
-                  sx={{
-                    color: '#60A5FA',
-                    fontSize: 8.5,
-                    fontFamily: 'monospace',
-                    letterSpacing: '0.2px',
-                  }}
-                  title={rtspUrl}
-                >
-                  RTSP: {rtspUrl}
-                </Typography>
-              </Box>
-            )}
-
             {/* Timestamp Overlay */}
             <Typography
               sx={{
@@ -467,8 +481,56 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
               {currentTime}
             </Typography>
           </>
-        ) : null}
+        )}
       </Box>
+
+      {/* Manual Cycling Controls */}
+      {activeLoop.length > 1 && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            py: 1,
+            bgcolor: 'rgba(15, 23, 42, 0.4)',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={() => setCurrentIndex((prev) => (prev === 0 ? activeLoop.length - 1 : prev - 1))}
+            sx={{
+              color: '#94A3B8',
+              '&:hover': { color: '#F8FAFC', bgcolor: 'rgba(255,255,255,0.08)' },
+            }}
+          >
+            <IconChevronLeft size={16} />
+          </IconButton>
+          
+          <Typography
+            sx={{
+              color: '#E2E8F0',
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: 'monospace',
+            }}
+          >
+            {currentIndex + 1} / {activeLoop.length}
+          </Typography>
+
+          <IconButton
+            size="small"
+            onClick={() => setCurrentIndex((prev) => (prev + 1) % activeLoop.length)}
+            sx={{
+              color: '#94A3B8',
+              '&:hover': { color: '#F8FAFC', bgcolor: 'rgba(255,255,255,0.08)' },
+            }}
+          >
+            <IconChevronRight size={16} />
+          </IconButton>
+        </Box>
+      )}
 
       {/* Controls */}
       {/* <Box

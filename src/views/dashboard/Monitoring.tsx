@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Box, IconButton } from '@mui/material';
 import {
   IconChevronLeft,
@@ -19,7 +19,9 @@ import EventDetail from 'src/components/dashboards/monitoring/monitoringcomponen
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import { FloorplanType } from 'src/store/apps/crud/floorplan';
 import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
+import { useFloorplanList } from 'src/hooks/useFloorplan';
 import { useSelector, RootState } from 'src/store/Store';
+import { useSearchParams } from 'react-router';
 
 const Monitoring = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -28,24 +30,89 @@ const Monitoring = () => {
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [selectedFloorplan, setSelectedFloorplan] = useState<FloorplanType | null>(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [siteId, setSiteId] = useState<string | null>(() => {
+    const urlId = new URLSearchParams(window.location.search).get('siteId');
+    if (urlId) return urlId;
+    return localStorage.getItem('selectedSiteId');
+  });
+
+  const [role, setRole] = useState('');
+  useEffect(() => {
+    let currentRole = '';
+    try {
+      const responseStr = localStorage.getItem('response');
+      const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
+      currentRole = loggedInUser?.role || localStorage.getItem('role') || '';
+    } catch (e) {
+      currentRole = localStorage.getItem('role') || '';
+    }
+    setRole(currentRole);
+  }, []);
+
+  const isSuperAdmin = role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+
+  // Keep URL, state, and localStorage synced
+  useEffect(() => {
+    const handleSiteChange = () => {
+      const currentSiteId = localStorage.getItem('selectedSiteId');
+      setSiteId(currentSiteId);
+      
+      if (currentSiteId) {
+        setSearchParams({ siteId: currentSiteId }, { replace: true });
+      } else {
+        setSearchParams({}, { replace: true });
+      }
+    };
+
+    const urlId = searchParams.get('siteId');
+    if (urlId && urlId !== localStorage.getItem('selectedSiteId')) {
+      localStorage.setItem('selectedSiteId', urlId);
+      localStorage.removeItem('selectedSite');
+      window.dispatchEvent(new Event('siteChanged'));
+    } else if (!urlId && siteId) {
+      setSearchParams({ siteId }, { replace: true });
+    }
+
+    window.addEventListener('siteChanged', handleSiteChange);
+    return () => {
+      window.removeEventListener('siteChanged', handleSiteChange);
+    };
+  }, [searchParams, setSearchParams, siteId]);
+
   // Fetch all lookup data needed for MQTT message mapping
   const { data: deviceMappingResponse } = useDeviceMappingList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc', floorplanId: '' });
-  
+  const { data: floorplanResponse } = useFloorplanList();
 
   const alarmEventList = useSelector((state: RootState) => state.alarmEventReducer.alarmEventList);
 
   const events = useMemo(() => {
-    if (alarmEventList.length === 0) {
-      return dummyEvents;
+    const rawEvents = alarmEventList.length === 0 ? dummyEvents : alarmEventList;
+    if (isSuperAdmin && !siteId) {
+      return rawEvents.filter((evt) => {
+        const sev = (evt.severity || '').toLowerCase();
+        return sev === 'critical' || sev === 'high';
+      });
     }
-    console.log("Alarm Event List", alarmEventList)
-    return alarmEventList;
-  }, [alarmEventList]);
+    return rawEvents;
+  }, [alarmEventList, isSuperAdmin, siteId]);
 
   const handleSelectEvent = useCallback((event: EventItem) => {
+    console.log("Event Clicked! ", event);
     const matchingDevice = deviceMappingResponse?.data?.find(
       (dm) => event.deviceId && (dm.id?.toLowerCase() === event.deviceId?.toLowerCase() || dm.deviceId?.toLowerCase() === event.deviceId?.toLowerCase())
     );
+
+    // Auto-select floorplan based on event's floorplanId or matching device's floorplanId
+    const targetFloorplanId = event.floorplanId || matchingDevice?.floorplanId;
+    if (targetFloorplanId && floorplanResponse?.data) {
+      const matchingFloorplan = floorplanResponse.data.find(
+        (fp) => fp.id === targetFloorplanId
+      );
+      if (matchingFloorplan) {
+        setSelectedFloorplan(matchingFloorplan);
+      }
+    }
     
     if (matchingDevice) {
       setSelectedDevice(matchingDevice);
@@ -68,7 +135,7 @@ const Monitoring = () => {
     } else {
       console.warn('No matching device mapping found for event:', event);
     }
-  }, [deviceMappingResponse]);
+  }, [deviceMappingResponse, floorplanResponse, setSelectedFloorplan]);
 
   return (
     <PageContainer title="Monitoring" description="Security Monitoring Dashboard">

@@ -28,12 +28,14 @@ export type AlarmRuleDataType = {
     siteName: string;
     name: string;
     isActive: boolean;
-    inputs: ioItems[];
-    inputDeviceIds: string[];
+    inputDeviceName?: string;
+    inputDeviceId: string;
+    streamDeviceIds: string[];
+    streams?: ioItems[];
     outputDeviceIds: string[];
-    outputs: ioItems[];
-    scheduleTemplateId: string;
-    scheduleTemplateName: string;
+    outputs?: ioItems[];
+    scheduleTemplateId?: string;
+    scheduleTemplateName?: string;
 }
 
 interface StateType {

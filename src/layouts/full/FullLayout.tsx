@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import { useAlarmEventList } from 'src/hooks/useAlarmEvent';
 import { mapAlarmEventToEventItem } from 'src/utils/alarmMessageMapper';
 import AlarmPopup from 'src/utils/AlarmPopup';
+import { useQueryClient } from '@tanstack/react-query';
 
 const MainWrapper = styled('div')(() => ({
   display: 'flex',
@@ -38,6 +39,7 @@ const FullLayout: FC = () => {
   const customizer = useSelector((state: RootState) => state.customizer);
   const theme = useTheme();
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const [criticalAlarm, setCriticalAlarm] = useState<AlarmEvent | null>(null);
 
   useAlarmEventList({ page: 1, limit: 100 });
@@ -53,7 +55,11 @@ const FullLayout: FC = () => {
         return;
       }
 
-      const eventItem = mapAlarmEventToEventItem(message);
+      const cache = queryClient.getQueriesData<any>({ queryKey: ['alarm-rule-list'] });
+      const ruleEntry = cache.find((item) => item[1]?.data);
+      const alarmRules = ruleEntry ? ruleEntry[1].data : [];
+
+      const eventItem = mapAlarmEventToEventItem(message, alarmRules);
 
       // Dispatch mapped event to Redux store
       dispatch(AddAlarmEvent(eventItem));
@@ -61,13 +67,15 @@ const FullLayout: FC = () => {
       // Trigger standard toast notification
       const sev = (message.severity || '').toLowerCase();
       const isOnDashboard = window.location.pathname.includes('/dashboards/');
+      const role = localStorage.getItem('role');
       if (sev === 'critical') {
         // toast.error(`CRITICAL ALARM: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
-        if (isOnDashboard) {
           setCriticalAlarm(message);
-        }
-      } else if (sev === 'high' || sev === 'medium') {
+        
+      } else if (sev === 'high' && role?.toLowerCase() === "admin") {
         // toast.error(`Alarm: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
+          setCriticalAlarm(message);
+
       } else {
         // toast.success(`Info: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
       }

@@ -10,7 +10,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 
-import { IconMenu2 } from '@tabler/icons-react';
+import { IconMenu2, IconRefresh } from '@tabler/icons-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useDispatch, useSelector } from 'src/store/Store';
 import {
@@ -42,6 +43,11 @@ const Header = () => {
   );
 
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
+
+  const handleRefetchSummary = () => {
+    queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+  };
 
   const customizer = useSelector(
     (state: RootState) => state.customizer
@@ -49,19 +55,27 @@ const Header = () => {
 
   const [selectedSite, setSelectedSite] = useState<SiteType | null>(null);
   const [userRole, setUserRole] = useState('');
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showHeader, setShowHeader] = useState(true);
 
   const { data: siteLookupResponse, isLoading: isLoadingSites } = useSiteLookup();
   const sites = siteLookupResponse?.data || [];
 
   useEffect(() => {
-    const savedSite = localStorage.getItem('selectedSite');
-    if (savedSite) {
-      try {
-        setSelectedSite(JSON.parse(savedSite));
-      } catch (e) {
-        console.error(e);
+    const syncSelectedSite = () => {
+      const savedSite = localStorage.getItem('selectedSite');
+      if (savedSite) {
+        try {
+          setSelectedSite(JSON.parse(savedSite));
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        setSelectedSite(null);
       }
-    }
+    };
+
+    syncSelectedSite();
 
     const responseStr = localStorage.getItem('response');
     if (responseStr) {
@@ -74,17 +88,66 @@ const Header = () => {
     } else {
       setUserRole(localStorage.getItem('role') || '');
     }
+
+    window.addEventListener('siteChanged', syncSelectedSite);
+    return () => {
+      window.removeEventListener('siteChanged', syncSelectedSite);
+    };
   }, []);
 
-  const AppBarStyled = styled(AppBar)(({ theme }) => ({
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.scrollY > 10;
+      setIsScrolled(scrolled);
+      if (!scrolled) {
+        setShowHeader(true);
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (window.scrollY > 10) {
+        if (e.clientY < 80) {
+          setShowHeader(true);
+        } else {
+          setShowHeader(false);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('mousemove', handleMouseMove);
+
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  const AppBarStyled = styled(AppBar, {
+    shouldForwardProp: (prop) => prop !== 'isScrolled' && prop !== 'showHeader',
+  })<{ isScrolled: boolean; showHeader: boolean }>(({ theme, isScrolled, showHeader }) => ({
     background: '#111827',
     boxShadow: 'none',
     borderBottom: '1px solid rgba(255,255,255,.08)',
     backdropFilter: 'blur(10px)',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1100,
+    transform: isScrolled && !showHeader ? 'translateY(-100%)' : 'translateY(0)',
+    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, box-shadow 0.3s ease, border-bottom 0.3s ease',
 
     [theme.breakpoints.up('lg')]: {
       minHeight: customizer.TopbarHeight,
     },
+
+    ...(isScrolled && {
+      background: 'rgba(17, 24, 39, 0.85)',
+      backdropFilter: 'blur(12px)',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+    }),
   }));
 
   const ToolbarStyled = styled(Toolbar)(() => ({
@@ -97,6 +160,9 @@ const Header = () => {
     <AppBarStyled
       position="sticky"
       color="transparent"
+      isScrolled={isScrolled}
+      showHeader={showHeader}
+      onMouseEnter={() => setShowHeader(true)}
     >
       <ToolbarStyled>
 
@@ -127,7 +193,23 @@ const Header = () => {
           <>
             <Box flex={1} />
 
-            <HeaderSummary />
+            <Box display="flex" alignItems="center" gap={1}>
+              <HeaderSummary />
+              <IconButton
+                color="inherit"
+                onClick={handleRefetchSummary}
+                title="Refresh Dashboard Summary"
+                sx={{
+                  color: 'white',
+                  bgcolor: 'rgba(255,255,255,0.05)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                  },
+                }}
+              >
+                <IconRefresh size={16} />
+              </IconButton>
+            </Box>
 
             <Box width={40} />
 

@@ -81,6 +81,7 @@ import {
   IconUser,
   IconUserShield,
   IconAlarm,
+  IconZoomFilled,
 } from '@tabler/icons-react';
 
 const Menuitems: MenuitemsType[] = [
@@ -265,7 +266,16 @@ const Menuitems: MenuitemsType[] = [
     icon: IconAlarm,
     href: '/master/alarminvestigation',
   },
-
+  {
+    navlabel: true,
+    subheader: 'Report',
+  },
+  {
+    id: uniqueId(),
+    title: 'Investigate',
+    icon: IconZoomFilled,
+    href: '/report/investigate',
+  }
   // {
   //   id: uniqueId(),
   //   title: 'Blog',

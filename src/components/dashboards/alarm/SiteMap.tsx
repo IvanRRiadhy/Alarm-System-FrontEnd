@@ -35,6 +35,7 @@ export interface ActiveAlarmSite {
 type SiteMapProps = {
   region: string;
   activeAlarmsBySite?: ActiveAlarmSite[];
+  height?: string | number;
 };
 
 interface Site {
@@ -47,71 +48,70 @@ interface Site {
   alarms: number;
 }
 
-const sites: Site[] = [
-  {
-    id: 1,
-    name: 'Medan Hub',
-    region: 'Sumatera Utara',
-    lat: 3.5952,
-    lng: 98.6722,
-    status: 'normal',
-    alarms: 23,
-  },
-  {
-    id: 2,
-    name: 'Jakarta SOC',
-    region: 'DKI Jakarta',
-    lat: -6.2088,
-    lng: 106.8456,
-    status: 'alarm',
-    alarms: 8,
-  },
-  {
-    id: 3,
-    name: 'Semarang',
-    region: 'Jawa Tengah',
-    lat: -6.9667,
-    lng: 110.4167,
-    status: 'trouble',
-    alarms: 15,
-  },
-  {
-    id: 4,
-    name: 'Surabaya',
-    region: 'Jawa Timur',
-    lat: -7.2575,
-    lng: 112.7521,
-    status: 'normal',
-    alarms: 31,
-  },
-  {
-    id: 5,
-    name: 'Balikpapan',
-    region: 'Kalimantan Timur',
-    lat: -1.2379,
-    lng: 116.8529,
-    status: 'normal',
-    alarms: 9,
-  },
-  {
-    id: 6,
-    name: 'Makassar',
-    region: 'Sulawesi Selatan',
-    lat: -5.1477,
-    lng: 119.4327,
-    status: 'trouble',
-    alarms: 12,
-  },
-  {
-    id: 7,
-    name: 'Jayapura',
-    region: 'Papua',
-    lat: -2.5489,
-    lng: 140.7181,
-    status: 'normal',
-    alarms: 30,
-  },
-];
+// const sites: Site[] = [
+//   {
+//     id: 1,
+//     name: 'Medan Hub',
+//     region: 'Sumatera Utara',
+//     lat: 3.5952,
+//     lng: 98.6722,
+//     status: 'normal',
+//     alarms: 23,
+//   },
+//   {
+//     id: 2,
+//     name: 'Jakarta SOC',
+//     region: 'DKI Jakarta',
+//     lat: -6.2088,
+//     lng: 106.8456,
+//     status: 'alarm',
+//     alarms: 8,
+//   },
+//   {
+//     id: 3,
+//     name: 'Semarang',
+//     region: 'Jawa Tengah',
+//     lat: -6.9667,
+//     lng: 110.4167,
+//     status: 'trouble',
+//     alarms: 15,
+//   },
+//   {
+//     id: 4,
+//     name: 'Surabaya',
+//     region: 'Jawa Timur',
+//     lat: -7.2575,
+//     lng: 112.7521,
+//     status: 'normal',
+//     alarms: 31,
+//   },
+//   {
+//     id: 5,
+//     name: 'Balikpapan',
+//     region: 'Kalimantan Timur',
+//     lat: -1.2379,
+//     lng: 116.8529,
+//     status: 'normal',
+//     alarms: 9,
+//   },
+//   {
+//     id: 6,
+//     name: 'Makassar',
+//     region: 'Sulawesi Selatan',
+//     lat: -5.1477,
+//     lng: 119.4327,
+//     status: 'trouble',
+//     alarms: 12,
+//   },
+//   {
+//     id: 7,
+//     name: 'Jayapura',
+//     region: 'Papua',
+//     lat: -2.5489,
+//     status: 'offline',
+//     alarms: 0,
+//   },
+// ];
 
 const colors = {
   normal: '#10b981',
@@ -149,7 +149,7 @@ const bounds: [[number, number], [number, number]] = [
   [8, 142],
 ];
 
-const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
+const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite, height }) => {
   const displaySites = activeAlarmsBySite && activeAlarmsBySite.length > 0
     ? activeAlarmsBySite.map((site) => ({
         id: site.siteId,
@@ -160,7 +160,7 @@ const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
         status: (site.status || 'normal').toLowerCase() as keyof typeof colors,
         alarms: site.totalAlarms,
       }))
-    : sites;
+    : [];
 
   // const filtered =
   //   region === 'Semua Region'
@@ -174,7 +174,7 @@ const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
         borderRadius: 3,
         border: '1px solid rgba(255,255,255,.08)',
         overflow: 'hidden',
-        height: "100%",
+        height: height || '100%',
       }}
     >
       <Box
@@ -196,7 +196,7 @@ const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite }) => {
 
       <Box
         sx={{
-          height: 330,
+          height: height ? (typeof height === 'number' ? height - 90 : `calc(${height} - 90px)`) : 330,
         }}
       >
         <MapContainer

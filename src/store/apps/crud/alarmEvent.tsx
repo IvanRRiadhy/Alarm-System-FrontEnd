@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { metaData } from "./site";
 import { EventItem } from "src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar";
+import { BooleanSchema } from "yup";
 
 export interface AlarmEvent {
   id: string;
@@ -27,6 +28,7 @@ export interface AlarmEvent {
   siteName: string;
   buildingName: string | null;
   floorName: string | null;
+  triggered: boolean;
   statusEvents?: any;
 }
 

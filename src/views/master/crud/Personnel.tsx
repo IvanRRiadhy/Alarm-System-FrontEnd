@@ -10,14 +10,14 @@ import PersonnelContent from 'src/components/master/security/Personnels/Personne
 const drawerWidth = 240;
 const secdrawerWidth = 320;
 
-const SecurityGuard = () => {
+const Personnel = () => {
   const [isLeftSidebarOpen, setLeftSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
   const mdUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
   return (
-    <PageContainer title="People Tracking System" description="People Tracking System">
+    <PageContainer title="Personnel Table" description="Personnel Table">
       <AppCard>
         {/* ------------------------------------------- */}
         {/* Left Part */}
@@ -91,4 +91,4 @@ const SecurityGuard = () => {
   );
 };
 
-export default SecurityGuard;
+export default Personnel;

@@ -29,7 +29,7 @@ import { AlarmRuleDataType } from 'src/store/apps/crud/alarmRule';
 import { useAddAlarmRule, useEditAlarmRule } from 'src/hooks/useAlarmRule';
 import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { useScheduleList } from 'src/hooks/useSchedule';
-import { useDeviceList } from 'src/hooks/useDevice';
+import { useDeviceLookup } from 'src/hooks/useDevice';
 import { SiteType } from 'src/store/apps/crud/site';
 import { ScheduleDataType } from 'src/store/apps/crud/schedule';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
@@ -71,11 +71,22 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
     ...(formData.siteId ? { siteId: formData.siteId } : {}),
   }), [formData.siteId]);
 
-  const { data: inputDevicesResponse, isLoading: isInputLoading } = useDeviceList(inputDeviceParams as any);
-  const { data: outputDevicesResponse, isLoading: isOutputLoading } = useDeviceList(outputDeviceParams as any);
+  const { data: inputDevicesResponse, isLoading: isInputLoading } = useDeviceLookup(inputDeviceParams as any);
+  const { data: outputDevicesResponse, isLoading: isOutputLoading } = useDeviceLookup(outputDeviceParams as any);
+
+  // Fetch Stream Devices
+  const streamDeviceParams = useMemo(() => ({
+    page: 1,
+    limit: 1000,
+    deviceIO: 'Stream',
+    ...(formData.siteId ? { siteId: formData.siteId } : {}),
+  }), [formData.siteId]);
+
+  const { data: streamDevicesResponse, isLoading: isStreamLoading } = useDeviceLookup(streamDeviceParams as any);
 
   const inputDevices = inputDevicesResponse?.data || [];
   const outputDevices = outputDevicesResponse?.data || [];
+  const streamDevices = streamDevicesResponse?.data || [];
 
   const addMutation = useAddAlarmRule();
   const editMutation = useEditAlarmRule();
@@ -117,11 +128,11 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
     
     try {
       setIsSaving(true);
-      const { inputs, outputs, ...restFormData } = formData;
+      const { outputs, streams, ...restFormData } = formData;
       const payload = {
         ...restFormData,
-        inputDeviceIds: (inputs || []).map((d) => d.deviceId),
         outputDeviceIds: (outputs || []).map((d) => d.deviceId),
+        streamDeviceIds: (streams || []).map((d) => d.deviceId),
       };
 
       if (type === 'add') {
@@ -143,24 +154,20 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
 
   // Device selection toggle logic
   const handleToggleInputDevice = (device: any) => {
-    const isChecked = formData.inputs.some((d) => d.deviceId === device.id);
-    let newInputs = [...formData.inputs];
-
-    if (isChecked) {
-      newInputs = newInputs.filter((d) => d.deviceId !== device.id);
-    } else {
-      newInputs.push({ deviceId: device.id, deviceName: device.name });
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      inputs: newInputs,
-    }));
+    setFormData((prev) => {
+      const isCurrentlySelected = prev.inputDeviceId === device.id;
+      return {
+        ...prev,
+        inputDeviceId: isCurrentlySelected ? '' : device.id,
+        // inputDeviceName: isCurrentlySelected ? '' : device.name,
+      };
+    });
   };
 
   const handleToggleOutputDevice = (device: any) => {
-    const isChecked = formData.outputs.some((d) => d.deviceId === device.id);
-    let newOutputs = [...formData.outputs];
+    const currentOutputs = formData.outputs || [];
+    const isChecked = currentOutputs.some((d) => d.deviceId === device.id);
+    let newOutputs = [...currentOutputs];
 
     if (isChecked) {
       newOutputs = newOutputs.filter((d) => d.deviceId !== device.id);
@@ -171,6 +178,23 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
     setFormData((prev) => ({
       ...prev,
       outputs: newOutputs,
+    }));
+  };
+
+  const handleToggleStreamDevice = (device: any) => {
+    const currentStreams = formData.streams || [];
+    const isChecked = currentStreams.some((d) => d.deviceId === device.id);
+    let newStreams = [...currentStreams];
+
+    if (isChecked) {
+      newStreams = newStreams.filter((d) => d.deviceId !== device.id);
+    } else {
+      newStreams.push({ deviceId: device.id, deviceName: device.name });
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      streams: newStreams,
     }));
   };
 
@@ -234,8 +258,10 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                     ...prev,
                     siteId: val?.id ?? '',
                     siteName: val?.name ?? '',
-                    inputs: [], // Reset inputs on site change to prevent cross-site assignments
+                    inputDeviceId: '',
+                    // inputDeviceName: '',
                     outputs: [], // Reset outputs
+                    streams: [], // Reset streams
                   }));
                   setFormErrors((prev) => {
                     const next = { ...prev };
@@ -277,10 +303,10 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
             </Grid>
 
             {/* SECTIONS */}
-            {/* Section 1: Inputs */}
-            <Grid size={{ xs: 12, md: 6 }}>
+            {/* Section 1: Inputs (Single select, thinner) */}
+            <Grid size={{ xs: 12, md: 3 }}>
               <Typography variant="h6" fontWeight={600} mb={2}>
-                Input Devices
+                Input Device
               </Typography>
               <Paper variant="outlined" sx={{ p: 2, height: 400, overflowY: 'auto' }}>
                 {isInputLoading ? (
@@ -293,17 +319,71 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                   </Box>
                 ) : inputDevices.length === 0 ? (
                   <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                    <Typography color="textSecondary">No input devices found for this site.</Typography>
+                    <Typography color="textSecondary">No input devices found.</Typography>
                   </Box>
                 ) : (
                   <List>
                     {inputDevices.map((device) => {
-                      const isChecked = formData.inputs.some((d) => d.deviceId === device.id);
+                      const isSelected = formData.inputDeviceId === device.id;
+                      const hasSelection = !!formData.inputDeviceId;
+                      const isGreyed = hasSelection && !isSelected;
                       return (
                         <ListItemButton
                           key={device.id}
                           dense
                           onClick={() => handleToggleInputDevice(device)}
+                          sx={{
+                            opacity: isGreyed ? 0.45 : 1,
+                            transition: 'opacity 0.2s ease',
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Checkbox
+                              edge="start"
+                              checked={isSelected}
+                              tabIndex={-1}
+                              disableRipple
+                            />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={device.name}
+                            secondary={`Serial: ${device.serialNumber || 'N/A'} | Type: ${device.deviceType}`}
+                          />
+                        </ListItemButton>
+                      );
+                    })}
+                  </List>
+                )}
+              </Paper>
+            </Grid>
+
+            {/* Section 2: Outputs (Multiple select) */}
+            <Grid size={{ xs: 12, md: 4.5 }}>
+              <Typography variant="h6" fontWeight={600} mb={2}>
+                Output Devices
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 2, height: 400, overflowY: 'auto' }}>
+                {isOutputLoading ? (
+                  <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                    <CircularProgress />
+                  </Box>
+                ) : !formData.siteId ? (
+                  <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                    <Typography color="textSecondary">Please select a Site first.</Typography>
+                  </Box>
+                ) : outputDevices.length === 0 ? (
+                  <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                    <Typography color="textSecondary">No output devices found.</Typography>
+                  </Box>
+                ) : (
+                  <List>
+                    {outputDevices.map((device) => {
+                      const isChecked = (formData.outputs || []).some((d) => d.deviceId === device.id);
+                      return (
+                        <ListItemButton
+                          key={device.id}
+                          dense
+                          onClick={() => handleToggleOutputDevice(device)}
                         >
                           <ListItemIcon>
                             <Checkbox
@@ -325,13 +405,13 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
               </Paper>
             </Grid>
 
-            {/* Section 2: Outputs */}
-            <Grid size={{ xs: 12, md: 6 }}>
+            {/* Section 3: Streams (Multiple select) */}
+            <Grid size={{ xs: 12, md: 4.5 }}>
               <Typography variant="h6" fontWeight={600} mb={2}>
-                Output Devices
+                Stream Devices
               </Typography>
               <Paper variant="outlined" sx={{ p: 2, height: 400, overflowY: 'auto' }}>
-                {isOutputLoading ? (
+                {isStreamLoading ? (
                   <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                     <CircularProgress />
                   </Box>
@@ -339,19 +419,19 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                   <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                     <Typography color="textSecondary">Please select a Site first.</Typography>
                   </Box>
-                ) : outputDevices.length === 0 ? (
+                ) : streamDevices.length === 0 ? (
                   <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                    <Typography color="textSecondary">No output devices found for this site.</Typography>
+                    <Typography color="textSecondary">No stream devices found.</Typography>
                   </Box>
                 ) : (
                   <List>
-                    {outputDevices.map((device) => {
-                      const isChecked = formData.outputs.some((d) => d.deviceId === device.id);
+                    {streamDevices.map((device) => {
+                      const isChecked = (formData.streams || []).some((d) => d.deviceId === device.id);
                       return (
                         <ListItemButton
                           key={device.id}
                           dense
-                          onClick={() => handleToggleOutputDevice(device)}
+                          onClick={() => handleToggleStreamDevice(device)}
                         >
                           <ListItemIcon>
                             <Checkbox

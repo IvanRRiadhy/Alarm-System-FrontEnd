@@ -488,12 +488,13 @@ export const defaultAlarmRuleForm: AlarmRuleDataType = {
   siteName: '',
   name: '',
   isActive: true,
-  inputs: [],
-  inputDeviceIds: [],
+  // inputDeviceName: '',
+  inputDeviceId: '',
+  streamDeviceIds: [],
   outputDeviceIds: [],
-  outputs: [],
-  scheduleTemplateId: '',
-  scheduleTemplateName: '',
+  // outputs: [],
+  // scheduleTemplateId: '',
+  // scheduleTemplateName: '',
 }
 
 export const defaultAlarmRuleFilter: AlarmRuleFilter = {

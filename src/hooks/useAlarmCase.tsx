@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
 import { metaData } from '../store/apps/crud/site';
-import { AlarmCaseType, GetFilter, SetAlarmCases, UpdateAlarmCaseMeta } from '../store/apps/crud/alarmCase';
+import { AlarmCaseType, AlarmCaseTimelineType, GetFilter, SetAlarmCases, UpdateAlarmCaseMeta } from '../store/apps/crud/alarmCase';
 import { useDispatch } from 'src/store/Store';
 
 const API_URL = '/api/alarm-cases';
@@ -46,6 +46,20 @@ export function useAlarmCaseByID(id: string) {
         return response.data.data;
       }
       return response.data as AlarmCaseType;
+    },
+    enabled: !!id,
+  });
+}
+export function useAlarmCaseTimeline(id: string) {
+    return useQuery({
+    queryKey: ['alarm-timeline', id],
+    queryFn: async () => {
+      const response = await axiosServices.get<{ data: AlarmCaseTimelineType } | AlarmCaseTimelineType>(`${API_URL}/${id}/timeline`);
+      // Return response.data.data if wrapped, otherwise response.data
+      if (response.data && 'data' in response.data) {
+        return response.data.data;
+      }
+      return response.data as AlarmCaseTimelineType;
     },
     enabled: !!id,
   });

@@ -9,6 +9,7 @@ import {
   Divider,
   Menu,
   MenuItem,
+  GlobalStyles,
 } from '@mui/material';
 import {
   IconFilter,
@@ -23,6 +24,14 @@ import {
 
 export type Severity = 'Critical' | 'High' | 'Medium' | 'Low';
 export type FilterType = 'Semua' | Severity;
+
+export type IoDeviceItem = {
+  deviceId: string;
+  deviceName: string;
+  deviceType: string;
+  status: 'active' | 'nonActive';
+  controllerNo?: number;
+};
 
 export interface EventItem {
   id: number;
@@ -46,6 +55,9 @@ export interface EventItem {
   floorId?: string | null;
   siteId?: string;
   seenStatus?: boolean;
+  inputDevice?: IoDeviceItem | null;
+  outputDevices?: IoDeviceItem[];
+  streamDevices?: IoDeviceItem[];
 }
 
 export const dummyEvents: EventItem[] = [
@@ -192,6 +204,27 @@ interface EventSidebarProps {
   currentFloorplanId?: string | null;
 }
 
+const isNewEvent = (createdAtStr?: string) => {
+  if (!createdAtStr) return false;
+  const elapsed = Date.now() - new Date(createdAtStr).getTime();
+  return elapsed >= 0 && elapsed < 15000; // 15 seconds window
+};
+
+const getBreathingBg = (severity: Severity) => {
+  switch (severity) {
+    case 'Critical':
+      return 'rgba(153, 27, 27, 0.22)';
+    case 'High':
+      return 'rgba(239, 68, 68, 0.15)';
+    case 'Medium':
+      return 'rgba(249, 115, 22, 0.15)';
+    case 'Low':
+      return 'rgba(234, 179, 8, 0.15)';
+    default:
+      return 'rgba(37, 99, 235, 0.15)';
+  }
+};
+
 const EventSidebar: React.FC<EventSidebarProps> = ({
   events,
   onSelectEvent,
@@ -201,6 +234,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
   const [activeFilter, setActiveFilter] = useState<FilterType>('Semua');
   const [floorplanFilterActive, setFloorplanFilterActive] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [expandedCases, setExpandedCases] = useState<Record<string, boolean>>({});
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -248,6 +282,48 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
     });
   }, [filteredEvents]);
 
+  const groupedEvents = React.useMemo(() => {
+    const groups: Record<string, EventItem[]> = {};
+    const ungrouped: EventItem[] = [];
+
+    for (const event of sortedFilteredEvents) {
+      if (event.alarmCaseId) {
+        if (!groups[event.alarmCaseId]) {
+          groups[event.alarmCaseId] = [];
+        }
+        groups[event.alarmCaseId].push(event);
+      } else {
+        ungrouped.push(event);
+      }
+    }
+
+    const resultGroups = Object.entries(groups).map(([alarmCaseId, groupEvents]) => {
+      const latestEvent = groupEvents.reduce((latest, current) => {
+        const latestTime = latest.createdAt ? new Date(latest.createdAt).getTime() : 0;
+        const currentTime = current.createdAt ? new Date(current.createdAt).getTime() : 0;
+        return currentTime > latestTime ? current : latest;
+      }, groupEvents[0]);
+
+      return {
+        alarmCaseId,
+        latestEvent,
+        events: groupEvents,
+        createdAtTime: latestEvent.createdAt ? new Date(latestEvent.createdAt).getTime() : 0,
+      };
+    });
+
+    const resultUngrouped = ungrouped.map((event) => ({
+      alarmCaseId: `single-${event.id}`,
+      latestEvent: event,
+      events: [event],
+      createdAtTime: event.createdAt ? new Date(event.createdAt).getTime() : 0,
+    }));
+
+    const combined = [...resultGroups, ...resultUngrouped];
+    combined.sort((a, b) => b.createdAtTime - a.createdAtTime);
+    return combined;
+  }, [sortedFilteredEvents]);
+
   const filters: { label: string; value: FilterType; count?: number; color?: string }[] = [
     { label: 'Semua', value: 'Semua' },
     { label: `CRITICAL (${criticalCount})`, value: 'Critical', color: '#991B1B' },
@@ -267,6 +343,20 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
         overflow: 'hidden',
       }}
     >
+      <GlobalStyles
+        styles={{
+          '@keyframes breatheOnce': {
+            '0%': { backgroundColor: 'transparent' },
+            '30%': { backgroundColor: 'var(--pulse-bg)' },
+            '100%': { backgroundColor: 'transparent' },
+          },
+          '@keyframes breatheLoop': {
+            '0%': { backgroundColor: 'transparent' },
+            '50%': { backgroundColor: 'var(--pulse-bg)' },
+            '100%': { backgroundColor: 'transparent' },
+          },
+        }}
+      />
       {/* Header */}
       <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
         <Typography
@@ -367,13 +457,51 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
           '&::-webkit-scrollbar-thumb': { background: '#334155', borderRadius: 10 },
         }}
       >
-        {sortedFilteredEvents.map((event, index) => {
-          const isSelected = selectedEventId === event.id;
-          // console.log("Events: ", event)
+        {groupedEvents.map((group) => {
+          const { alarmCaseId, latestEvent, events } = group;
+          const isSelected = selectedEventId === latestEvent.id;
+          const isExpanded = !!expandedCases[alarmCaseId];
+          const hasMultiple = events.length > 1;
+
+          // Check if alarm is active
+          const isAlarmActive =
+            latestEvent.statusAlarm?.toLowerCase() === 'on' ||
+            latestEvent.statusAlarm?.toLowerCase() === 'active' ||
+            latestEvent.inputDevice?.status === 'active';
+
+          // Determine breathing animation
+          let animationStyle: any = {};
+          const isCriticalActive = latestEvent.severity === 'Critical' && isAlarmActive;
+          const isNew = isNewEvent(latestEvent.createdAt);
+
+          if (isCriticalActive) {
+            animationStyle = {
+              animation: 'breatheLoop 2.5s infinite ease-in-out',
+              '--pulse-bg': getBreathingBg(latestEvent.severity),
+            };
+          } else if (isNew) {
+            animationStyle = {
+              animation: 'breatheOnce 3s 1 ease-in-out',
+              '--pulse-bg': getBreathingBg(latestEvent.severity),
+            };
+          }
+
           return (
-            <React.Fragment key={event.id}>
+            <Box
+              key={alarmCaseId}
+              sx={{
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                ...animationStyle,
+              }}
+            >
+              {/* Group Header (Latest Event) */}
               <Box
-                onClick={() => onSelectEvent?.(event)}
+                onClick={() => {
+                  onSelectEvent?.(latestEvent);
+                  if (hasMultiple) {
+                    setExpandedCases((prev) => ({ ...prev, [alarmCaseId]: !prev[alarmCaseId] }));
+                  }
+                }}
                 sx={{
                   px: 2,
                   py: 1.5,
@@ -389,18 +517,34 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                     sx={{
                       width: 34,
                       height: 34,
-                      bgcolor: `${event.iconColor}18`,
-                      color: event.iconColor,
+                      bgcolor: `${latestEvent.iconColor}18`,
+                      color: latestEvent.iconColor,
                       mt: 0.25,
                     }}
                   >
-                    {event.icon}
+                    {latestEvent.icon}
                   </Avatar>
 
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.2 }}>
-                      {event.time}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.2 }}>
+                        {latestEvent.time}
+                      </Typography>
+                      {hasMultiple && (
+                        <Chip
+                          label={`${events.length} kejadian`}
+                          size="small"
+                          sx={{
+                            height: 16,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            bgcolor: 'rgba(255,255,255,0.08)',
+                            color: '#94A3B8',
+                            border: 'none',
+                          }}
+                        />
+                      )}
+                    </Box>
                     <Typography
                       sx={{
                         color: '#F8FAFC',
@@ -412,10 +556,10 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                         textOverflow: 'ellipsis',
                       }}
                     >
-                      {event.title}
+                      {latestEvent.title}
                     </Typography>
                     <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.3 }}>
-                      {event.site}
+                      {latestEvent.site}
                     </Typography>
                   </Box>
 
@@ -429,27 +573,78 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                     }}
                   >
                     <Chip
-                      label={event.severity === "Critical" ? event.severity.toUpperCase() : event.severity}
+                      label={latestEvent.severity === "Critical" ? latestEvent.severity.toUpperCase() : latestEvent.severity}
                       size="small"
                       sx={{
                         height: 20,
                         fontSize: 10,
                         fontWeight: 700,
-                        bgcolor: `${severityColors[event.severity]}20`,
-                        color: severityColors[event.severity],
-                        border: `1px solid ${severityColors[event.severity]}40`,
+                        bgcolor: `${severityColors[latestEvent.severity]}20`,
+                        color: severityColors[latestEvent.severity],
+                        border: `1px solid ${severityColors[latestEvent.severity]}40`,
                       }}
                     />
                     <Typography sx={{ color: '#64748B', fontSize: 10 }}>
-                      {event.area}
+                      {latestEvent.area}
                     </Typography>
                   </Box>
                 </Box>
               </Box>
-              {index < sortedFilteredEvents.length - 1 && (
-                <Divider sx={{ borderColor: 'rgba(255,255,255,0.04)' }} />
+
+              {/* Nested Sub-events */}
+              {hasMultiple && isExpanded && (
+                <Box
+                  sx={{
+                    bgcolor: 'rgba(0,0,0,0.15)',
+                    pl: 4,
+                    borderLeft: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  {events.map((subEvent, subIndex) => {
+                    const isSubSelected = selectedEventId === subEvent.id;
+                    return (
+                      <Box
+                        key={subEvent.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectEvent?.(subEvent);
+                        }}
+                        sx={{
+                          py: 1.2,
+                          pr: 2,
+                          cursor: 'pointer',
+                          bgcolor: isSubSelected ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                          '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' },
+                          borderBottom: subIndex < events.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ color: '#F8FAFC', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {subEvent.title}
+                            </Typography>
+                            <Typography sx={{ color: '#64748B', fontSize: 10 }}>
+                              {subEvent.time} • {subEvent.area}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={subEvent.severity}
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: 8.5,
+                              bgcolor: `${severityColors[subEvent.severity]}15`,
+                              color: severityColors[subEvent.severity],
+                              border: `1px solid ${severityColors[subEvent.severity]}30`,
+                            }}
+                          />
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
               )}
-            </React.Fragment>
+            </Box>
           );
         })}
       </Box>

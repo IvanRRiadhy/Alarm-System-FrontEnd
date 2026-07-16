@@ -196,6 +196,9 @@ const User = Loadable(lazy(() => import('../views/master/crud/User')))
 //Investigation
 const AlarmInvestigations = Loadable(lazy(() => import('../views/master/crud/AlarmInvestigation')))
 
+//Report
+const Investigate = Loadable(lazy(() => import('../views/report/Investigate')))
+
 
 
 const Router = [
@@ -329,6 +332,9 @@ const Router = [
 
       //AlarmInvestigation
       {path: '/master/alarminvestigation', element: <AlarmInvestigations/> },
+
+      //Report
+      {path: '/report/investigate', element: <Investigate/>},
 
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],

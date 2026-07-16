@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
 import { metaData } from '../store/apps/crud/site';
 import { AlarmEvent, GetFilter, SetAlarmEvents, UpdateAlarmEventMeta } from '../store/apps/crud/alarmEvent';
@@ -17,6 +17,7 @@ interface PaginatedResponse<T> {
 
 export function useAlarmEventList(filter?: GetFilter) {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: ['alarm-event-list', filter],
     queryFn: async () => {
@@ -24,7 +25,12 @@ export function useAlarmEventList(filter?: GetFilter) {
         params: filter,
       });
       console.log("Response", response);
-      const mapped = (response.data?.data || []).map(mapAlarmEventToEventItem);
+      
+      const cache = queryClient.getQueriesData<any>({ queryKey: ['alarm-rule-list'] });
+      const ruleEntry = cache.find((item) => item[1]?.data);
+      const alarmRules = ruleEntry ? ruleEntry[1].data : [];
+
+      const mapped = (response.data?.data || []).map((evt) => mapAlarmEventToEventItem(evt, alarmRules));
       dispatch(SetAlarmEvents(mapped));
       dispatch(UpdateAlarmEventMeta(response.data.meta));
       return response.data;

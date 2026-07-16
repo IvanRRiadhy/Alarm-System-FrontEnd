@@ -15,70 +15,71 @@ interface ActiveAlarmItem {
   region: string;
   time: string;
   severity: 'Critical' | 'High' | 'Low';
+  caseNumber: string;
 }
 
 interface ActiveAlarmsProps {
   region: string;
 }
 
-const alarmsData: ActiveAlarmItem[] = [
-  {
-    id: 1,
-    title: 'Pintu Utama Terbuka',
-    site: 'KCP Surabaya Diponegoro',
-    region: 'Jawa Timur',
-    time: '10:28',
-    severity: 'Critical',
-  },
-  {
-    id: 2,
-    title: 'Gerakan Terdeteksi',
-    site: 'KCP Medan Iskandar Muda',
-    region: 'Sumatera Utara',
-    time: '10:22',
-    severity: 'Critical',
-  },
-  {
-    id: 3,
-    title: 'Pintu Belakang Terbuka',
-    site: 'KCP Makassar Ratulangi',
-    region: 'Sulawesi Selatan',
-    time: '10:16',
-    severity: 'High',
-  },
-  {
-    id: 4,
-    title: 'Sensor Getar Aktif',
-    site: 'KCP Bandung Asia Afrika',
-    region: 'Jawa Barat',
-    time: '10:05',
-    severity: 'High',
-  },
-  {
-    id: 5,
-    title: 'Camera Offline',
-    site: 'KCP Semarang Pandanaran',
-    region: 'Jawa Tengah',
-    time: '09:57',
-    severity: 'Low',
-  },
-  {
-    id: 6,
-    title: 'Pintu Vault Terbuka',
-    site: 'KCP Jakarta Sudirman',
-    region: 'DKI Jakarta',
-    time: '09:41',
-    severity: 'Critical',
-  },
-  {
-    id: 7,
-    title: 'Motion Detected',
-    site: 'KCP Denpasar',
-    region: 'Bali',
-    time: '09:20',
-    severity: 'Low',
-  },
-];
+// const alarmsData: ActiveAlarmItem[] = [
+//   {
+//     id: 1,
+//     title: 'Pintu Utama Terbuka',
+//     site: 'KCP Surabaya Diponegoro',
+//     region: 'Jawa Timur',
+//     time: '10:28',
+//     severity: 'Critical',
+//   },
+//   {
+//     id: 2,
+//     title: 'Gerakan Terdeteksi',
+//     site: 'KCP Medan Iskandar Muda',
+//     region: 'Sumatera Utara',
+//     time: '10:22',
+//     severity: 'Critical',
+//   },
+//   {
+//     id: 3,
+//     title: 'Pintu Belakang Terbuka',
+//     site: 'KCP Makassar Ratulangi',
+//     region: 'Sulawesi Selatan',
+//     time: '10:16',
+//     severity: 'High',
+//   },
+//   {
+//     id: 4,
+//     title: 'Sensor Getar Aktif',
+//     site: 'KCP Bandung Asia Afrika',
+//     region: 'Jawa Barat',
+//     time: '10:05',
+//     severity: 'High',
+//   },
+//   {
+//     id: 5,
+//     title: 'Camera Offline',
+//     site: 'KCP Semarang Pandanaran',
+//     region: 'Jawa Tengah',
+//     time: '09:57',
+//     severity: 'Low',
+//   },
+//   {
+//     id: 6,
+//     title: 'Pintu Vault Terbuka',
+//     site: 'KCP Jakarta Sudirman',
+//     region: 'DKI Jakarta',
+//     time: '09:41',
+//     severity: 'Critical',
+//   },
+//   {
+//     id: 7,
+//     title: 'Motion Detected',
+//     site: 'KCP Denpasar',
+//     region: 'Bali',
+//     time: '09:20',
+//     severity: 'Low',
+//   },
+// ];
 
 interface ActiveAlarmsProps {
   region: string;

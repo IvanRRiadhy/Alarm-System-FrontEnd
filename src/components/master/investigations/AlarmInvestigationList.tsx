@@ -22,17 +22,19 @@ import {
     Button,
     Collapse,
     Paper,
+    CircularProgress,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
-import { IconPaperclip, IconX, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconPaperclip, IconX, IconChevronDown, IconChevronRight, IconHistory } from '@tabler/icons-react';
 import { useLocation } from 'react-router';
 import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Store';
-import { SetAlarmCaseFilter } from 'src/store/apps/crud/alarmCase';
+import { SetAlarmCaseFilter, AlarmCaseType } from 'src/store/apps/crud/alarmCase';
 import { defaultDeviceFilter } from 'src/store/apps/defaultForm';
-import { useAlarmCaseList } from 'src/hooks/useAlarmCase';
+import { useAlarmCaseList, useAlarmCaseTimeline } from 'src/hooks/useAlarmCase';
 import { useAlarmInvestigationList } from 'src/hooks/useAlarmInvestigation';
 import { AlarmInvestigationType, AttachmentsType } from 'src/store/apps/crud/alarmInvestigation';
 import InvestigationUpdate from './InvestigationUpdate';
+import AlarmTimelineProgress from './AlarmTimeline';
 
 const columns = [
     { label: 'Case Number', field: 'caseNumber', sortAble: true },
@@ -41,7 +43,7 @@ const columns = [
     { label: 'Device Name', field: 'deviceName', sortAble: true },
     { label: 'Severity', field: 'severity', sortAble: true },
     { label: 'Investigation Status', field: 'investigationStatus', sortAble: true },
-    { label: 'Attachment Count', field: 'attachments', sortAble: false },
+    // { label: 'Timeline', field: 'timeline', sortAble: false },
 ];
 
 const getStatusColor = (status: string) => {
@@ -57,7 +59,7 @@ const getStatusColor = (status: string) => {
         case 'cancelled':
             return 'error';
         default:
-            return 'default';
+            return 'error';
     }
 };
 
@@ -141,6 +143,19 @@ const AlarmInvestigationList = () => {
     const [selectedAttachments, setSelectedAttachments] = useState<AttachmentsType[]>([]);
     const [activeAttachmentIndex, setActiveAttachmentIndex] = useState(0);
     const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
+
+    const [timelineDialogOpen, setTimelineDialogOpen] = useState(false);
+    const [selectedCaseForTimeline, setSelectedCaseForTimeline] = useState<AlarmCaseType | null>(null);
+
+    const handleOpenTimeline = (caseItem: AlarmCaseType) => {
+        setSelectedCaseForTimeline(caseItem);
+        setTimelineDialogOpen(true);
+    };
+
+    const handleCloseTimeline = () => {
+        setTimelineDialogOpen(false);
+        setSelectedCaseForTimeline(null);
+    };
 
     const toggleExpand = (caseId: string) => {
         setExpandedCaseId((prev) => (prev === caseId ? null : caseId));
@@ -391,13 +406,15 @@ const AlarmInvestigationList = () => {
                                                         <TableCell>
                                                             <Box display="flex" flexDirection="column" alignItems="flex-start" gap={0.5}>
                                                                  <Chip
-                                                                     label={caseItem.investigationStatus || '-'}
+                                                                     label={caseItem.investigationStatus || 'TRIGGERED'}
                                                                      color={getStatusColor(caseItem.investigationStatus)}
                                                                      size="small"
                                                                  />
                                                             </Box>
                                                         </TableCell>
-                                                        <TableCell>{(caseItem as any).attachments?.length || 0}</TableCell>
+                                                         {/* <TableCell>
+                                                             
+                                                         </TableCell> */}
                                                         <TableCell
                                                             sx={{
                                                                 position: 'sticky',
@@ -409,21 +426,16 @@ const AlarmInvestigationList = () => {
                                                                 maxWidth: 180,
                                                               }}
                                                         >
-                                                            <Box display="flex" alignItems="center" gap={1}>
-                                                                {!caseItem.investigationStatus && (
-                                                                    <Tooltip title="See Attachments">
-                                                                    <span>
-                                                                        <IconButton
-                                                                            color="primary"
-                                                                            size="small"
-                                                                            onClick={() => handleOpenAttachments((caseItem as any).attachments || [])}
-                                                                            disabled={!(caseItem as any).attachments || (caseItem as any).attachments.length === 0}
-                                                                        >
-                                                                            <IconPaperclip size={20} />
-                                                                        </IconButton>
-                                                                    </span>
-                                                                </Tooltip>
-                                                                )}
+                                                             <Box display="flex" alignItems="center" gap={1}>
+                                                                <Tooltip title="See Timeline">
+                                                                 <IconButton
+                                                                     color="primary"
+                                                                     size="small"
+                                                                     onClick={() => handleOpenTimeline(caseItem)}
+                                                                 >
+                                                                     <IconHistory size={20} />
+                                                                 </IconButton>
+                                                             </Tooltip>
                                                                 <InvestigationUpdate device={mappedForUpdate} />
                                                                 <Tooltip title={isOpen ? 'Hide Investigations' : 'Show Investigations'} arrow>
                                                                     <IconButton size="small" onClick={() => toggleExpand(caseItem.id)}>
@@ -602,8 +614,181 @@ const AlarmInvestigationList = () => {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Timeline Dialog */}
+            <Dialog
+                open={timelineDialogOpen}
+                onClose={handleCloseTimeline}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '24px',
+                        p: 2,
+                    },
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Typography variant="h5" fontWeight="bold">
+                            Alarm Incident Timeline
+                        </Typography>
+                        {selectedCaseForTimeline && (
+                            <Chip
+                                label={selectedCaseForTimeline.investigationStatus}
+                                size="small"
+                                color={selectedCaseForTimeline.isCleared ? 'success' : 'error'}
+                            />
+                        )}
+                    </Box>
+                    <IconButton onClick={handleCloseTimeline} size="small" sx={{ color: 'text.secondary' }}>
+                        <IconX size={20} />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <AlarmTimelineContainer id={selectedCaseForTimeline?.id || null} caseItem={selectedCaseForTimeline} />
+                </DialogContent>
+            </Dialog>
         </Grid>
     );
 }
+
+const AlarmTimelineContainer = ({ id, caseItem }: { id: string | null; caseItem: AlarmCaseType | null }) => {
+    const { data: timelineData, isLoading, isError } = useAlarmCaseTimeline(id || '');
+    const [activeAttachmentIndex, setActiveAttachmentIndex] = useState(0);
+
+    if (!id) return null;
+    if (isLoading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" py={5}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+    if (isError || !timelineData) {
+        return (
+            <Box py={3} textAlign="center">
+                <Typography color="error">Failed to load timeline data.</Typography>
+            </Box>
+        );
+    }
+
+    const attachments = timelineData.incidentInfo?.attachments || [];
+
+    return (
+        <Box display="flex" flexDirection="column" gap={3}>
+            <AlarmTimelineProgress timelineData={timelineData as any} caseData={caseItem} />
+            
+            {attachments.length > 0 && (
+                <Box sx={{ mt: 2, borderTop: '1px solid', borderColor: 'divider', pt: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                        Incident Attachments ({attachments.length})
+                    </Typography>
+                    
+                    <Box
+                        sx={{
+                            width: '100%',
+                            height: '350px',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'action.hover',
+                            position: 'relative',
+                        }}
+                    >
+                        {(() => {
+                            const current = attachments[activeAttachmentIndex];
+                            const fileUrl = typeof current === 'string' ? current : current.fileUrl || current.url || '';
+                            const fileType = typeof current === 'string' ? '' : current.fileType || '';
+                            
+                            const isImage = fileType.toLowerCase().startsWith('image/') ||
+                                /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileUrl);
+                            const isVideo = fileType.toLowerCase().startsWith('video/') ||
+                                /\.(mp4|webm|ogg)$/i.test(fileUrl);
+
+                            if (isImage) {
+                                return (
+                                    <Box
+                                        component="img"
+                                        src={fileUrl}
+                                        alt={`Attachment ${activeAttachmentIndex + 1}`}
+                                        sx={{
+                                            maxWidth: '100%',
+                                            maxHeight: '100%',
+                                            objectFit: 'contain',
+                                        }}
+                                    />
+                                );
+                            } else if (isVideo) {
+                                return (
+                                    <Box
+                                        component="video"
+                                        src={fileUrl}
+                                        controls
+                                        sx={{
+                                            maxWidth: '100%',
+                                            maxHeight: '100%',
+                                            outline: 'none',
+                                        }}
+                                    />
+                                );
+                            } else {
+                                return (
+                                    <Box sx={{ textAlign: 'center', p: 3 }}>
+                                        <Typography variant="body1" gutterBottom>
+                                            Preview not available for this file type.
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            href={fileUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Download/Open File
+                                        </Button>
+                                    </Box>
+                                );
+                            }
+                        })()}
+                    </Box>
+
+                    {attachments.length > 1 && (
+                        <Box display="flex" justifyContent="center" gap={1.5} mt={2}>
+                            {attachments.map((_, idx) => {
+                                const isActive = idx === activeAttachmentIndex;
+                                return (
+                                    <IconButton
+                                        key={idx}
+                                        onClick={() => setActiveAttachmentIndex(idx)}
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            backgroundColor: isActive ? 'primary.main' : 'background.paper',
+                                            color: isActive ? 'primary.contrastText' : 'text.primary',
+                                            border: '1px solid',
+                                            borderColor: isActive ? 'primary.main' : 'divider',
+                                            fontWeight: 'bold',
+                                            fontSize: '12px',
+                                            '&:hover': {
+                                                backgroundColor: isActive ? 'primary.dark' : 'action.hover',
+                                            },
+                                        }}
+                                    >
+                                        {idx + 1}
+                                    </IconButton>
+                                );
+                            })}
+                        </Box>
+                    )}
+                </Box>
+            )}
+        </Box>
+    );
+};
 
 export default AlarmInvestigationList;

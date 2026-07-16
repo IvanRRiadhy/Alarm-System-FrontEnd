@@ -334,7 +334,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
                                         <MenuItem value="MotionSensor">Motion Sensor</MenuItem>
                                         <MenuItem value="DoorSensor">Door Sensor</MenuItem>
                                         <MenuItem value="GlassBreakSensor">Glass Break Sensor</MenuItem>
-                                        <MenuItem value="BeamSensor">Beam Sensor</MenuItem>
+                                        {/* <MenuItem value="BeamSensor">Beam Sensor</MenuItem> */}
                                         <MenuItem value="VibrationSensor">Vibration Sensor</MenuItem>
                                         <MenuItem value="CctvCamera">CCTV (Camera)</MenuItem>
                                         <MenuItem value="DoorLock">Door Lock</MenuItem>

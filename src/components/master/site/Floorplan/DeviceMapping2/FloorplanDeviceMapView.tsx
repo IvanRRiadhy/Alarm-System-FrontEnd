@@ -197,7 +197,7 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
   const handleAreaComplete = useCallback((nodes: any[]) => {
     setPendingAreaNodes(nodes);
     setAreaName('');
-    setAreaColor('#EF4444');
+    setAreaColor('#FF4D4F');
   }, []);
 
   const handleConfirmAreaPlacement = useCallback(() => {
@@ -429,26 +429,71 @@ const FloorplanDeviceMapView = ({ floorplan }: FloorplanDeviceMapViewProps) => {
             }}
           />
           <Typography variant="subtitle2" fontWeight={600} color="text.primary">
-            Select Area Color:
+            Area Color
           </Typography>
-          <Box display="flex" gap={1.5} flexWrap="wrap">
-            {['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'].map((c) => (
-              <Box
-                key={c}
-                onClick={() => setAreaColor(c)}
-                sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  bgcolor: c,
-                  cursor: 'pointer',
-                  border: areaColor === c ? '3px solid #111827' : '2px solid transparent',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  '&:hover': { transform: 'scale(1.1)' },
-                  transition: 'transform 0.1s',
-                }}
-              />
-            ))}
+          <Box
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: '8px',
+              p: 2,
+              bgcolor: 'action.hover',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: 2,
+                justifyItems: 'center',
+              }}
+            >
+              {[
+                '#FF4D4F', '#A8071A', '#EB2F96', '#722ED1', '#1890FF',
+                '#13C2C2', '#52C41A', '#FADB14', '#D4B106', '#FA8C16'
+              ].map((c) => {
+                const isSelected = areaColor === c;
+                return (
+                  <Box
+                    key={c}
+                    onClick={() => setAreaColor(c)}
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      bgcolor: c,
+                      cursor: 'pointer',
+                      border: isSelected ? '2px solid #000' : '1px solid rgba(0,0,0,0.1)',
+                      boxShadow: isSelected ? '0 0 0 3px rgba(0,0,0,0.15)' : 'none',
+                      transition: 'all 0.15s ease',
+                      '&:hover': {
+                        transform: 'scale(1.1)',
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+          
+          {/* Active Color Hex display */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, justifyContent: 'center', mt: 0.5 }}>
+            <Box
+              sx={{
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                bgcolor: areaColor,
+                border: '1px solid rgba(0,0,0,0.1)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}
+            />
+            <Typography sx={{ color: 'text.primary', fontSize: 13, fontWeight: 700, fontFamily: 'monospace' }}>
+              {areaColor.toUpperCase()}
+            </Typography>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

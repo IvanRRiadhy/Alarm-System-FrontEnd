@@ -24,6 +24,7 @@ import {
   Collapse,
   Paper,
   Tooltip,
+  Chip,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
 import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload, IconExchange } from '@tabler/icons-react';
@@ -32,7 +33,7 @@ import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Stor
 import toast from 'react-hot-toast';
 import { UpdateFilter } from 'src/store/apps/crud/controller';
 import { defaultControllerFilter } from 'src/store/apps/defaultForm';
-import { useControllerList, useDeleteController } from 'src/hooks/useController';
+import { useControllerList, useDeleteController, useChangeStatusController } from 'src/hooks/useController';
 import { controllerType } from 'src/store/apps/crud/controller';
 import AddEditController from './AddEditController';
 import ControllerChannel from './ControllerChannel';
@@ -44,6 +45,7 @@ const columns = [
   { label: 'MAC Address', field: 'macAddress', sortAble: true },
   { label: 'Port', field: 'port', sortAble: true },
   { label: 'Status', field: 'status', sortAble: true },
+  { label: 'Alarm Mode', field: 'alarmMode', sortAble: true },
 ];
 
 const SKELETON_ROWS = 5;
@@ -133,6 +135,17 @@ const ControllerList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedController, setSelectedController] = useState<controllerType | null>(null);
   const deleteMutation = useDeleteController();
+  const changeStatusMutation = useChangeStatusController();
+
+  const handleChangeStatus = async (id: string, alarmMode: string) => {
+    try {
+      await changeStatusMutation.mutateAsync({ id, alarmMode });
+      toast.success('Alarm Mode Updated');
+    } catch (error) {
+      toastError(error, 'Update failed');
+      console.error(error);
+    }
+  };
 
     // Open delete confirmation dialog
     const handleOpenDeleteDialog = (controller: controllerType) => {
@@ -181,17 +194,29 @@ const ControllerList = () => {
                   >
                     <Skeleton variant="text" width={18} />
                   </TableCell>
-                  {/* Building Name */}
+                  {/* Controller Name */}
                   <TableCell>
-                    <Skeleton variant="text" width={220} height={22} />
+                    <Skeleton variant="text" width={120} height={22} />
                   </TableCell>
-                  {/* Building Tag */}
+                  {/* IP Address */}
                   <TableCell>
-                    <Skeleton variant="text" width={220} height={22} />
+                    <Skeleton variant="text" width={100} height={22} />
                   </TableCell>
-                  {/* Building Image */}
+                  {/* MAC Address */}
                   <TableCell>
-                    <Skeleton variant="rectangular" width={80} height={60} />
+                    <Skeleton variant="text" width={120} height={22} />
+                  </TableCell>
+                  {/* Port */}
+                  <TableCell>
+                    <Skeleton variant="text" width={50} height={22} />
+                  </TableCell>
+                  {/* Status */}
+                  <TableCell>
+                    <Skeleton variant="text" width={65} height={22} />
+                  </TableCell>
+                  {/* Alarm Mode */}
+                  <TableCell>
+                    <Skeleton variant="text" width={180} height={22} />
                   </TableCell>
                   {/* Actions (right sticky) */}
                   <TableCell
@@ -200,14 +225,13 @@ const ControllerList = () => {
                       right: 0,
                       backgroundColor: 'background.paper',
                       zIndex: 2,
-                      width: 150,
-                      minWidth: 150,
-                      maxWidth: 150,
+                      width: 180,
+                      minWidth: 180,
+                      maxWidth: 180,
                     }}
                   >
                     <Box display="flex" gap={1}>
                       <Skeleton variant="rounded" width={90} height={32} />
-                      {/* <Skeleton variant="circular" width={32} height={32} /> */}
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -311,6 +335,42 @@ const ControllerList = () => {
                               <TableCell>
                                 {controller.status}
                               </TableCell>
+                              <TableCell>
+                                <Box display="flex" flexDirection="column" gap={1} alignItems="center">
+                                  <Chip
+                                    label={controller.alarmMode || 'Disarmed'}
+                                    size="small"
+                                    color={
+                                      controller.alarmMode === 'Disarmed'
+                                        ? 'success'
+                                        : controller.alarmMode === 'Acknowledge'
+                                        ? 'info'
+                                        : 'warning'
+                                    }
+                                    sx={{ fontWeight: '500' }}
+                                  />
+                                  <Box display="flex" flexWrap="wrap" gap={0.5} justifyContent="center" sx={{ maxWidth: 220 }}>
+                                    {['Disarmed', 'ArmedStay', 'ArmedAway', 'Acknowledge'].map((mode) => (
+                                      <Button
+                                        key={mode}
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => handleChangeStatus(controller.id, mode)}
+                                        disabled={controller.alarmMode === mode || changeStatusMutation.isPending}
+                                        sx={{
+                                          fontSize: '0.7rem',
+                                          py: 0.25,
+                                          px: 0.75,
+                                          minWidth: 'auto',
+                                          textTransform: 'none',
+                                        }}
+                                      >
+                                        {mode}
+                                      </Button>
+                                    ))}
+                                  </Box>
+                                </Box>
+                              </TableCell>
                               <TableCell
                                 sx={{
                                   position: 'sticky',
@@ -367,7 +427,7 @@ const ControllerList = () => {
                             {/* ACCORDION ROW */}
                             {isChildShown && (
                               <TableRow>
-                                <TableCell colSpan={5} sx={{ p: 0, borderBottom: 0 }}>
+                                <TableCell colSpan={8} sx={{ p: 0, borderBottom: 0 }}>
                                   <Collapse in={isOpen} timeout="auto" unmountOnExit>
                                     <Box pl={6} pr={2} pb={2}>
                                       {/* <BuildingAccordionContent

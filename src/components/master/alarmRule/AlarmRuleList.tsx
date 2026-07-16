@@ -25,7 +25,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
-import { IconTrash, IconChevronDown, IconChevronRight, IconMap } from '@tabler/icons-react';
+import { IconTrash, IconChevronDown, IconChevronRight, IconMap, IconInfoCircle } from '@tabler/icons-react';
 import { useLocation } from 'react-router';
 import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Store';
 import toast from 'react-hot-toast';
@@ -278,9 +278,34 @@ const AlarmRuleList = () => {
                                   {index + 1 + (page - 1) * rowsPerPage}
                                 </TableCell>
                                 <TableCell>{alarmRule.name}</TableCell>
-                                <TableCell>{alarmRule.inputs.length}</TableCell>
-                                <TableCell>{alarmRule.outputs.length}</TableCell>
-                                <TableCell>{alarmRule.scheduleTemplateName}</TableCell>
+                                <TableCell>{alarmRule.inputDeviceName || "-"}</TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    {(alarmRule.outputs?.length || 0) + (alarmRule.streams?.length || 0)}
+                                    {((alarmRule.outputs?.length || 0) + (alarmRule.streams?.length || 0)) > 0 && (
+                                      <Tooltip
+                                        title={
+                                          <Box sx={{ p: 0.5 }}>
+                                            {[
+                                              ...(alarmRule.outputs || []).map(o => `${o.deviceName} (Output)`),
+                                              ...(alarmRule.streams || []).map(s => `${s.deviceName} (Stream)`)
+                                            ].map((name, idx) => (
+                                              <Typography key={idx} variant="caption" display="block">
+                                                • {name}
+                                              </Typography>
+                                            ))}
+                                          </Box>
+                                        }
+                                        arrow
+                                      >
+                                        <span>
+                                          <IconInfoCircle size={16} style={{ cursor: 'pointer', color: '#64748B', display: 'inline-block', verticalAlign: 'middle' }} />
+                                        </span>
+                                      </Tooltip>
+                                    )}
+                                  </Box>
+                                </TableCell>
+                                <TableCell>{alarmRule.scheduleTemplateName || "-"}</TableCell>
                                 {/* <TableCell>{alarmRule.alarmMode}</TableCell> */}
                                 <TableCell
                                   sx={{
