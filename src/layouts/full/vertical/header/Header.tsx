@@ -135,7 +135,6 @@ const Header = () => {
 
             <Box width={30} />
 
-             {userRole === 'Admin' && (
                <Box sx={{ minWidth: 220 }}>
                  <CustomAutocomplete<SiteType>
                    id="header-site-select"
@@ -170,7 +169,7 @@ const Header = () => {
                    }}
                  />
                </Box>
-             )}
+             
 
             <Box width={20} />
 

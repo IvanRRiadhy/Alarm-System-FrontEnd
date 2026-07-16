@@ -25,6 +25,7 @@ import { FloorplanType } from 'src/store/apps/crud/floorplan';
 import { useSiteList, useSiteLookup } from 'src/hooks/useSite';
 import { useFloorList } from 'src/hooks/useFloor';
 import { useFloorplanList } from 'src/hooks/useFloorplan';
+import { useBuildingList } from 'src/hooks/useBuilding';
 
 const getCdnUrl = (url?: string | null) => {
   if (!url) return '';
@@ -90,57 +91,73 @@ const FloorPlan = () => {
     });
   };
 
-  // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(
+    localStorage.getItem('selectedSiteId')
+  );
+
+  useEffect(() => {
+    const handleSiteChanged = () => {
+      setSelectedSiteId(localStorage.getItem('selectedSiteId'));
+      setSelectedFloorplan(null);
+    };
+    window.addEventListener('siteChanged', handleSiteChanged);
+    return () => {
+      window.removeEventListener('siteChanged', handleSiteChanged);
+    };
+  }, []);
+
+  // Fetch site, building, floor, and floorplan lists
   const { data: siteResponse } = useSiteLookup();
+  const { data: buildingResponse } = useBuildingList();
   const { data: floorResponse } = useFloorList();
   const { data: floorplanResponse } = useFloorplanList();
 
   useEffect(() => {
-    if (selectedFloorplan) return;
+    if (selectedFloorplan) {
+      if (!selectedSiteId || selectedFloorplan.siteId === selectedSiteId) {
+        return;
+      }
+    }
 
     const sites = siteResponse?.data || [];
+    const buildings = buildingResponse?.data || [];
     const floorData = floorResponse?.data || [];
     const floorplanData = floorplanResponse?.data || [];
 
-    if (sites.length > 0 && floorData.length > 0 && floorplanData.length > 0) {
-      const firstSite = sites[0];
-      const siteFloors = floorData.filter((f) => f.siteId === firstSite.id);
+    if (sites.length > 0 && buildings.length > 0 && floorData.length > 0 && floorplanData.length > 0) {
+      const activeSiteId = selectedSiteId || (sites[0]?.id);
+      if (!activeSiteId) return;
 
-      // Find floor level 0
-      let targetFloor = siteFloors.find((f) => f.level === 0);
-      if (!targetFloor) {
-        // Find floor with smallest level > 0
-        const positiveFloors = siteFloors.filter((f) => f.level > 0).sort((a, b) => a.level - b.level);
-        if (positiveFloors.length > 0) {
-          targetFloor = positiveFloors[0];
-        }
-      }
-      if (!targetFloor && siteFloors.length > 0) {
-        const sortedFloors = [...siteFloors].sort((a, b) => a.level - b.level);
-        targetFloor = sortedFloors[0];
-      }
+      const siteBuildings = buildings.filter((b) => b.siteId === activeSiteId);
+      if (siteBuildings.length > 0) {
+        const firstBuilding = siteBuildings[0];
+        const buildingFloors = floorData.filter((f) => f.buildingId === firstBuilding.id);
 
-      if (targetFloor) {
-        const floorplans = floorplanData.filter((fp) => fp.floorId === targetFloor.id);
-        if (floorplans.length > 0) {
-          setSelectedFloorplan(floorplans[0]);
-          return;
+        if (buildingFloors.length > 0) {
+          const sortedFloors = [...buildingFloors].sort((a, b) => Math.abs(a.level) - Math.abs(b.level));
+          const targetFloor = sortedFloors[0];
+
+          if (targetFloor) {
+            const floorplans = floorplanData.filter((fp) => fp.floorId === targetFloor.id);
+            if (floorplans.length > 0) {
+              setSelectedFloorplan(floorplans[0]);
+              return;
+            }
+          }
         }
       }
 
-      // Fallback 1: Any floorplan in the first site
-      const siteFloorplans = floorplanData.filter((fp) => fp.siteId === firstSite.id);
+      const siteFloorplans = floorplanData.filter((fp) => fp.siteId === activeSiteId);
       if (siteFloorplans.length > 0) {
         setSelectedFloorplan(siteFloorplans[0]);
         return;
       }
 
-      // Fallback 2: Any floorplan overall
       if (floorplanData.length > 0) {
         setSelectedFloorplan(floorplanData[0]);
       }
     }
-  }, [siteResponse, floorResponse, floorplanResponse, selectedFloorplan]);
+  }, [siteResponse, buildingResponse, floorResponse, floorplanResponse, selectedFloorplan, selectedSiteId]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
