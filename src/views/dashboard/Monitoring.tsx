@@ -130,6 +130,7 @@ const Monitoring = () => {
         deviceType: matchingDevice.deviceType,
         description: `${event.title} terdeteksi di area ${event.area || 'pengawasan'}.`,
         statusAlarm: event.statusAlarm,
+        alarmCaseId: event.alarmCaseId
       };
       setSelectedLog(mappedLog);
     } else {

@@ -10,7 +10,7 @@ const Investigate = () => {
         container
         spacing={3}
         sx={{
-          height: { xs: 'auto', md: 'calc(100vh - 70px)' },
+          height: { xs: 'auto', md: 'calc(100vh - 80px)' },
           overflow: 'hidden',
           m: 0,
           width: '100%'

@@ -83,6 +83,7 @@ const InvestigateList = () => {
 
   const [selectedItem, setSelectedItem] = useState<investigateType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeAttachmentIndex, setActiveAttachmentIndex] = useState(0);
 
   const handleItemClick = (item: investigateType) => {
     setSelectedItem(item);
@@ -92,6 +93,7 @@ const InvestigateList = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedItem(null);
+    setActiveAttachmentIndex(0);
   };
 
   // local controls for search and sorting
@@ -260,7 +262,7 @@ const InvestigateList = () => {
       </Card>
 
       {/* Main Grid Card display of cases */}
-      <Scrollbar sx={{ flexGrow: 1, height: '100%', pr: 1, pb: 2 }}>
+      <Scrollbar sx={{ flex: 1, minHeight: 0, pr: 1, pb: 2 }}>
         {isLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
@@ -670,6 +672,120 @@ const InvestigateList = () => {
                         <Box sx={{ p: 1.5, mt: 0.5, bgcolor: '#1E293B', borderRadius: 1, borderLeft: '4px solid #0EA5E9' }}>
                           <Typography variant="body2">{selectedItem.investigationNote}</Typography>
                         </Box>
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
+              )}
+
+              {/* Section 7: Attachments */}
+              {selectedItem.attachments && selectedItem.attachments.length > 0 && (
+                <Grid size={12}>
+                  <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary.main">
+                      Incident Attachments ({selectedItem.attachments.length})
+                    </Typography>
+                    <Divider sx={{ my: 1, borderColor: 'rgba(255,255,255,0.05)' }} />
+                    
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: '350px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#0F172A',
+                        position: 'relative',
+                        mt: 2,
+                      }}
+                    >
+                      {(() => {
+                        const current = selectedItem.attachments[activeAttachmentIndex];
+                        if (!current) return null;
+                        const fileUrl = current.fileUrl || '';
+                        const fileType = current.fileType || '';
+                        
+                        const isImage = fileType.toLowerCase().startsWith('image/') ||
+                          /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileUrl);
+                        const isVideo = fileType.toLowerCase().startsWith('video/') ||
+                          /\.(mp4|webm|ogg)$/i.test(fileUrl);
+
+                        if (isImage) {
+                          return (
+                            <Box
+                              component="img"
+                              src={fileUrl}
+                              alt={`Attachment ${activeAttachmentIndex + 1}`}
+                              sx={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                objectFit: 'contain',
+                              }}
+                            />
+                          );
+                        } else if (isVideo) {
+                          return (
+                            <Box
+                              component="video"
+                              src={fileUrl}
+                              controls
+                              sx={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                outline: 'none',
+                              }}
+                            />
+                          );
+                        } else {
+                          return (
+                            <Box sx={{ textAlign: 'center', p: 3 }}>
+                              <Typography variant="body1" gutterBottom>
+                                Preview not available for this file type.
+                              </Typography>
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Download/Open File
+                              </Button>
+                            </Box>
+                          );
+                        }
+                      })()}
+                    </Box>
+
+                    {selectedItem.attachments.length > 1 && (
+                      <Box display="flex" justifyContent="center" gap={1.5} mt={2}>
+                        {selectedItem.attachments.map((_, idx) => {
+                          const isActive = idx === activeAttachmentIndex;
+                          return (
+                            <IconButton
+                              key={idx}
+                              onClick={() => setActiveAttachmentIndex(idx)}
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                backgroundColor: isActive ? 'primary.main' : 'background.paper',
+                                color: isActive ? 'primary.contrastText' : 'text.primary',
+                                border: '1px solid',
+                                borderColor: isActive ? 'primary.main' : 'divider',
+                                fontWeight: 'bold',
+                                fontSize: '12px',
+                                '&:hover': {
+                                  backgroundColor: isActive ? 'primary.dark' : 'action.hover',
+                                },
+                              }}
+                            >
+                              {idx + 1}
+                            </IconButton>
+                          );
+                        })}
                       </Box>
                     )}
                   </Box>

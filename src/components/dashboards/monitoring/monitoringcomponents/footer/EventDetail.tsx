@@ -94,7 +94,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ selectedLog }) => {
       setIsSaving(false);
     }
   };
-
+  console.log("Event Detail: ", selectedLog )
   return (
     <Box
       sx={{

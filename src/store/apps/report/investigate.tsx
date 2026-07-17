@@ -3,6 +3,14 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { metaData } from '../crud/site';
 
+export type InvestigateAttachmentType = {
+    id: string;
+    alarmInvestigationId: string;
+    stage: string;
+    fileUrl: string;
+    fileType: string;
+}
+
 export type GetFilter = {
     page?: number;
     limit?: number;
@@ -65,6 +73,7 @@ export type investigateType = {
     doneAt: string | null;
     investigationResult: string | null;
     investigationNote: string | null;
+    attachments: InvestigateAttachmentType[];
 };
 
 interface StateType {

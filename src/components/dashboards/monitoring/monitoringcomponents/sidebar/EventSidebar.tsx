@@ -517,8 +517,8 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                     sx={{
                       width: 34,
                       height: 34,
-                      bgcolor: `${latestEvent.iconColor}18`,
-                      color: latestEvent.iconColor,
+                      bgcolor: `${severityColors[latestEvent.severity] || '#3B82F6'}18`,
+                      color: severityColors[latestEvent.severity] || '#3B82F6',
                       mt: 0.25,
                     }}
                   >

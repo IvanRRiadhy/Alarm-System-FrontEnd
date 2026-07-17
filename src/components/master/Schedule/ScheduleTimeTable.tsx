@@ -22,6 +22,7 @@ import {
   IconPlayerPlay,
   IconTrash,
   IconX,
+  IconPlus,
   IconInfoCircle,
   IconAlertCircle,
   IconCircleCheck,
@@ -37,6 +38,10 @@ import { RootState, useSelector } from 'src/store/Store';
 import { useAddSchedule, useEditSchedule } from 'src/hooks/useSchedule';
 import toast from 'react-hot-toast';
 import { toastError } from 'src/utils/errors';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import dayjs, { Dayjs } from 'dayjs';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type DaySchedule = {
@@ -64,6 +69,13 @@ const parseHour = (t: string | null): number | null => {
   const h = parseInt(t.split(':')[0], 10);
   return isNaN(h) ? null : h;
 };
+const parseTimeToDayjs = (timeStr: string | null, defaultHour: number, defaultMinute: number = 0): Dayjs => {
+  if (!timeStr) {
+    return dayjs().hour(defaultHour).minute(defaultMinute).second(0);
+  }
+  const [h, m] = timeStr.split(':').map((x) => parseInt(x, 10));
+  return dayjs().hour(h).minute(m).second(0);
+};
 const fmtHour = (h: number | null): string | null => (h === null ? null : `${String(h).padStart(2, '0')}:00`);
 const formatHourDisplay = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
@@ -72,21 +84,39 @@ const emptyWeek = (): DaySchedule[] =>
 
 type CellRole = 'start' | 'end' | 'middle' | 'both' | null;
 
+const getMinutes = (t: string | null): number | null => {
+  if (!t) return null;
+  const parts = t.split(':');
+  const hrs = parseInt(parts[0], 10);
+  const mins = parseInt(parts[1] || '0', 10);
+  return isNaN(hrs) || isNaN(mins) ? null : hrs * 60 + mins;
+};
+
 const getCellRole = (schedule: WeeklySchedule, dayIdx: number, h: number): CellRole => {
   const ds = schedule.days.find((d) => d.dayOfWeek === dayIdx);
   if (!ds) return null;
-  const s = parseHour(ds.startTime);
-  const e = parseHour(ds.endTime);
-  const endSlot = e !== null ? e - 1 : null;
-  if (s !== null && endSlot !== null && s === endSlot && h === s) return 'both';
-  if (h === s) return 'start';
-  if (h === endSlot) return 'end';
-  if (s !== null && endSlot !== null) {
-    const lo = Math.min(s, endSlot);
-    const hi = Math.max(s, endSlot);
-    if (h > lo && h < hi) return 'middle';
-  }
-  return null;
+  if (!ds.startTime || !ds.endTime) return null;
+
+  const startMins = getMinutes(ds.startTime);
+  const endMins = getMinutes(ds.endTime);
+  if (startMins === null || endMins === null) return null;
+
+  const cellStart = h * 60;
+  const cellEnd = (h + 1) * 60;
+
+  // Does the schedule block overlap this hour?
+  const overlaps = startMins < cellEnd && endMins > cellStart;
+  if (!overlaps) return null;
+
+  // Is this the first hour of the block?
+  const isFirstHour = startMins >= cellStart && startMins < cellEnd;
+  // Is this the last hour of the block?
+  const isLastHour = endMins > cellStart && endMins <= cellEnd;
+
+  if (isFirstHour && isLastHour) return 'both';
+  if (isFirstHour) return 'start';
+  if (isLastHour) return 'end';
+  return 'middle';
 };
 
 const getDayIndex = (dayStr: string): number => {
@@ -132,6 +162,19 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
     hour: number;
     role: CellRole;
   } | null>(null);
+
+  // ─ Edit Time Picker states ─
+  const [editStartTime, setEditStartTime] = useState<Dayjs | null>(null);
+  const [editEndTime, setEditEndTime] = useState<Dayjs | null>(null);
+  const [showDaySelector, setShowDaySelector] = useState(false);
+  const [selectedExtraDays, setSelectedExtraDays] = useState<number[]>([]);
+
+  const isTimeInvalid = useMemo(() => {
+    if (!editStartTime || !editEndTime) return true;
+    const startMins = editStartTime.hour() * 60 + editStartTime.minute();
+    const endMins = editEndTime.hour() * 60 + editEndTime.minute();
+    return startMins >= endMins;
+  }, [editStartTime, editEndTime]);
 
   // ─ Site data ─
   const { data: siteRes, isLoading: sitesLoading } = useSiteLookup();
@@ -209,40 +252,18 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
   };
 
   // ─ Schedule logic ─
-  const updateDay = (dayIdx: number, s: number | null, e: number | null) => {
-    const days = [...schedule.days];
-    const i = days.findIndex((d) => d.dayOfWeek === dayIdx);
-    const entry: DaySchedule = { dayOfWeek: dayIdx, startTime: fmtHour(s), endTime: fmtHour(e) };
-    if (i !== -1) days[i] = entry; else days.push(entry);
-    setSchedule({ days });
-  };
-
-  const setStart = () => {
-    if (!menuCtx) return;
-    const ds = schedule.days.find((d) => d.dayOfWeek === menuCtx.dayIdx);
-    const end = ds ? parseHour(ds.endTime) : null;
-    updateDay(menuCtx.dayIdx, menuCtx.hour, end === menuCtx.hour ? null : end);
-    closeMenu();
-  };
-
-  const setEnd = () => {
-    if (!menuCtx) return;
-    const ds = schedule.days.find((d) => d.dayOfWeek === menuCtx.dayIdx);
-    const start = ds ? parseHour(ds.startTime) : null;
-    const target = menuCtx.hour + 1;
-    updateDay(menuCtx.dayIdx, start === target ? null : start, target);
-    closeMenu();
-  };
-
   const removeSlot = () => {
     if (!menuCtx) return;
-    const ds = schedule.days.find((d) => d.dayOfWeek === menuCtx.dayIdx);
-    let s = ds ? parseHour(ds.startTime) : null;
-    let e = ds ? parseHour(ds.endTime) : null;
-    if (menuCtx.role === 'start') s = null;
-    else if (menuCtx.role === 'end') e = null;
-    else { s = null; e = null; }
-    updateDay(menuCtx.dayIdx, s, e);
+    const days = [...schedule.days];
+    const idx = days.findIndex((d) => d.dayOfWeek === menuCtx.dayIdx);
+    const entry: DaySchedule = {
+      dayOfWeek: menuCtx.dayIdx,
+      startTime: null,
+      endTime: null,
+    };
+    if (idx !== -1) days[idx] = entry;
+    else days.push(entry);
+    setSchedule({ days });
     closeMenu();
   };
 
@@ -255,8 +276,32 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
     setMenuCtx({ dayIdx, hour, role });
+
+    const ds = schedule.days.find((d) => d.dayOfWeek === dayIdx);
+    const sStr = ds?.startTime;
+    const eStr = ds?.endTime;
+
+    const defaultEndHour = hour === 23 ? 23 : (hour + 1) % 24;
+    const defaultEndMinute = hour === 23 ? 59 : 0;
+
+    setEditStartTime(parseTimeToDayjs(sStr || null, hour, 0));
+    setEditEndTime(parseTimeToDayjs(eStr || null, defaultEndHour, defaultEndMinute));
   };
-  const closeMenu = () => { setAnchorEl(null); setMenuCtx(null); };
+
+  const closeMenu = () => {
+    setAnchorEl(null);
+    setMenuCtx(null);
+    setEditStartTime(null);
+    setEditEndTime(null);
+    setShowDaySelector(false);
+    setSelectedExtraDays([]);
+  };
+
+  const toggleExtraDay = (d: number) => {
+    setSelectedExtraDays((prev) =>
+      prev.includes(d) ? prev.filter((day) => day !== d) : [...prev, d]
+    );
+  };
 
   const handleSave = async () => {
     if (!scheduleName.trim()) {
@@ -503,24 +548,17 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
                 display: 'flex',
               }}
             >
-              <IconCalendar size={20} />
+              <IconClock size={20} />
             </Box>
             <Typography variant="h6" fontWeight={700}>
-              {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
+              Weekly Schedule Template
             </Typography>
           </Box>
 
           <Box display="flex" gap={1} alignItems="center">
             <Button size="small" variant="outlined" startIcon={<IconClearAll size={16} />} onClick={clearAll}>
-              Clear
+              Clear All
             </Button>
-            <Button size="small" variant="outlined" onClick={goToday}>
-              Today
-            </Button>
-            <Box display="flex" sx={{ border: `1px solid ${borderColor}`, borderRadius: 2 }}>
-              <IconButton size="small" onClick={prevWeek}><IconChevronLeft size={18} /></IconButton>
-              <IconButton size="small" onClick={nextWeek}><IconChevronRight size={18} /></IconButton>
-            </Box>
           </Box>
         </Box>
 
@@ -555,36 +593,18 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
                   flexDirection="column"
                   alignItems="center"
                   justifyContent="center"
-                  py={1}
+                  py={2}
                   sx={{ borderRight: idx < 6 ? `1px solid ${borderColor}` : 'none' }}
                 >
                   <Typography
                     variant="caption"
-                    fontSize={10}
+                    fontSize={11}
                     fontWeight={700}
                     letterSpacing={1}
                     color={td ? blue.main : 'textSecondary'}
                   >
                     {DAY_NAMES_SHORT[idx]}
                   </Typography>
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mt: 0.5,
-                      fontWeight: 700,
-                      fontSize: 14,
-                      bgcolor: td ? blue.main : 'transparent',
-                      color: td ? '#fff' : theme.palette.text.primary,
-                      boxShadow: td ? `0 2px 8px ${blue.main}44` : 'none',
-                    }}
-                  >
-                    {date.getDate()}
-                  </Box>
                 </Box>
               );
             })}
@@ -684,8 +704,8 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
                               bgTo={isDark ? 'rgba(93,135,255,0.06)' : '#F0F4FF'}
                               rounded
                             >
-                              <BlockLabel color={green.main}>Start: {formatHourDisplay(s)}</BlockLabel>
-                              <BlockLabel color={amber.main}>End: {formatHourDisplay(e)}</BlockLabel>
+                              <BlockLabel color={green.main}>Start: {ds.startTime}</BlockLabel>
+                              <BlockLabel color={amber.main}>End: {ds.endTime}</BlockLabel>
                             </ScheduleBlock>
                           )}
 
@@ -701,7 +721,7 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
                               rounded={e === null}
                             >
                               <BlockLabel color={e === null ? green.main : green.main}>Start</BlockLabel>
-                              <BlockTime color={e === null ? green.main : blue.main}>{formatHourDisplay(s)}</BlockTime>
+                              <BlockTime color={e === null ? green.main : blue.main}>{ds.startTime}</BlockTime>
                             </ScheduleBlock>
                           )}
 
@@ -717,7 +737,7 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
                               rounded={s === null}
                             >
                               <BlockLabel color={s === null ? amber.main : amber.main}>End</BlockLabel>
-                              <BlockTime color={s === null ? amber.main : blue.main}>{formatHourDisplay(e)}</BlockTime>
+                              <BlockTime color={s === null ? amber.main : blue.main}>{ds.endTime}</BlockTime>
                             </ScheduleBlock>
                           )}
 
@@ -774,56 +794,136 @@ const ScheduleTimeTable: React.FC<ScheduleTimeTableProps> = ({ onBack }) => {
           onClose={closeMenu}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          slotProps={{ paper: { sx: { borderRadius: 3, minWidth: 190, p: 1 } } }}
+          slotProps={{ paper: { sx: { borderRadius: 3, width: 280, p: 2 } } }}
         >
           {menuCtx && (
-            <>
-              <Box display="flex" alignItems="center" justifyContent="space-between" px={1.5} py={0.75}>
-                <Typography variant="caption" fontWeight={700} color="textSecondary">
-                  {formatHourDisplay(menuCtx.hour)}
-                </Typography>
-                <IconButton size="small" onClick={closeMenu}><IconX size={14} /></IconButton>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      {DAY_NAMES_LONG[menuCtx.dayIdx]} Schedule
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => setShowDaySelector(!showDaySelector)}
+                      sx={{ p: 0.5 }}
+                    >
+                      <IconPlus size={16} />
+                    </IconButton>
+                  </Box>
+                  <IconButton size="small" onClick={closeMenu}><IconX size={16} /></IconButton>
+                </Box>
+
+                {showDaySelector && (
+                  <Box sx={{ mt: 0.5, p: 1, bgcolor: 'action.hover', borderRadius: 2 }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+                      Copy times to:
+                    </Typography>
+                    <Box display="flex" gap={0.5} flexWrap="wrap">
+                      {[1, 2, 3, 4, 5, 6, 0].map((d) => {
+                        if (d === menuCtx.dayIdx) return null;
+                        const isSelected = selectedExtraDays.includes(d);
+                        return (
+                          <Button
+                            key={d}
+                            size="small"
+                            variant={isSelected ? 'contained' : 'outlined'}
+                            sx={{
+                              px: 1,
+                              py: 0.5,
+                              minWidth: 0,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              borderRadius: 1.5,
+                            }}
+                            onClick={() => toggleExtraDay(d)}
+                          >
+                            {DAY_NAMES_SHORT[d]}
+                          </Button>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                )}
+                <Divider />
+
+                <Box display="flex" flexDirection="column" gap={1.5}>
+                  <Box>
+                    <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>
+                      Start Time
+                    </Typography>
+                    <TimePicker
+                      value={editStartTime}
+                      onChange={(val) => setEditStartTime(val)}
+                      ampm={false}
+                      slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                    />
+                  </Box>
+
+                  <Box>
+                    <Typography variant="caption" fontWeight={600} color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>
+                      End Time
+                    </Typography>
+                    <TimePicker
+                      value={editEndTime}
+                      onChange={(val) => setEditEndTime(val)}
+                      ampm={false}
+                      slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                    />
+                  </Box>
+                </Box>
+
+                {isTimeInvalid && (
+                  <Typography variant="caption" color="error" sx={{ fontWeight: 600 }}>
+                    Start time must be earlier than end time.
+                  </Typography>
+                )}
+
+                <Box display="flex" justifyContent="space-between" mt={1}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    startIcon={<IconTrash size={14} />}
+                    onClick={removeSlot}
+                  >
+                    Clear Day
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    disabled={isTimeInvalid}
+                    onClick={() => {
+                      if (editStartTime && editEndTime) {
+                        const startStr = editStartTime.format('HH:mm');
+                        const endStr = editEndTime.format('HH:mm');
+                        const days = [...schedule.days];
+                        const targetDays = [menuCtx.dayIdx, ...selectedExtraDays];
+
+                        targetDays.forEach((targetDay) => {
+                          const idx = days.findIndex((d) => d.dayOfWeek === targetDay);
+                          const entry: DaySchedule = {
+                            dayOfWeek: targetDay,
+                            startTime: startStr,
+                            endTime: endStr,
+                          };
+                          if (idx !== -1) days[idx] = entry;
+                          else days.push(entry);
+                        });
+
+                        setSchedule({ days });
+                      }
+                      closeMenu();
+                    }}
+                  >
+                    Save
+                  </Button>
+                </Box>
               </Box>
-              <Divider sx={{ mb: 0.5 }} />
-
-              {menuCtx.role === null && (
-                <>
-                  <PopMenuItem icon={<IconPlayerPlay size={16} />} color={blue.main} onClick={setStart}>
-                    <Typography variant="caption" fontWeight={600}>Set Start Time</Typography>
-                    <Typography variant="caption" fontSize={10} color="textSecondary">
-                      {formatHourDisplay(menuCtx.hour)}
-                    </Typography>
-                  </PopMenuItem>
-                  <PopMenuItem icon={<IconClock size={16} />} color={amber.main} onClick={setEnd}>
-                    <Typography variant="caption" fontWeight={600}>Set End Time</Typography>
-                    <Typography variant="caption" fontSize={10} color="textSecondary">
-                      {formatHourDisplay((menuCtx.hour + 1) % 24)}
-                    </Typography>
-                  </PopMenuItem>
-                </>
-              )}
-
-              {menuCtx.role === 'middle' && (
-                <>
-                  <PopMenuItem icon={<IconPlayerPlay size={16} />} color={blue.main} onClick={setStart}>
-                    <Typography variant="caption" fontWeight={600}>Set Start Time</Typography>
-                  </PopMenuItem>
-                  <PopMenuItem icon={<IconClock size={16} />} color={amber.main} onClick={setEnd}>
-                    <Typography variant="caption" fontWeight={600}>Set End Time</Typography>
-                  </PopMenuItem>
-                  <Divider sx={{ my: 0.5 }} />
-                  <PopMenuItem icon={<IconTrash size={16} />} color={theme.palette.error.main} onClick={removeSlot}>
-                    <Typography variant="caption" fontWeight={600}>Remove Schedule</Typography>
-                  </PopMenuItem>
-                </>
-              )}
-
-              {(menuCtx.role === 'start' || menuCtx.role === 'end') && (
-                <PopMenuItem icon={<IconTrash size={16} />} color={theme.palette.error.main} onClick={removeSlot}>
-                  <Typography variant="caption" fontWeight={600}>Remove</Typography>
-                </PopMenuItem>
-              )}
-            </>
+            </LocalizationProvider>
           )}
         </Popover>
       </Paper>
@@ -950,32 +1050,6 @@ const BlockTime: React.FC<{ color: string; children: React.ReactNode }> = ({ col
   <Typography variant="caption" fontSize={10} fontWeight={700} sx={{ color, mt: 0.25, lineHeight: 1 }}>
     {children}
   </Typography>
-);
-
-/** Popover menu row */
-const PopMenuItem: React.FC<{
-  icon: React.ReactNode;
-  color: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}> = ({ icon, color, onClick, children }) => (
-  <Box
-    onClick={onClick}
-    display="flex"
-    alignItems="center"
-    gap={1.5}
-    sx={{
-      px: 1.5,
-      py: 1,
-      borderRadius: 2,
-      cursor: 'pointer',
-      transition: 'background 0.15s',
-      '&:hover': { bgcolor: `${color}11` },
-    }}
-  >
-    <Box sx={{ color, display: 'flex' }}>{icon}</Box>
-    <Box display="flex" flexDirection="column">{children}</Box>
-  </Box>
 );
 
 export default ScheduleTimeTable;

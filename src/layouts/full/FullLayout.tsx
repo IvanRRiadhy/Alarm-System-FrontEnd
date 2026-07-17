@@ -70,11 +70,10 @@ const FullLayout: FC = () => {
       const role = localStorage.getItem('role');
       if (sev === 'critical') {
         // toast.error(`CRITICAL ALARM: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
-          setCriticalAlarm(message);
-        
+        if(message.triggered) setCriticalAlarm(message);
       } else if (sev === 'high' && role?.toLowerCase() === "admin") {
         // toast.error(`Alarm: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
-          setCriticalAlarm(message);
+        if(message.triggered) setCriticalAlarm(message);
 
       } else {
         // toast.success(`Info: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
