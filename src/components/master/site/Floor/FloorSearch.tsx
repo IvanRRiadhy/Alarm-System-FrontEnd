@@ -11,32 +11,32 @@ const FloorSearch = () => {
   );
   
   // Initialize from Redux so it doesn't clear an external filter on mount
-  const [searchValue, setSearchValue] = useState(floorFilter.SearchValue || '');
+  const [searchValue, setSearchValue] = useState(floorFilter.search || '');
 
   // Keep internal state synced if Redux changes externally (like on mount from location state)
   useEffect(() => {
-    setSearchValue(floorFilter.SearchValue || '');
-  }, [floorFilter.SearchValue]);
+    setSearchValue(floorFilter.search || '');
+  }, [floorFilter.search]);
 
   useEffect(() => {
     // Only dispatch if the local searchValue differs from Redux
-    if (searchValue.trim() !== (floorFilter.SearchValue || '')) {
+    if (searchValue.trim() !== (floorFilter.search || '')) {
       const delayDebounce = setTimeout(() => {
-        dispatch(UpdateFilter({ SearchValue: searchValue.trim() }));
+        dispatch(UpdateFilter({ search: searchValue.trim() }));
       }, 1000);
       return () => clearTimeout(delayDebounce);
     }
-  }, [searchValue, dispatch, floorFilter.SearchValue]);
+  }, [searchValue, dispatch, floorFilter.search]);
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      dispatch(UpdateFilter({ SearchValue: searchValue.trim() }));
+      dispatch(UpdateFilter({ search: searchValue.trim() }));
     }
   };
 
   const handleClearSearch = () => {
     setSearchValue('');
-    dispatch(UpdateFilter({ SearchValue: '' }));
+    dispatch(UpdateFilter({ search: '' }));
   };
 
   return (

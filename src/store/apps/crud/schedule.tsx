@@ -8,11 +8,11 @@ import { metaData } from "./site";
 const API_URL = '/api/schedule-templates'
 
 export type GetFilter = {
-    page: number,
-    limit: number,
-    // search: string,
-    sortBy: string,
-    sortOrder: 'asc' | "desc",
+    page?: number,
+    limit?: number,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: 'asc' | "desc",
     siteId?: string,
     isActive?:boolean
 }

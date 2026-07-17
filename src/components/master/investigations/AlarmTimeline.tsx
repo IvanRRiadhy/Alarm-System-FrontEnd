@@ -16,11 +16,20 @@ import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import { AlarmTimelineType, TimelineItemType } from 'src/store/apps/crud/alarmTrigger';
-import { AlarmCaseType } from 'src/store/apps/crud/alarmCase';
+import { AlarmCaseTimelineType, AlarmCaseType } from 'src/store/apps/crud/alarmCase';
+
+export interface TimelineItemType {
+  stage: string;
+  timestamp: string | null;
+  actor?: string | null;
+  actorId?: string | null;
+  durationInSeconds?: number | null;
+  durationFormatted?: string | null;
+  description: string;
+}
 
 interface Props {
-  timelineData: AlarmTimelineType | null;
+  timelineData: AlarmCaseTimelineType | null;
   caseData: AlarmCaseType | null;
 }
 
@@ -91,7 +100,11 @@ const getStageConfig = (stage: string) => {
         icon: <CheckCircleIcon />,
         sx: { bgcolor: '#4caf50', color: '#fff' },
       };
-
+    case 'investigated':
+      return {
+        icon: <CheckCircleIcon />,
+        sx: { bgcolor: '#4caf50', color: '#fff' },
+      };
     case 'waiting':
       return {
         icon: <AccessTimeIcon />,
@@ -137,22 +150,26 @@ const formatStageLabel = (stage: string) => {
 
 const AlarmTimelineProgress = ({ timelineData, caseData }: Props) => {
   const [selectedStage, setSelectedStage] = useState<number>(0);
-  const finalStages = ['resolved', 'cancelled', 'no_action', 'no action', 'noaction', 'cleared'];
+  const finalStages = ['resolved', 'cancelled', 'no_action', 'no action', 'noaction', 'cleared', 'done_investigated', 'investigated'];
 
+  const filteredTimeline = timelineData?.timeline?.filter((item: any) => item.stage !== 'cleared') || [];
+
+  const hasCleared = timelineData?.timeline?.some((t: any) => t.stage === 'cleared');
   const isFinal =
-    timelineData?.timeline?.length &&
-    finalStages.includes(timelineData.timeline[timelineData.timeline.length - 1].stage);
+    hasCleared ||
+    (filteredTimeline.length > 0 &&
+      finalStages.includes(filteredTimeline[filteredTimeline.length - 1].stage));
 
   useEffect(() => {
-    if (timelineData?.timeline?.length) {
-      setSelectedStage(timelineData.timeline.length - 1);
+    if (filteredTimeline.length) {
+      setSelectedStage(filteredTimeline.length - 1);
     }
-  }, [timelineData]);
+  }, [filteredTimeline.length]);
 
-  if (!timelineData?.timeline?.length) return null;
+  if (!timelineData || !filteredTimeline.length) return null;
   const timelineWithActive = !isFinal
     ? [
-        ...timelineData.timeline,
+        ...filteredTimeline,
         {
           stage: 'ongoing',
           timestamp: null,
@@ -163,12 +180,13 @@ const AlarmTimelineProgress = ({ timelineData, caseData }: Props) => {
           durationInSeconds: undefined,
         } as unknown as TimelineItemType,
       ]
-    : timelineData.timeline;
+    : filteredTimeline;
 
-  const dispatchedStage = timelineData.timeline.find((t) => t.stage === 'dispatched');
-  const investigatedStage = timelineData.timeline.find((t) => t.stage === 'accepted');
-  const resolvedStage = timelineData.timeline.find((t) => t.stage === 'done_investigated');
-  const confirmedResolvedStage = timelineData.timeline.find((t) => t.stage === 'resolved');
+  const dispatchedStage = timelineData?.timeline?.find((t: any) => t.stage === 'dispatched');
+  const investigatedStage = timelineData?.timeline?.find((t: any) => t.stage === 'accepted');
+  const resolvedStage = timelineData?.timeline?.find((t: any) => t.stage === 'done_investigated');
+  const confirmedResolvedStage = timelineData?.timeline?.find((t: any) => t.stage === 'resolved');
+  const clearedStage = timelineData?.timeline?.find((t: any) => t.stage === 'cleared');
   return (
     <Box sx={{ mt: 1 }}>
       {/* Top Details Card */}
@@ -220,7 +238,7 @@ const AlarmTimelineProgress = ({ timelineData, caseData }: Props) => {
               },
             }}
           >
-            {timelineWithActive.map((item, index) => {
+            {timelineWithActive.map((item: any, index: any) => {
               const isOngoing = item.stage === 'ongoing';
               const isSelected = selectedStage === index && !isOngoing;
               const config = getStageConfig(item.stage);
@@ -277,11 +295,11 @@ const AlarmTimelineProgress = ({ timelineData, caseData }: Props) => {
                       {formatStageLabel(item.stage)}
                     </Typography>
 
-                    {item.actor && (
+                    {/* {item.actor && (
                       <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
                         {getActorPrefix(item.stage)}: {item.actor}
                       </Typography>
-                    )}
+                    )} */}
 
                     {isSelected && (
                       <>
@@ -321,7 +339,7 @@ const AlarmTimelineProgress = ({ timelineData, caseData }: Props) => {
               }}
             >
               <Typography fontWeight={600} color="inherit">Dispatched to</Typography>
-              <Typography variant="body2" color="inherit">{timelineData.investigation.dispatchedPerson}</Typography>
+              <Typography variant="body2" color="inherit">{timelineData?.investigation?.dispatchedPerson}</Typography>
             </Box>
           )}
 
@@ -366,6 +384,25 @@ const AlarmTimelineProgress = ({ timelineData, caseData }: Props) => {
             >
               <Typography fontWeight={600} color="inherit">Confirmed Resolved by</Typography>
               <Typography variant="body2" color="inherit">{confirmedResolvedStage.actor}</Typography>
+            </Box>
+          )}
+          {clearedStage && (
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: '#e8f5e9',
+                border: '1px solid #a5d6a7',
+                color: '#2e7d32',
+              }}
+            >
+              <Typography fontWeight={600} color="inherit">Cleared by</Typography>
+              <Typography variant="body2" color="inherit">{clearedStage.actor || 'System'}</Typography>
+              {clearedStage.timestamp && (
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                  {dayjs(clearedStage.timestamp).format('DD MMM YYYY HH:mm:ss')}
+                </Typography>
+              )}
             </Box>
           )}
         </Box>

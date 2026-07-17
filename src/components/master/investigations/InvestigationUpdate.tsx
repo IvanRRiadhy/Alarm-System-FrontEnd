@@ -31,7 +31,9 @@ import {
 } from 'src/hooks/useAlarmInvestigation';
 import { usePersonnelLookup } from 'src/hooks/usePersonnel';
 import { useUploadCDN } from 'src/hooks/useCDN';
-import { AlarmInvestigationType, AttachmentsType } from 'src/store/apps/crud/alarmInvestigation';
+import { AlarmInvestigationType, AttachmentsType } from 'src/store/apps/report/alarmInvestigation';
+import { PersonnelType } from 'src/store/apps/crud/personnels';
+import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 
 interface InvestigationUpdateProps {
   device: AlarmInvestigationType;
@@ -55,7 +57,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   };
 
   const [formData, setFormData] = useState({
-    personnelId: device.personnelId || '',
+    personnelIds: (device.personnelId ? [device.personnelId] : []) as string[],
     note: device.note || '',
     result: device.result || '',
     isNoAction: false,
@@ -74,7 +76,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   });
 
   const acknowledgeMutation = useAcknowledgeInvestigation(device.id);
-  const dispatchMutation = useDispatchInvestigation(device.id, formData.personnelId);
+  const dispatchMutation = useDispatchInvestigation(device.id, formData.personnelIds);
   const resolveMutation = useResolveInvestigation(device.id, {
     note: formData.note,
     result: formData.result,
@@ -89,7 +91,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   useEffect(() => {
     if (open) {
       setFormData({
-        personnelId: device.personnelId || '',
+        personnelIds: device.personnelId ? [device.personnelId] : [],
         note: device.note || '',
         result: device.result || '',
         isNoAction: false,
@@ -181,7 +183,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   };
 
   const handleDispatch = async () => {
-    if (!formData.personnelId) {
+    if (formData.personnelIds.length === 0) {
       toast.error('Please select personnel to dispatch.');
       return;
     }
@@ -326,24 +328,22 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
               {/* Status specific fields */}
               {(device.status === 'Acknowledged' || device.status === 'Postponed') && (
                 <Grid size={12}>
-                  <CustomFormLabel htmlFor="personnelId">Select Personnel for Dispatch</CustomFormLabel>
-                  <CustomTextField
-                    id="personnelId"
-                    name="personnelId"
-                    select
-                    fullWidth
-                    value={formData.personnelId}
-                    onChange={handleInputChange}
-                  >
-                    <MenuItem value="" disabled>
-                      Select Personnel
-                    </MenuItem>
-                    {personnelList.map((p) => (
-                      <MenuItem key={p.id} value={p.id}>
-                        {p.name}
-                      </MenuItem>
-                    ))}
-                  </CustomTextField>
+                  <CustomFormLabel htmlFor="personnelIds">Select Personnel for Dispatch</CustomFormLabel>
+                  <CustomAutocomplete<PersonnelType>
+                    id="personnelIds"
+                    placeholder="Select Personnel"
+                    multiple={true}
+                    options={personnelList}
+                    value={personnelList.filter((p) => formData.personnelIds.includes(p.id))}
+                    onChange={(selectedOptions) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        personnelIds: selectedOptions.map((p) => p.id),
+                      }));
+                    }}
+                    getOptionLabel={(option) => option.name}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                  />
                 </Grid>
               )}
 
@@ -519,7 +519,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
                     variant="contained"
                     color="primary"
                     onClick={handleDispatch}
-                    disabled={isSaving || !formData.personnelId}
+                    disabled={isSaving || formData.personnelIds.length === 0}
                     sx={{
                       px: 3,
                       fontWeight: 'bold',
@@ -576,7 +576,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
                     variant="contained"
                     color="primary"
                     onClick={handleDispatch}
-                    disabled={isSaving || !formData.personnelId}
+                    disabled={isSaving || formData.personnelIds.length === 0}
                     sx={{ fontWeight: 'bold' }}
                   >
                     {isSaving ? 'Dispatching...' : 'Dispatch'}

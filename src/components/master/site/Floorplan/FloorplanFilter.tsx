@@ -7,113 +7,208 @@ import {
 } from '@mui/material';
 import { IconAdjustmentsHorizontal } from '@tabler/icons-react';
 import { isEqual } from 'lodash';
-import { lazy, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
 import { UpdateFilter } from 'src/store/apps/crud/floorplan';
+import { defaultFloorplanFilter } from 'src/store/apps/defaultForm';
 import { RootState, useDispatch, useSelector } from 'src/store/Store';
-import AutocompleteFilter from 'src/components/shared/AutocompleteFilter';
+import { useBuildingList } from 'src/hooks/useBuilding';
+import { useFloorList } from 'src/hooks/useFloor';
+import { useSiteLookup } from 'src/hooks/useSite';
+import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
+import AreaHierarchySelector, { SelectedNode } from 'src/components/shared/AreaHierarchySelector';
 
 const FloorplanFilter = () => {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
-  const [resetToken, setResetToken] = useState(0);
 
-  // --- Redux data ---
-  const buildingList = useSelector((state: RootState) => state.buildingReducer.buildingAll);
-  const floorList = useSelector((state: RootState) => state.floorReducer.floorAll);
+  const { data: buildingResponse } = useBuildingList({
+    page: 1,
+    limit: 1000,
+    search: '',
+    sortOrder: 'desc',
+    sortBy: '',
+    siteId: '',
+  });
+  const buildingList = buildingResponse?.data || [];
+
+  const { data: floorResponse } = useFloorList({
+    page: 1,
+    limit: 1000,
+    search: '',
+    sortOrder: 'desc',
+    sortBy: '',
+  });
+  const floorList = floorResponse?.data || [];
+
+  const { data: siteResponse } = useSiteLookup();
+  const siteList = siteResponse?.data || [];
+
   const floorplanFilter = useSelector((state: RootState) => state.floorplanReducer.floorplanFilter);
 
-  // --- Local filter state (only FloorId matters for API) ---
-  const [appliedFilter, setAppliedFilter] = useState({
-    FloorId: floorplanFilter.filters?.FloorId ?? [],
-  });
+  // Local copy of filters
+  const [appliedFilter, setAppliedFilter] = useState(floorplanFilter);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>('');
+  const [selectedNode, setSelectedNode] = useState<SelectedNode>(null);
 
-  // --- Locked initial (for stable AutocompleteFilter) ---
-  const [lockedInitial, setLockedInitial] = useState<{
-    BuildingId: string[];
-    FloorId: string[];
-    FloorplanId: string[];
-    MaskedAreaId: string[];
-  } | null>(null);
-
-  // --- Fetch Data ---
-  // useEffect(() => {
-  //   dispatch(fetchBuildings());
-  //   dispatch(fetchFloors());
-  // }, [dispatch]);
-
-  // --- Sync filters + lock initial ---
+  // --- Fetch + Sync ---
   useEffect(() => {
-    const currentFloorIds = floorplanFilter.filters?.FloorId ?? [];
-    setAppliedFilter({ FloorId: currentFloorIds });
+    setAppliedFilter(floorplanFilter);
 
-    if (currentFloorIds.length > 0 && !lockedInitial) {
-      // resolve parent buildings for the selected floors
-      const buildingIds = Array.from(
-        new Set(
-          floorList
-            .filter((f) => currentFloorIds.includes(f.id))
-            .map((f) => f.buildingId),
-        ),
-      );
-
-      setLockedInitial({
-        BuildingId: buildingIds,
-        FloorId: currentFloorIds,
-        FloorplanId: [],
-        MaskedAreaId: [],
-      });
+    const fId = floorplanFilter.floorId;
+    if (!fId) {
+      setSelectedSiteId('');
+      setSelectedNode(null);
+      return;
     }
-  }, [floorplanFilter.filters, lockedInitial, floorList]);
 
-  // --- Drawer controls ---
+    // Try to determine the selected node based on floorId
+    // If it's a comma-separated list of floor IDs
+    if (fId.includes(',')) {
+      const ids = fId.split(',');
+      // Check if they all belong to a single building
+      const matchingFloors = floorList.filter((f) => ids.includes(f.id));
+      if (matchingFloors.length > 0) {
+        const firstBId = matchingFloors[0].buildingId;
+        const allFloorsOfBuilding = floorList.filter((f) => f.buildingId === firstBId);
+        
+        // If the number of matching floors matches the total floors of that building, then the building itself is selected
+        const isAllOfBuilding = allFloorsOfBuilding.length > 0 && allFloorsOfBuilding.every((f) => ids.includes(f.id));
+        if (isAllOfBuilding) {
+          const building = buildingList.find((b) => b.id === firstBId);
+          if (building) {
+            setSelectedNode({ type: 'building', data: building });
+            setSelectedSiteId(building.siteId || '');
+            return;
+          }
+        }
+      }
+
+      // Check if it's a Site
+      // Find which site contains all these floors
+      if (siteList.length > 0) {
+        for (const site of siteList) {
+          const buildingsInSite = buildingList.filter((b) => b.siteId === site.id);
+          const bIds = buildingsInSite.map((b) => b.id);
+          const floorsInSite = floorList.filter((f) => bIds.includes(f.buildingId));
+          const allFloorsMatch = floorsInSite.length > 0 && floorsInSite.every((f) => ids.includes(f.id));
+          if (allFloorsMatch) {
+            setSelectedSiteId(site.id);
+            setSelectedNode(null);
+            return;
+          }
+        }
+      }
+    } else {
+      // Single floor ID selected
+      const floor = floorList.find((f) => f.id === fId);
+      if (floor) {
+        setSelectedNode({ type: 'floor', data: floor });
+        const b = buildingList.find((x) => x.id === floor.buildingId);
+        if (b) {
+          setSelectedSiteId(b.siteId || '');
+        }
+        return;
+      }
+    }
+  }, [floorplanFilter, buildingList, floorList, siteList]);
+
+  // --- Drawer Controls ---
   const handleClickOpen = () => {
-    // freeze snapshot when opening
-    const buildingIds = Array.from(
-      new Set(
-        floorList
-          .filter((f) => appliedFilter.FloorId.includes(f.id))
-          .map((f) => f.buildingId),
-      ),
-    );
-    setLockedInitial({
-      BuildingId: buildingIds,
-      FloorId: appliedFilter.FloorId ?? [],
-      FloorplanId: [],
-      MaskedAreaId: [],
-    });
     setOpen(true);
   };
   const handleClose = () => setOpen(false);
 
-  // --- Area Change handler (from AutocompleteFilter) ---
-const handleAreaChange = (filter: {
-  BuildingId: string[];
-  FloorId: string[];
-  FloorplanId: string[];
-  MaskedAreaId: string[];
-}) => {
-  // Avoid triggering re-renders if same FloorIds
-  setAppliedFilter((prev) => {
-    const nextFloorIds = filter.FloorId ?? [];
-    if (isEqual(prev.FloorId, nextFloorIds)) return prev;
-    return { FloorId: nextFloorIds };
-  });
-};
+  // --- Site change handler ---
+  const handleSiteChange = (val: any) => {
+    const sId = val?.id ?? '';
+    setSelectedSiteId(sId);
+    setSelectedNode(null);
+
+    if (sId) {
+      // Rollup all floor IDs under this site
+      const siteBuildings = buildingList.filter((b) => b.siteId === sId);
+      const bIds = siteBuildings.map((b) => b.id);
+      const siteFloors = floorList.filter((f) => bIds.includes(f.buildingId));
+      const fIds = siteFloors.map((f) => f.id).join(',');
+      setAppliedFilter((prev) => ({
+        ...prev,
+        floorId: fIds || null,
+      }));
+    } else {
+      setAppliedFilter((prev) => ({
+        ...prev,
+        floorId: null,
+      }));
+    }
+  };
+
+  // --- Hierarchy change handler (Building or Floor) ---
+  const handleHierarchyChange = (val: SelectedNode) => {
+    setSelectedNode(val);
+    if (!val) {
+      // Revert to site filter if site is selected, otherwise clear
+      if (selectedSiteId) {
+        const siteBuildings = buildingList.filter((b) => b.siteId === selectedSiteId);
+        const bIds = siteBuildings.map((b) => b.id);
+        const siteFloors = floorList.filter((f) => bIds.includes(f.buildingId));
+        const fIds = siteFloors.map((f) => f.id).join(',');
+        setAppliedFilter((prev) => ({
+          ...prev,
+          floorId: fIds || null,
+        }));
+      } else {
+        setAppliedFilter((prev) => ({
+          ...prev,
+          floorId: null,
+        }));
+      }
+      return;
+    }
+
+    if (val.type === 'building') {
+      const bId = val.data.id;
+      const bFloors = floorList.filter((f) => f.buildingId === bId);
+      const fIds = bFloors.map((f) => f.id).join(',');
+      setAppliedFilter((prev) => ({
+        ...prev,
+        floorId: fIds || null,
+      }));
+    } else if (val.type === 'floor') {
+      setAppliedFilter((prev) => ({
+        ...prev,
+        floorId: val.data.id,
+      }));
+    }
+  };
 
   // --- Apply & Reset ---
   const handleApplyFilter = () => {
-    dispatch(UpdateFilter({ Start: 0, filters: { FloorId: appliedFilter.FloorId ?? [] } }));
+    dispatch(UpdateFilter({ ...appliedFilter, page: 1 }));
     setOpen(false);
   };
 
   const handleResetFilter = () => {
-    setAppliedFilter({ FloorId: [] });
-    setLockedInitial(null);
-    setResetToken((t) => t + 1);
-    dispatch(UpdateFilter({ filters: { FloorId: [] } }));
+    setAppliedFilter(defaultFloorplanFilter);
+    setSelectedSiteId('');
+    setSelectedNode(null);
+    dispatch(UpdateFilter({ ...defaultFloorplanFilter }));
     setOpen(false);
   };
+
+  const buildingIdsWithFloors = new Set(floorList.map((f) => f.buildingId));
+  const filteredBuildings = (selectedSiteId
+    ? buildingList.filter((b) => b.siteId === selectedSiteId)
+    : buildingList
+  ).filter((b) => buildingIdsWithFloors.has(b.id));
+
+  // Filter floor list under selected site so tree is clean
+  const filteredFloors = selectedSiteId
+    ? floorList.filter((f) => {
+        const b = buildingList.find((x) => x.id === f.buildingId);
+        return b && b.siteId === selectedSiteId;
+      })
+    : floorList;
 
   return (
     <>
@@ -153,27 +248,35 @@ const handleAreaChange = (filter: {
         </Typography>
 
         <Grid container spacing={3}>
-          {/* 🏢 Building + Floor Tree (Display) */}
+          {/* 🏢 Site Filter */}
+          <Grid size={12}>
+            <CustomFormLabel>
+              <Typography variant="caption">Site :</Typography>
+            </CustomFormLabel>
+            <CustomAutocomplete
+              label="Select Site"
+              options={siteList}
+              value={siteList.find((s) => s.id === selectedSiteId) || null}
+              onChange={handleSiteChange}
+              getOptionLabel={(o) => o.name}
+              isOptionEqualToValue={(a, b) => a.id === b.id}
+            />
+          </Grid>
+
+          {/* 🏢 Building / Floor Filter (AreaHierarchySelector) */}
           <Grid size={12}>
             <CustomFormLabel>
               <Typography variant="caption">Building / Floor :</Typography>
             </CustomFormLabel>
 
-            <AutocompleteFilter
-              buildings={buildingList}
-              floors={floorList}
-              floorplans={[]}       // hide deeper levels
-              maskedAreas={[]}      // hide deeper levels
-              initial={
-                lockedInitial ?? {
-                  BuildingId: [],
-                  FloorId: appliedFilter.FloorId ?? [],
-                  FloorplanId: [],
-                  MaskedAreaId: [],
-                }
-              }
-              onChangeFilter={handleAreaChange}
-              resetToken={resetToken}
+            <AreaHierarchySelector
+              buildings={filteredBuildings}
+              floors={filteredFloors}
+              floorplans={[]} // hide deeper levels
+              maskedAreas={[]} // hide deeper levels
+              value={selectedNode}
+              onChange={handleHierarchyChange}
+              label="Select Building / Floor"
             />
           </Grid>
         </Grid>
@@ -197,10 +300,7 @@ const handleAreaChange = (filter: {
                 color="primary"
                 fullWidth
                 onClick={handleApplyFilter}
-                disabled={isEqual(
-                  appliedFilter.FloorId,
-                  floorplanFilter.filters?.FloorId ?? [],
-                )}
+                disabled={isEqual(appliedFilter, floorplanFilter)}
               >
                 Apply
               </Button>

@@ -8,6 +8,23 @@ const components: any = (theme: Theme) => {
       styleOverrides: {
         '*': {
           boxSizing: 'border-box',
+          '&::-webkit-scrollbar': {
+            width: '6px',
+            height: '6px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.15)'
+              : 'rgba(0, 0, 0, 0.15)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          },
+          scrollbarWidth: 'thin',
+          scrollbarColor: theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.15) transparent'
+            : 'rgba(0, 0, 0, 0.15) transparent',
         },
         html: {
           height: '100%',

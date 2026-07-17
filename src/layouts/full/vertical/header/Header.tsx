@@ -95,6 +95,20 @@ const Header = () => {
     };
   }, []);
 
+  // Synchronize selectedSite if selectedSiteId is present in localStorage but selectedSite is not
+  useEffect(() => {
+    const savedSite = localStorage.getItem('selectedSite');
+    const savedSiteId = localStorage.getItem('selectedSiteId');
+    if (!savedSite && savedSiteId && sites.length > 0) {
+      const matchingSite = sites.find((s: SiteType) => s.id === savedSiteId);
+      if (matchingSite) {
+        setSelectedSite(matchingSite);
+        localStorage.setItem('selectedSite', JSON.stringify(matchingSite));
+        window.dispatchEvent(new Event('siteChanged'));
+      }
+    }
+  }, [sites]);
+
   useEffect(() => {
     const handleScroll = () => {
       const scrolled = window.scrollY > 10;

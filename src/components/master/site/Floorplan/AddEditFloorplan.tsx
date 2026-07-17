@@ -17,7 +17,6 @@ import {
   TextField,
   FormHelperText,
 } from '@mui/material';
-import CustomSelect from 'src/components/forms/theme-elements/CustomSelect';
 import { IconPencil, IconPlus } from '@tabler/icons-react';
 import React, { useEffect } from 'react';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
@@ -27,12 +26,9 @@ import { fetchFloors, floorType } from 'src/store/apps/crud/floor';
 import { FloorplanType, fetchFloorplanDT } from 'src/store/apps/crud/floorplan';
 import toast from 'react-hot-toast';
 import { defaultFloorplanForm } from 'src/store/apps/defaultForm';
-import { EngineType, fetchEngines } from 'src/store/apps/crud/engine';
 import { useAddFloorplan, useEditFloorplan } from 'src/hooks/useFloorplan';
 import { useAllFloors, useFloorList } from 'src/hooks/useFloor';
-import { useAllEngines } from 'src/hooks/useEngine';
-import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
-import { useUploadCDN } from 'src/hooks/usePatrolCase';
+import { useUploadCDN } from 'src/hooks/useCDN';
 import AreaHierarchySelector, { SelectedNode } from 'src/components/shared/AreaHierarchySelector';
 import { useAllBuilding, useBuildingList } from 'src/hooks/useBuilding';
 import { toastError } from 'src/utils/errors';
@@ -79,7 +75,6 @@ const AddEditFloorplan = ({ type, floorplan, fixedFloorId, trigger }: FormType) 
   // const { data: buildingData = [] } = useAllBuilding();
   const { data: buildingRes, isLoading: buildingLoading} = useBuildingList();
   const buildingData = buildingRes?.data || [];
-  const { data: engineData = [], isLoading: engineLoading } = useAllEngines();
 
   const filteredBuildings = React.useMemo(() => {
     const buildingIdsWithFloors = new Set(floorData.map((f) => f.buildingId));
@@ -291,10 +286,6 @@ const AddEditFloorplan = ({ type, floorplan, fixedFloorId, trigger }: FormType) 
     return { type: 'floor', data: floor };
   }, [formData.floorId, floorData]);
 
-  const engineOptions = engineData.map((e) => ({
-    label: e.name,
-    id: e.id,
-  }));
 
   return (
     <>

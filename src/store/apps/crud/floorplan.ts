@@ -2,12 +2,8 @@ import axiosServices, { BASE_URL } from "../../../utils/axios";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, dispatch } from "src/store/Store";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { floorType } from "./floor";
-import { FloorplanDeviceType } from "./floorplanDevice";
-import { MaskedAreaType } from "./maskedArea";
-import { defaultFloorplanFilter } from "../defaultForm";
+    import { defaultFloorplanFilter } from "../defaultForm";
 import { ensureMinLatency, retryUntilSuccess } from "src/utils/retry";
-import { EngineType } from "./engine";
 import { metaData } from "./site";
 
 const Floorplan_API_URL = '/api/MstFloorplan/';
@@ -15,12 +11,12 @@ const Floorplan_DT_URL = '/api/MstFloorplan/filter/';
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-    page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-    floorId: string | null;
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    floorId?: string | null;
 }
 
 

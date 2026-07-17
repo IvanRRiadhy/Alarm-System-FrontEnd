@@ -1,27 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Grid2 as Grid,
   Paper,
   Typography,
 } from '@mui/material';
+import { useNavigate } from 'react-router';
 
-import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
-import MapRoundedIcon from '@mui/icons-material/MapRounded';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import DesktopWindowsRoundedIcon from '@mui/icons-material/DesktopWindowsRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import VideocamRoundedIcon from '@mui/icons-material/VideocamRounded';
-import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import DeveloperBoardRoundedIcon from '@mui/icons-material/DeveloperBoardRounded';
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
+import { AcknowledgeDialog } from './QuickActionsComponent/Acknowledge';
+import { ControllerControlDialog } from './QuickActionsComponent/ControllerControl';
 
 const actions = [
   {
-    title: 'Export Report',
-    icon: <DescriptionRoundedIcon fontSize="large" />,
+    title: 'Investigate',
+    icon: <SearchRoundedIcon fontSize="large" />,
     color: '#3B82F6',
   },
   {
-    title: 'View Map',
-    icon: <MapRoundedIcon fontSize="large" />,
+    title: 'Monitoring',
+    icon: <DesktopWindowsRoundedIcon fontSize="large" />,
     color: '#22C55E',
   },
   {
@@ -35,8 +38,8 @@ const actions = [
     color: '#EF4444',
   },
   {
-    title: 'System Config',
-    icon: <SettingsRoundedIcon fontSize="large" />,
+    title: 'Controller Control',
+    icon: <DeveloperBoardRoundedIcon fontSize="large" />,
     color: '#8B5CF6',
   },
   {
@@ -47,6 +50,22 @@ const actions = [
 ];
 
 const QuickAccess = () => {
+  const navigate = useNavigate();
+  const [ackDialogOpen, setAckDialogOpen] = useState(false);
+  const [ctrlDialogOpen, setCtrlDialogOpen] = useState(false);
+
+  const handleActionClick = (title: string) => {
+    if (title === 'Investigate') {
+      navigate('/report/investigate');
+    } else if (title === 'Monitoring') {
+      navigate('/dashboards/monitoring');
+    } else if (title === 'Controller Control') {
+      setCtrlDialogOpen(true);
+    } else if (title === 'Acknowledge') {
+      setAckDialogOpen(true);
+    }
+  };
+
   return (
     <Paper
       sx={{
@@ -54,6 +73,9 @@ const QuickAccess = () => {
         borderRadius: 3,
         border: '1px solid rgba(255,255,255,.08)',
         overflow: 'hidden',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Box
@@ -79,15 +101,18 @@ const QuickAccess = () => {
         spacing={2}
         sx={{
           p: 2,
+          flex: 1,
+          alignContent: 'center',
         }}
       >
         {actions.map((item) => (
           <Grid
             key={item.title}
-            size={2}
+            size={4}
           >
             <Paper
               elevation={0}
+              onClick={() => handleActionClick(item.title)}
               sx={{
                 bgcolor: '#0F172A',
                 border: '1px solid rgba(255,255,255,.06)',
@@ -138,6 +163,15 @@ const QuickAccess = () => {
           </Grid>
         ))}
       </Grid>
+
+      <AcknowledgeDialog
+        open={ackDialogOpen}
+        onClose={() => setAckDialogOpen(false)}
+      />
+      <ControllerControlDialog
+        open={ctrlDialogOpen}
+        onClose={() => setCtrlDialogOpen(false)}
+      />
     </Paper>
   );
 };

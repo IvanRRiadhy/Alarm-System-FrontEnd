@@ -1,10 +1,11 @@
     import { createSlice } from "@reduxjs/toolkit";
     import type { PayloadAction } from "@reduxjs/toolkit";
-    import { metaData } from "./site";
+    import { metaData } from "../crud/site";
 
     export type GetFilter = {
-        page: number;
-        limit: number;
+        page?: number;
+        limit?: number;
+        search?: string;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         // severity?: string;

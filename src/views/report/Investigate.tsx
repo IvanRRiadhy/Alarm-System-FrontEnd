@@ -1,23 +1,44 @@
-import { useEffect, useState } from 'react';
-import { Button, Box, Drawer, useMediaQuery, Theme, Typography } from '@mui/material';
+import { Grid2 as Grid } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
-// import Breadcrumb from 'src/layouts/full/shared/breadcrumb/Breadcrumb';
-import AppCard from 'src/components/shared/AppCard';
-
-const drawerWidth = 240;
-const secdrawerWidth = 320;
+import InvestigateFilter from 'src/components/report/Investigate/InvestigateFilter';
+import InvestigateList from 'src/components/report/Investigate/InvestigateList';
 
 const Investigate = () => {
-  const [isLeftSidebarOpen, setLeftSidebarOpen] = useState(false);
-  const [isRightSidebarOpen, setRightSidebarOpen] = useState(false);
-  const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
-  const mdUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
-
   return (
-    <PageContainer title="Investigate" description="Investigate">
-      <AppCard>
-        <Typography> Investigate Alarm </Typography>
-      </AppCard>
+    <PageContainer title="Investigate Alarm" description="Investigate Alarm Report">
+      <Grid
+        container
+        spacing={3}
+        sx={{
+          height: { xs: 'auto', md: 'calc(100vh - 70px)' },
+          overflow: 'hidden',
+          m: 0,
+          width: '100%'
+        }}
+      >
+        {/* Left Sidebar Filter */}
+        <Grid
+          size={{ xs: 12, md: 4, lg: 3 }}
+          sx={{
+            height: { xs: 'auto', md: '100%' },
+            p: 1
+          }}
+        >
+          <InvestigateFilter />
+        </Grid>
+        {/* Right Main Content */}
+        <Grid
+          size={{ xs: 12, md: 8, lg: 9 }}
+          sx={{
+            height: { xs: 'auto', md: '100%' },
+            display: 'flex',
+            flexDirection: 'column',
+            p: 1
+          }}
+        >
+          <InvestigateList />
+        </Grid>
+      </Grid>
     </PageContainer>
   );
 };

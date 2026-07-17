@@ -217,7 +217,7 @@ const DeviceInfo: React.FC<DeviceInfoProps> = ({ selectedDevice }) => {
       </Box>
 
       {/* Footer */}
-      <Box sx={{ p: 1.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* <Box sx={{ p: 1.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <Button
           fullWidth
           variant="text"
@@ -237,7 +237,7 @@ const DeviceInfo: React.FC<DeviceInfoProps> = ({ selectedDevice }) => {
         >
           Lihat Detail Device
         </Button>
-      </Box>
+      </Box> */}
     </Box>
   );
 };

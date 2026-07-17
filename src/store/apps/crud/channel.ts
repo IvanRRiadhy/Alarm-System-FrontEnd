@@ -14,11 +14,11 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
     page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-    controllerId:string | null;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    controllerId?:string | null;
 };
 
 export interface channelType {

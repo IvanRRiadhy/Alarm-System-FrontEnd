@@ -211,11 +211,10 @@ const FloorList = () => {
   const isLoading = useSelector((state: RootState) => state.floorReducer.isLoading);
   const hasLoaded = useSelector((state: RootState) => state.floorReducer.hasLoaded);
   // Pagination State
-  const page = floorFilter.page - 1 ;
-  const start = floorFilter.page * floorFilter.limit - 1;
-  const rowsPerPage = floorFilter.limit;
-  const orderBy = floorFilter.sortBy;
-  const order = floorFilter.sortOrder;
+  const page = floorFilter.page ?? 1;
+  const rowsPerPage = floorFilter.limit ?? 5;
+  const orderBy = floorFilter.sortBy ?? '';
+  const order = floorFilter.sortOrder ?? 'desc';
 
   const handleChangePage = (_: unknown, newPage: number) => {
     dispatch(UpdateFilter({ page: newPage + 1 }));
@@ -464,8 +463,8 @@ const FloorList = () => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                               }}
-                            >
-                              {index + 1 + page * rowsPerPage}
+                            > 
+                              {index + 1 + (page - 1) * rowsPerPage}
                             </TableCell>
                             <TableCell>{floor.name}</TableCell>
                             <TableCell>
@@ -586,7 +585,7 @@ const FloorList = () => {
               component="div"
               count={floorFilteredCount}
               rowsPerPage={rowsPerPage}
-              page={page}
+              page={page - 1}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
             />

@@ -71,22 +71,54 @@ export default function CustomAutocomplete<T>(props: CustomAutocompleteProps<T>)
       loadingText="Loading..."
       componentsProps={{
         paper: {
-          elevation: 6,
+          elevation: 8,
           sx: {
-            borderRadius: 2,
+            borderRadius: '12px',
             mt: 1,
-            py: 1,
             backgroundColor: 'background.paper',
-            border: '1px solid #f0f0f0',
-            boxShadow: '0px 4px 12px rgba(0,0,0,0.12), 0px 0px 4px rgba(0,0,0,0.05)',
-            '& .MuiAutocomplete-option': {
-              px: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: (theme: any) =>
+              theme.palette.mode === 'dark'
+                ? '0px 8px 24px rgba(0, 0, 0, 0.4)'
+                : '0px 8px 24px rgba(145, 158, 171, 0.2)',
+            '& .MuiAutocomplete-listbox': {
+              maxHeight: 220,
+              overflowY: 'auto',
               py: 1,
-              fontSize: '0.9rem',
-              borderBottom: '1px solid #f0f0f0',
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: (theme: any) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.15)'
+                    : 'rgba(0, 0, 0, 0.15)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'transparent',
+              },
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(128, 128, 128, 0.2) transparent',
             },
-            '& .MuiAutocomplete-option:last-child': {
+            '& .MuiAutocomplete-option': {
+              mx: 1,
+              my: 0.5,
+              px: 2,
+              py: 1.25,
+              fontSize: '0.875rem',
+              borderRadius: '6px',
+              transition: 'all 0.2s ease',
               borderBottom: 'none',
+              '&[aria-selected="true"]': {
+                backgroundColor: 'primary.light',
+                color: 'primary.main',
+                fontWeight: 600,
+              },
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
             },
           },
         },

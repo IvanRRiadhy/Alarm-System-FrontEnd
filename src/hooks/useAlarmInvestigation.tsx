@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
 import { metaData } from '../store/apps/crud/site';
-import {AlarmInvestigationType, AttachmentsType, GetFilter, SetAlarmInvestigations, UpdateAlarmInvestigationMeta} from '../store/apps/crud/alarmInvestigation';
+import {AlarmInvestigationType, AttachmentsType, GetFilter, SetAlarmInvestigations, UpdateAlarmInvestigationMeta} from '../store/apps/report/alarmInvestigation';
 // export type { AlarmEvent, GetFilter };
 import { useDispatch } from 'src/store/Store';
 
@@ -98,11 +98,11 @@ export function useAcknowledgeInvestigation(id: string) {
     });
 }
 
-export function useDispatchInvestigation(id: string, personnelId: string) {
+export function useDispatchInvestigation(id: string, personnelIds: string[]) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async () => {
-            const response = await axiosServices.put(`${API_URL}/${id}/dispatch`, {personnelId});
+            const response = await axiosServices.put(`${API_URL}/${id}/dispatch`, {personnelIds});
             return response.data;
         },
         onSuccess: () => {

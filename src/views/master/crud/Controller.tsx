@@ -14,6 +14,7 @@ import AppCard from 'src/components/shared/AppCard';
 import { RootState, useSelector } from 'src/store/Store';
 import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
+import ControllerFilter from 'src/components/master/device/Controller/ControllerFilter';
 import ControllerList from 'src/components/master/device/Controller/ControllerList';
 import AddEditController from 'src/components/master/device/Controller/AddEditController';
 
@@ -90,7 +91,8 @@ const Controller = () => {
           }}
         >
           <ParentCard title="Controller List" codeModel={[
-            <AddEditController type='add' />
+            <ControllerFilter key="filter" />,
+            <AddEditController key="add" type='add' />
             ]}>
             <ControllerList />
           </ParentCard>

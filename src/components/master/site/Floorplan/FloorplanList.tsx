@@ -38,7 +38,6 @@ import { defaultFloorplanFilter } from 'src/store/apps/defaultForm';
 import toast from 'react-hot-toast';
 import { BuildingType, fetchBuildings } from 'src/store/apps/crud/building';
 import { fetchFloors } from 'src/store/apps/crud/floor';
-import { fetchEngines } from 'src/store/apps/crud/engine';
 import { toastError } from 'src/utils/errors';
 const columns = [
   { label: 'Floorplan Name', field: 'name', sortAble: true },
@@ -66,18 +65,8 @@ const FloorplanList = () => {
   const buildingData: BuildingType[] = useSelector(
     (state: RootState) => state.buildingReducer.buildingAll,
   );
-  // const floorplanTotalCount = useSelector(
-  //   (state: RootState) => state.floorplanReducer.floorplanTotalCount,
-  // );
-  // const floorplanFilteredCount = useSelector(
-  //   (state: RootState) => state.floorplanReducer.floorplanFilteredCount,
-  // );
+
   const floorplanFilter = useSelector((state: RootState) => state.floorplanReducer.floorplanFilter);
-  // const {
-  //   data: floorplanData = [],
-  //   isLoading: queryLoading,
-  //   isFetching,
-  // } = useFloorplanList(floorplanFilter);
 
   const { data, isLoading: queryLoading } = useFloorplanList(floorplanFilter);
   const floorplanData = data?.data || [];
@@ -87,10 +76,10 @@ const FloorplanList = () => {
   const isLoading = useSelector((state: RootState) => state.floorplanReducer.isLoading);
   const hasLoaded = useSelector((state: RootState) => state.floorplanReducer.hasLoaded);
   // Pagination State
-  const page = floorplanFilter.page
-  const rowsPerPage = floorplanFilter.limit;
-  const orderBy = floorplanFilter.sortBy;
-  const order = floorplanFilter.sortOrder;
+  const page = floorplanFilter.page ?? 1;
+  const rowsPerPage = floorplanFilter.limit ?? 5;
+  const orderBy = floorplanFilter.sortBy ?? "";
+  const order = floorplanFilter.sortOrder ?? "desc";
 
   const handleChangePage = (_: unknown, newPage: number) => {
     dispatch(UpdateFilter({ page: newPage + 1 }));
@@ -141,19 +130,6 @@ const FloorplanList = () => {
   //   ]).finally(() => setLoading(false));
   // }, [dispatch]);
 
-  useEffect(() => {
-    Promise.all([
-      dispatch(fetchBuildings()),
-      dispatch(fetchFloors()),
-      dispatch(fetchEngines())
-    ]);
-
-    const initialFilter = location.state?.floorplanName
-      ? { ...defaultFloorplanFilter, SearchValue: location.state.floorplanName }
-      : defaultFloorplanFilter;
-
-    dispatch(UpdateFilter(initialFilter));
-  }, [dispatch]);
 
   useEffect(() => {
     console.log("Floorplan Data:", floorplanData);

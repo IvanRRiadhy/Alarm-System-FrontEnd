@@ -32,7 +32,7 @@ import { SetAlarmCaseFilter, AlarmCaseType } from 'src/store/apps/crud/alarmCase
 import { defaultDeviceFilter } from 'src/store/apps/defaultForm';
 import { useAlarmCaseList, useAlarmCaseTimeline } from 'src/hooks/useAlarmCase';
 import { useAlarmInvestigationList } from 'src/hooks/useAlarmInvestigation';
-import { AlarmInvestigationType, AttachmentsType } from 'src/store/apps/crud/alarmInvestigation';
+import { AlarmInvestigationType, AttachmentsType } from 'src/store/apps/report/alarmInvestigation';
 import InvestigationUpdate from './InvestigationUpdate';
 import AlarmTimelineProgress from './AlarmTimeline';
 
@@ -52,6 +52,7 @@ const getStatusColor = (status: string) => {
             return 'warning';
         case 'done':
         case 'resolved':
+        case 'noaction':
             return 'success';
         case 'in progress':
         case 'acknowledged':

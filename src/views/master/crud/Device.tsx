@@ -16,6 +16,7 @@ import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
 import DevicesList from 'src/components/master/device/Devices/DevicesList';
 import AddEditDevices from 'src/components/master/device/Devices/AddEditDevices';
+import DeviceFilter from 'src/components/master/device/Devices/DeviceFilter';
 
 interface cardType {
   icon?: string;
@@ -93,6 +94,7 @@ const Device = () => {
           <ParentCard 
             title="Device List" 
             codeModel={[
+              <DeviceFilter key="filter" />,
               <AddEditDevices type='add' key="add-device-trigger" />
             ]}
           >

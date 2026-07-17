@@ -2,7 +2,6 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { metaData } from "./site";
 import { EventItem } from "src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar";
-import { BooleanSchema } from "yup";
 
 export interface AlarmEvent {
   id: string;
@@ -33,8 +32,8 @@ export interface AlarmEvent {
 }
 
 export type GetFilter = {
-  page: number;
-  limit: number;
+  page?: number;
+  limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   severity?: string;

@@ -11,12 +11,12 @@ import { metaData } from "./site";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-    page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-    floorplanId: string | null;
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    floorplanId?: string | null;
 };
 
 export interface DeviceMappingType {
@@ -59,6 +59,7 @@ const initialState: StateType = {
     deviceMappingFilter: {
         page: 1,
         limit: 10,
+        search: '',
         sortBy: 'name',
         sortOrder: 'asc',
         floorplanId: null,

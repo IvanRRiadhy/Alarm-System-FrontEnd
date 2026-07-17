@@ -81,8 +81,9 @@ export interface AlarmCaseTimelineType {
 
 
 export type GetFilter = {
-    page: number;
-    limit: number;
+    page?: number;
+    limit?: number;
+    search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
 };
@@ -98,6 +99,7 @@ const initialState: StateType = {
     alarmCaseFilter: {
         page: 1,
         limit: 10,
+        search: '',
         sortBy: 'triggeredAt',
         sortOrder: 'desc',
     },

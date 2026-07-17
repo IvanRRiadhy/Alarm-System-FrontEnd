@@ -13,12 +13,12 @@ const API_DT_URL = "/api/floors/filter/";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-    page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-    buildingId: string | null;
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    buildingId?: string | null;
 }
 
 

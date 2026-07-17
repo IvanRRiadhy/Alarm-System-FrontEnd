@@ -9,49 +9,34 @@ import { IconAdjustmentsHorizontal } from '@tabler/icons-react';
 import { isEqual } from 'lodash';
 import { useEffect, useState } from 'react';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
-import { UpdateFilter } from 'src/store/apps/crud/floor';
-import { defaultFloorFilter } from 'src/store/apps/defaultForm';
+import { UpdateFilter } from 'src/store/apps/crud/controller';
+import { defaultControllerFilter } from 'src/store/apps/defaultForm';
 import { RootState, useDispatch, useSelector } from 'src/store/Store';
-import { useBuildingList } from 'src/hooks/useBuilding';
 import { useSiteLookup } from 'src/hooks/useSite';
 import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
-import AreaHierarchySelector, { SelectedNode } from 'src/components/shared/AreaHierarchySelector';
 
-const FloorFilter = () => {
+const statusOptions = [
+  { value: 'online', label: 'Online' },
+  { value: 'offline', label: 'Offline' },
+  { value: 'error', label: 'Error' },
+];
+
+const ControllerFilter = () => {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
-
-  const { data: buildingResponse } = useBuildingList({
-    page: 1,
-    limit: 1000,
-    search: '',
-    sortOrder: 'desc',
-    sortBy: '',
-    siteId: '',
-  });
-  const buildingList = buildingResponse?.data || [];
 
   const { data: siteResponse } = useSiteLookup();
   const siteList = siteResponse?.data || [];
 
-  const floorFilter = useSelector((state: RootState) => state.floorReducer.floorFilter);
+  const controllerFilter = useSelector((state: RootState) => state.ControllerReducer.controllerFilter);
 
   // Local copy of filters
-  const [appliedFilter, setAppliedFilter] = useState(floorFilter);
-  const [selectedSiteId, setSelectedSiteId] = useState<string>('');
+  const [appliedFilter, setAppliedFilter] = useState(controllerFilter);
 
   // --- Fetch + Sync ---
   useEffect(() => {
-    setAppliedFilter(floorFilter);
-    if (floorFilter.buildingId && buildingList.length > 0) {
-      const b = buildingList.find((x) => x.id === floorFilter.buildingId);
-      if (b) {
-        setSelectedSiteId(b.siteId || '');
-      }
-    } else {
-      setSelectedSiteId('');
-    }
-  }, [floorFilter, buildingList]);
+    setAppliedFilter(controllerFilter);
+  }, [controllerFilter]);
 
   // --- Drawer Controls ---
   const handleClickOpen = () => {
@@ -61,19 +46,17 @@ const FloorFilter = () => {
 
   // --- Site change handler ---
   const handleSiteChange = (val: any) => {
-    setSelectedSiteId(val?.id ?? '');
     setAppliedFilter((prev) => ({
       ...prev,
-      buildingId: null,
+      siteId: val?.id ?? undefined,
     }));
   };
 
-  // --- Building change handler ---
-  const handleBuildingChange = (val: SelectedNode) => {
-    const bId = val?.data?.id ?? null;
+  // --- Status change handler ---
+  const handleStatusChange = (val: any) => {
     setAppliedFilter((prev) => ({
       ...prev,
-      buildingId: bId,
+      status: (val?.value as 'offline' | 'online' | 'error') ?? undefined,
     }));
   };
 
@@ -84,20 +67,10 @@ const FloorFilter = () => {
   };
 
   const handleResetFilter = () => {
-    setAppliedFilter(defaultFloorFilter);
-    setSelectedSiteId('');
-    dispatch(UpdateFilter({ ...defaultFloorFilter }));
+    setAppliedFilter(defaultControllerFilter);
+    dispatch(UpdateFilter({ ...defaultControllerFilter }));
     setOpen(false);
   };
-
-  const filteredBuildings = selectedSiteId
-    ? buildingList.filter((b) => b.siteId === selectedSiteId)
-    : buildingList;
-
-  const selectedBuilding = buildingList.find((b) => b.id === appliedFilter.buildingId);
-  const selectedBuildingNode: SelectedNode = selectedBuilding
-    ? { type: 'building', data: selectedBuilding }
-    : null;
 
   return (
     <>
@@ -133,7 +106,7 @@ const FloorFilter = () => {
           gutterBottom
           sx={{ my: 4, borderBottom: 5, borderColor: 'primary.main' }}
         >
-          Floor Filter
+          Controller Filter
         </Typography>
 
         <Grid container spacing={3}>
@@ -145,28 +118,25 @@ const FloorFilter = () => {
             <CustomAutocomplete
               label="Select Site"
               options={siteList}
-              value={siteList.find((s) => s.id === selectedSiteId) || null}
+              value={siteList.find((s) => s.id === appliedFilter.siteId) || null}
               onChange={handleSiteChange}
               getOptionLabel={(o) => o.name}
               isOptionEqualToValue={(a, b) => a.id === b.id}
             />
           </Grid>
 
-          {/* 🏢 Building Filter (AreaHierarchySelector) */}
+          {/* 📶 Status Filter */}
           <Grid size={12}>
             <CustomFormLabel>
-              <Typography variant="caption">Building :</Typography>
+              <Typography variant="caption">Status :</Typography>
             </CustomFormLabel>
-
-            <AreaHierarchySelector
-              buildings={filteredBuildings}
-              floors={[]} // disable deeper levels
-              floorplans={[]}
-              maskedAreas={[]}
-              value={selectedBuildingNode}
-              onChange={handleBuildingChange}
-              exclusive="building"
-              label="Select Building"
+            <CustomAutocomplete
+              label="Select Status"
+              options={statusOptions}
+              value={statusOptions.find((s) => s.value === appliedFilter.status) || null}
+              onChange={handleStatusChange}
+              getOptionLabel={(o) => o.label}
+              isOptionEqualToValue={(a, b) => a.value === b.value}
             />
           </Grid>
         </Grid>
@@ -190,7 +160,7 @@ const FloorFilter = () => {
                 color="primary"
                 fullWidth
                 onClick={handleApplyFilter}
-                disabled={isEqual(appliedFilter, floorFilter)}
+                disabled={isEqual(appliedFilter, controllerFilter)}
               >
                 Apply
               </Button>
@@ -202,4 +172,4 @@ const FloorFilter = () => {
   );
 };
 
-export default FloorFilter;
+export default ControllerFilter;

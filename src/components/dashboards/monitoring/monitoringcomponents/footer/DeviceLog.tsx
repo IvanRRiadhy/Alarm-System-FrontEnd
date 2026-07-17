@@ -8,7 +8,7 @@ import {
   Divider,
 } from '@mui/material';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
-import { EventItem } from '../sidebar/EventSidebar';
+import { EventItem, Severity } from '../sidebar/EventSidebar';
 import { IconInfoCircle } from '@tabler/icons-react';
 
 type LogTabType = 'Semua' | 'Event' | 'Alarm' | 'System';
@@ -19,7 +19,7 @@ interface LogEntry {
   message: string;
   type: LogTabType;
   color: string;
-  severity: 'Critical' | 'High' | 'Low';
+  severity: Severity;
   site: string;
   area: string;
   deviceName: string;
@@ -405,7 +405,7 @@ const DeviceLog: React.FC<DeviceLogProps> = ({ selectedDevice, events, selectedL
       </Box>
 
       {/* Footer */}
-      <Box sx={{ p: 1.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* <Box sx={{ p: 1.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <Button
           fullWidth
           variant="text"
@@ -423,7 +423,7 @@ const DeviceLog: React.FC<DeviceLogProps> = ({ selectedDevice, events, selectedL
         >
           Lihat Semua Log
         </Button>
-      </Box>
+      </Box> */}
     </Box>
   );
 };

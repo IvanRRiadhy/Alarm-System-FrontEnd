@@ -12,11 +12,13 @@ import { defaultControllerFilter } from "../defaultForm";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-    page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    siteId?: string;
+    status?: "offline" | "online" | "error";
 };
 
 export interface controllerType {

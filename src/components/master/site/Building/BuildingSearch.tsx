@@ -11,32 +11,32 @@ const BuildingSearch = () => {
   );
 
   // Initialize from Redux so it doesn't clear an external filter on mount
-  const [searchValue, setSearchValue] = useState(buildingFilter.SearchValue || '');
+  const [searchValue, setSearchValue] = useState(buildingFilter.search || '');
 
   // Keep internal state synced if Redux changes externally (like on mount from location state)
   useEffect(() => {
-    setSearchValue(buildingFilter.SearchValue || '');
-  }, [buildingFilter.SearchValue]);
+    setSearchValue(buildingFilter.search || '');
+  }, [buildingFilter.search]);
 
   useEffect(() => {
     // Only dispatch if the local searchValue differs from Redux
-    if (searchValue.trim() !== (buildingFilter.SearchValue || '')) {
+    if (searchValue.trim() !== (buildingFilter.search || '')) {
       const delayDebounce = setTimeout(() => {
-        dispatch(UpdateFilter({ ...buildingFilter, SearchValue: searchValue.trim() }));
+        dispatch(UpdateFilter({ ...buildingFilter, search: searchValue.trim() }));
       }, 1000);
       return () => clearTimeout(delayDebounce);
     }
-  }, [searchValue, dispatch, buildingFilter.SearchValue]);
+  }, [searchValue, dispatch, buildingFilter.search]);
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      dispatch(UpdateFilter({ ...buildingFilter, SearchValue: searchValue.trim() }));
+      dispatch(UpdateFilter({ ...buildingFilter, search: searchValue.trim() }));
     }
   };
 
   const handleClearSearch = () => {
     setSearchValue('');
-    dispatch(UpdateFilter({ ...buildingFilter, SearchValue: '' }));
+    dispatch(UpdateFilter({ ...buildingFilter, search: '' }));
   };
 
   return (

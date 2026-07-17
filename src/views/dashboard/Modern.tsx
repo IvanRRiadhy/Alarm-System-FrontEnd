@@ -9,7 +9,6 @@ import AlarmTrend from 'src/components/dashboards/alarm/AlarmTrend';
 import ActiveAlarmSites from 'src/components/dashboards/alarm/ActiveAlarmSites';
 import FloorPlan from 'src/components/dashboards/alarm/FloorPlan';
 import RecentEvents from 'src/components/dashboards/alarm/RecentEvents';
-import SystemHealth from 'src/components/dashboards/alarm/SystemHealth';
 import QuickActions from 'src/components/dashboards/alarm/QuickActions';
 import { useDashboardSummary } from 'src/hooks/useDashboard';
 import { useSiteById, useSiteList } from 'src/hooks/useSite';
@@ -318,10 +317,27 @@ const Modern = () => {
 
   const renderStandardDashboard = () => (
     <>
-      {/* Top Cards row */}
-      <Box sx={{ mb: 3 }}>
-        <AlarmTopCards data={dashboardData} />
-      </Box>
+      {/* Top row: Side-by-side TopCards and QuickActions */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid
+          size={{
+            xs: 12,
+            lg: 5
+          }}
+          sx={{ display: 'flex', flexDirection: 'column' }}
+        >
+          <AlarmTopCards data={dashboardData} />
+        </Grid>
+        <Grid
+          size={{
+            xs: 12,
+            lg: 7
+          }}
+          sx={{ display: 'flex', flexDirection: 'column' }}
+        >
+          <QuickActions />
+        </Grid>
+      </Grid>
 
       {/* Middle row: ActiveAlarms, BuildingList (instead of SiteMap), FloorPlan */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -504,24 +520,6 @@ const Modern = () => {
             lg: 3
           }}>
           <RecentEvents recentEvents={dashboardData?.recentEvents} />
-        </Grid>
-      </Grid>
-
-      {/* Footer row: SystemHealth, QuickActions */}
-      <Grid container spacing={3}>
-        <Grid
-          size={{
-            xs: 12,
-            lg: 5.5
-          }}>
-          <SystemHealth systemHealth={dashboardData?.systemHealth} />
-        </Grid>
-        <Grid
-          size={{
-            xs: 12,
-            lg: 6.5
-          }}>
-          <QuickActions />
         </Grid>
       </Grid>
     </>
@@ -752,10 +750,27 @@ const Modern = () => {
 
       {/* Scroll Down Analytics Section */}
       <Box sx={{ mt: 5 }}>
-        {/* Top Cards row */}
-        <Box sx={{ mb: 4 }}>
-          <AlarmTopCards data={dashboardData} />
-        </Box>
+        {/* Top row of analytics: Side-by-side TopCards and QuickActions */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 6
+            }}
+            sx={{ display: 'flex', flexDirection: 'column' }}
+          >
+            <AlarmTopCards data={dashboardData} />
+          </Grid>
+          <Grid
+            size={{
+              xs: 12,
+              lg: 6
+            }}
+            sx={{ display: 'flex', flexDirection: 'column' }}
+          >
+            <QuickActions />
+          </Grid>
+        </Grid>
 
         {/* Middle row: ActiveAlarms, FloorPlan */}
         <Grid container spacing={3} sx={{ mb: 4, minHeight: "50vh" }}>
@@ -809,24 +824,6 @@ const Modern = () => {
               lg: 3
             }}>
             <RecentEvents recentEvents={dashboardData?.recentEvents} />
-          </Grid>
-        </Grid>
-
-        {/* Footer row: SystemHealth, QuickActions */}
-        <Grid container spacing={3}>
-          <Grid
-            size={{
-              xs: 12,
-              lg: 5.5
-            }}>
-            <SystemHealth systemHealth={dashboardData?.systemHealth} />
-          </Grid>
-          <Grid
-            size={{
-              xs: 12,
-              lg: 6.5
-            }}>
-            <QuickActions />
           </Grid>
         </Grid>
       </Box>

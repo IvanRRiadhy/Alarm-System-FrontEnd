@@ -5,11 +5,11 @@ import { metaData } from "./site";
 const API_URL = "api/personnel";
 
 export type GetFilter = {
-    page: number,
-    limit: number,
-    search: string,
-    sortBy: string,
-    sortOrder: 'asc' | "desc",
+    page?: number,
+    limit?: number,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: 'asc' | "desc",
 }
 
 export type PersonnelType = {

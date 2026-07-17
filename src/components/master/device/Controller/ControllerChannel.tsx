@@ -267,19 +267,18 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
     let hoverBgColor = 'rgba(40, 199, 111, 0.35)';
     let shadowColor = 'rgba(40, 199, 111, 0.15)';
     let hoverShadowColor = 'rgba(40, 199, 111, 0.3)';
-
-    if (channel.isUsed === false) {
-      color = '#82868b'; // Grey
-      bgColor = 'rgba(130, 134, 139, 0.18)';
-      hoverBgColor = 'rgba(130, 134, 139, 0.35)';
-      shadowColor = 'rgba(130, 134, 139, 0.15)';
-      hoverShadowColor = 'rgba(130, 134, 139, 0.3)';
-    } else if (channel.isEnabled === false) {
+    if (channel.isEnabled === false) {
       color = '#ea5455'; // Red
       bgColor = 'rgba(234, 84, 85, 0.18)';
       hoverBgColor = 'rgba(234, 84, 85, 0.35)';
       shadowColor = 'rgba(234, 84, 85, 0.15)';
       hoverShadowColor = 'rgba(234, 84, 85, 0.3)';
+    } else if (channel.isUsed === false) {
+      color = '#82868b'; // Grey
+      bgColor = 'rgba(130, 134, 139, 0.18)';
+      hoverBgColor = 'rgba(130, 134, 139, 0.35)';
+      shadowColor = 'rgba(130, 134, 139, 0.15)';
+      hoverShadowColor = 'rgba(130, 134, 139, 0.3)';
     }
 
     const isSelected = selectedChannel?.id === channel.id;

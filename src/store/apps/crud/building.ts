@@ -14,12 +14,12 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 
 export type GetFilter = {
-    page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: 'asc' | "desc";
-    siteId: string | null;
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | "desc";
+    siteId?: string | null;
 }
 
 

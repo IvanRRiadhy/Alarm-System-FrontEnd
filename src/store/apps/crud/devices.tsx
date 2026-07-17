@@ -11,13 +11,17 @@ import { metaData } from "./site";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-    page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-    floorplanId?: string;
-    deviceIO?: string; //input, output, stream, none
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    siteId?: string;
+    deviceIO?: "None" | "Input" | "Output" | "Stream"; //input, output, stream, none
+    channelId?: string;
+    controllerId?: string; 
+    deviceType?: 'Other' | 'MotionSensor' | 'DoorSensor' | 'GlassBreakSensor' | 'BeamSensor' | 'VibrationSensor' | 'CctvCamera' | 'DoorLock' | 'Siren' | 'StrobeLight' | 'PanicButton';
+    status?: "offline" | "online" | "error";
 };
 
 export interface deviceType {
@@ -68,6 +72,7 @@ const initialState: StateType = {
     deviceFilter: {
         page: 1,
         limit: 10,
+        search: '',
         sortBy: 'name',
         sortOrder: 'asc',
     },

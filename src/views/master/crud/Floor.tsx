@@ -96,10 +96,10 @@ const Floor = () => {
           }}
         >
           <ParentCard title="Floor List" codeModel={[
-            // <FloorSearch  key="search" />,
+            <FloorSearch  key="search" />,
             // <FloorImport key="import" />,
             // <FloorExport key="export" />,
-            // <FloorFilter key="filter" />,
+            <FloorFilter key="filter" />,
             <AddEditFloor key="add" type="add" />
             ]}>
             <FloorList />

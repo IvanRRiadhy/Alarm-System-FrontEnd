@@ -99,8 +99,8 @@ const Floorplan = () => {
         >
           <ParentCard title="Floorplan List" codeModel={[
             <FloorplanSearch key="search" />,
-            <FloorplanImport key="import" />,
-            <FloorplanExport key="export" />,
+            // <FloorplanImport key="import" />,
+            // <FloorplanExport key="export" />,
             <FloorplanFilter key="filter" />,
             <AddEditFloorplan key="add" type="add" />
             ]}>

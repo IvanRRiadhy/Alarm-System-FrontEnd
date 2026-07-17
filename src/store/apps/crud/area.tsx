@@ -11,11 +11,11 @@ import { metaData } from "./site";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-    page: number;
-    limit: number;
-    // search: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
     floorplanId?: string;
 };
 
@@ -58,6 +58,7 @@ const initialState: StateType = {
     areaFilter: {
         page: 1,
         limit: 10,
+        search: '',
         sortBy: 'name',
         sortOrder: 'asc',
     },

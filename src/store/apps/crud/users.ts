@@ -10,11 +10,11 @@ const REGIST_URL = '/api/Auth/register/';
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export type GetFilter = {
-    page: number,
-    limit: number,
-    // search: string,
-    sortBy: string,
-    sortOrder: 'asc' | "desc",
+    page?: number,
+    limit?: number,
+    search?: string,
+    sortBy?: string,
+    sortOrder?: 'asc' | "desc",
 }
 
 export type userType = {

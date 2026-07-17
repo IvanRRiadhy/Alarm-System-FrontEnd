@@ -96,8 +96,8 @@ const Building = () => {
         >
           <ParentCard title="Building List" codeModel={[
             <BuildingSearch key={"search"} />,
-            <BuildingImport key={"import"} />,
-            <BuildingExport key={"export"} />,
+            // <BuildingImport key={"import"} />,
+            // <BuildingExport key={"export"} />,
             <AddEditBuilding key={"add"} type="add" />
             ]}>
             <BuildingList />

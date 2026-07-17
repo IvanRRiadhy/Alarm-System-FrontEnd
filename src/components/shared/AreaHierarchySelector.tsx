@@ -1,7 +1,8 @@
 import React, { forwardRef } from 'react';
-import { Box, TextField, Paper, Popper, Typography, ClickAwayListener } from '@mui/material';
+import { Box, TextField, Paper, Popper, Typography, ClickAwayListener, IconButton } from '@mui/material';
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
-import { IconAdjustmentsHorizontal } from '@tabler/icons-react';
+import { IconAdjustmentsHorizontal, IconX } from '@tabler/icons-react';
+import Scrollbar from 'src/components/custom-scroll/Scrollbar';
 
 export type NodeType = 'building' | 'floor' | 'floorplan' | 'area';
 
@@ -94,6 +95,15 @@ const AreaHierarchySelector: React.FC<Props> = forwardRef(
       const singleValue = value as SelectedNode;
       return singleValue ? (singleValue.data?.name ?? singleValue.data?.areaName ?? '') : '';
     })();
+ 
+    const hasValue = multiple
+      ? Array.isArray(value) && value.length > 0
+      : !!value;
+
+    const handleClear = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onChange(multiple ? [] : null);
+    };
 
     const isSelected = (type: NodeType, id: string) => {
       if (multiple && Array.isArray(value)) {
@@ -301,6 +311,16 @@ const AreaHierarchySelector: React.FC<Props> = forwardRef(
                   <IconAdjustmentsHorizontal size={16} />
                 </Box>
               ),
+              endAdornment: hasValue ? (
+                <IconButton
+                  size="small"
+                  onClick={handleClear}
+                  disabled={disabled}
+                  sx={{ padding: '2px', marginRight: '-2px' }}
+                >
+                  <IconX size={16} />
+                </IconButton>
+              ) : null,
             }}
             error={error}
             helperText={helperText}
@@ -338,7 +358,7 @@ const AreaHierarchySelector: React.FC<Props> = forwardRef(
               />
 
               {/* TREE */}
-              <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
+              <Scrollbar sx={{ maxHeight: 300 }}>
                 <SimpleTreeView
                   expandedItems={expanded}
                   onExpandedItemsChange={(_e, ids) => setExpanded(Array.isArray(ids) ? ids : [ids])}
@@ -431,7 +451,7 @@ const AreaHierarchySelector: React.FC<Props> = forwardRef(
                     </TreeItem>
                   ))}
                 </SimpleTreeView>
-              </Box>
+              </Scrollbar>
             </Paper>
           </ClickAwayListener>
         </Popper>

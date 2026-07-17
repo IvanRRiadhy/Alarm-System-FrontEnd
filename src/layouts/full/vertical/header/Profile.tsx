@@ -60,6 +60,8 @@ const Profile = () => {
       localStorage.removeItem('role');
       localStorage.removeItem('siteIds');
       localStorage.removeItem('response');
+      localStorage.removeItem('selectedSiteId');
+      localStorage.removeItem('selectedSite');
       navigate('/auth/login');
     }
   };
