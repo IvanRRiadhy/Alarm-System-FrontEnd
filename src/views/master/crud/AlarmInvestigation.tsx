@@ -29,13 +29,19 @@ const AlarmInvestigations = () => {
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
   const mdUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
   const { alarmInvestigationMeta } = useSelector((state: RootState) => state.alarmInvestigationReducer);
+  const {alarmCaseMeta} = useSelector((state: RootState) => state.alarmCaseReducer)
   const { t } = useTranslation();
 
   const topCards: cardType[] = [
     {
+      title: 'Total Cases',
+      subtitle: alarmCaseMeta.totalItems.toString(),
+      bgcolor: 'success',
+    },
+    {
       title: 'Total Investigations',
       subtitle: alarmInvestigationMeta.totalItems.toString(),
-      bgcolor: 'success',
+      bgcolor: 'secondary',
     },
   ];
 

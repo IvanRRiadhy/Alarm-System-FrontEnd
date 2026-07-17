@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import { styled, Container, Box, useTheme } from '@mui/material';
+import { styled, Container, Box, useTheme, Backdrop, CircularProgress } from '@mui/material';
 import { useSelector, useDispatch } from 'src/store/Store';
 import { Outlet } from 'react-router';
 import { RootState, AppDispatch } from 'src/store/Store';
@@ -41,6 +41,20 @@ const FullLayout: FC = () => {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const [criticalAlarm, setCriticalAlarm] = useState<AlarmEvent | null>(null);
+  const [isRefetching, setIsRefetching] = useState(false);
+
+  useEffect(() => {
+    const handleStart = () => setIsRefetching(true);
+    const handleEnd = () => setIsRefetching(false);
+
+    window.addEventListener('app:refetch-summary-start', handleStart);
+    window.addEventListener('app:refetch-summary-end', handleEnd);
+
+    return () => {
+      window.removeEventListener('app:refetch-summary-start', handleStart);
+      window.removeEventListener('app:refetch-summary-end', handleEnd);
+    };
+  }, []);
 
   useAlarmEventList({ page: 1, limit: 100 });
   useEffect(() => {
@@ -178,6 +192,12 @@ const FullLayout: FC = () => {
           },
         }}
       />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: 99999 }}
+        open={isRefetching}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </>
 
   );

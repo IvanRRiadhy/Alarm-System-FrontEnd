@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import ControllerFilter from 'src/components/master/device/Controller/ControllerFilter';
 import ControllerList from 'src/components/master/device/Controller/ControllerList';
 import AddEditController from 'src/components/master/device/Controller/AddEditController';
+import ControllerSearch from 'src/components/master/device/Controller/ControllerSearch';
 
 interface cardType {
   icon?: string;
@@ -92,6 +93,7 @@ const Controller = () => {
         >
           <ParentCard title="Controller List" codeModel={[
             <ControllerFilter key="filter" />,
+            <ControllerSearch key="search" />,
             <AddEditController key="add" type='add' />
             ]}>
             <ControllerList />

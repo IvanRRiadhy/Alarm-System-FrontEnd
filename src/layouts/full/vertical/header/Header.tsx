@@ -45,8 +45,20 @@ const Header = () => {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
-  const handleRefetchSummary = () => {
-    queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+  const handleRefetchSummary = async () => {
+    window.dispatchEvent(new Event('app:refetch-summary-start'));
+    const startTime = Date.now();
+    try {
+      await queryClient.refetchQueries({ queryKey: ['dashboard-summary'] });
+    } catch (e) {
+      console.error(e);
+    }
+    const elapsed = Date.now() - startTime;
+    const remaining = 500 - elapsed;
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remaining));
+    }
+    window.dispatchEvent(new Event('app:refetch-summary-end'));
   };
 
   const customizer = useSelector(

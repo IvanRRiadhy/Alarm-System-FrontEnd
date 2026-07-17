@@ -24,6 +24,7 @@ import { deviceType } from 'src/store/apps/crud/devices';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import siwiImage from 'src/assets/images/products/Siwi-nobg.png';
+import AddEditDevices from 'src/components/master/device/Devices/AddEditDevices';
 
 interface ControllerChannelProps {
   open: boolean;
@@ -372,7 +373,7 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
                         key={device.id} 
                         onClick={() => handleDeviceClick(device)}
                         sx={{ 
-                          p: 2, 
+                          p: 1.5, 
                           mb: 1.5, 
                           borderRadius: 2, 
                           opacity: disabled ? 0.35 : 1,
@@ -385,47 +386,56 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
                           boxShadow: isSelected ? '0 4px 12px rgba(115, 103, 240, 0.1)' : '0 2px 4px rgba(0, 0, 0, 0.02)',
                           transition: 'all 0.2s',
                           cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
                           '&:hover': {
                             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
                             borderColor: isSelected ? '#7367f0' : 'primary.light'
                           }
                         }}
                       >
-                        <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-                          {device.name}
-                        </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={1} mt={0.5} alignItems="center">
-                          <Typography variant="caption" color="text.secondary">
-                            SN: {device.serialNumber || 'N/A'}
+                        
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
+                            {device.name}
                           </Typography>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              px: 1, 
-                              py: 0.2, 
-                              borderRadius: 1, 
-                              fontSize: '9px',
-                              fontWeight: 700,
-                              bgcolor: 'primary.light', 
-                              color: 'primary.main' 
-                            }}
-                          >
-                            {device.deviceType}
-                          </Typography>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              px: 1, 
-                              py: 0.2, 
-                              borderRadius: 1, 
-                              fontSize: '9px',
-                              fontWeight: 700,
-                              bgcolor: device.channelId ? 'success.light' : 'grey.200', 
-                              color: device.channelId ? 'success.main' : 'text.secondary' 
-                            }}
-                          >
-                            {device.channelId ? 'Assigned' : 'Unassigned'}
-                          </Typography>
+                          <Box display="flex" flexWrap="wrap" gap={1} mt={0.5} alignItems="center">
+                            <Typography variant="caption" color="text.secondary">
+                              SN: {device.serialNumber || 'N/A'}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                px: 1, 
+                                py: 0.2, 
+                                borderRadius: 1, 
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                bgcolor: 'primary.light', 
+                                color: 'primary.main' 
+                              }}
+                            >
+                              {device.deviceType}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                px: 1, 
+                                py: 0.2, 
+                                borderRadius: 1, 
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                bgcolor: device.channelId ? 'success.light' : 'grey.200', 
+                                color: device.channelId ? 'success.main' : 'text.secondary' 
+                              }}
+                            >
+                              {device.channelId ? 'Assigned' : 'Unassigned'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box onClick={(e) => e.stopPropagation()}>
+                          <AddEditDevices type="edit" device={device} trigger="gear" />
                         </Box>
                       </Box>
                     );
@@ -529,7 +539,7 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
                         key={device.id} 
                         onClick={() => handleDeviceClick(device)}
                         sx={{ 
-                          p: 2, 
+                          p: 1.5, 
                           mb: 1.5, 
                           borderRadius: 2, 
                           opacity: disabled ? 0.35 : 1,
@@ -542,47 +552,56 @@ const ControllerChannel = ({ open, onClose, controller }: ControllerChannelProps
                           boxShadow: isSelected ? '0 4px 12px rgba(115, 103, 240, 0.1)' : '0 2px 4px rgba(0, 0, 0, 0.02)',
                           transition: 'all 0.2s',
                           cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
                           '&:hover': {
                             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
                             borderColor: isSelected ? '#7367f0' : 'primary.light'
                           }
                         }}
                       >
-                        <Typography variant="subtitle2" fontWeight={700} color="text.primary">
-                          {device.name}
-                        </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={1} mt={0.5} alignItems="center">
-                          <Typography variant="caption" color="text.secondary">
-                            SN: {device.serialNumber || 'N/A'}
+                       
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
+                            {device.name}
                           </Typography>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              px: 1, 
-                              py: 0.2, 
-                              borderRadius: 1, 
-                              fontSize: '9px',
-                              fontWeight: 700,
-                              bgcolor: 'primary.light', 
-                              color: 'primary.main' 
-                            }}
-                          >
-                            {device.deviceType}
-                          </Typography>
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              px: 1, 
-                              py: 0.2, 
-                              borderRadius: 1, 
-                              fontSize: '9px',
-                              fontWeight: 700,
-                              bgcolor: device.channelId ? 'success.light' : 'grey.200', 
-                              color: device.channelId ? 'success.main' : 'text.secondary' 
-                            }}
-                          >
-                            {device.channelId ? 'Assigned' : 'Unassigned'}
-                          </Typography>
+                          <Box display="flex" flexWrap="wrap" gap={1} mt={0.5} alignItems="center">
+                            <Typography variant="caption" color="text.secondary">
+                              SN: {device.serialNumber || 'N/A'}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                px: 1, 
+                                py: 0.2, 
+                                borderRadius: 1, 
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                bgcolor: 'primary.light', 
+                                color: 'primary.main' 
+                              }}
+                            >
+                              {device.deviceType}
+                            </Typography>
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                px: 1, 
+                                py: 0.2, 
+                                borderRadius: 1, 
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                bgcolor: device.channelId ? 'success.light' : 'grey.200', 
+                                color: device.channelId ? 'success.main' : 'text.secondary' 
+                              }}
+                            >
+                              {device.channelId ? 'Assigned' : 'Unassigned'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                         <Box onClick={(e) => e.stopPropagation()}>
+                          <AddEditDevices type="edit" device={device} trigger="gear" />
                         </Box>
                       </Box>
                     );

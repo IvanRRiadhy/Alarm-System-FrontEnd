@@ -23,6 +23,7 @@ import {
   CircularProgress,
   Collapse,
   Tooltip,
+  Chip,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
 import { IconTrash, IconChevronDown, IconChevronRight, IconMap } from '@tabler/icons-react';
@@ -42,7 +43,9 @@ const columns = [
   { label: 'Serial Number', field: 'serialNumber', sortAble: true },
   { label: 'Device Type', field: 'deviceType', sortAble: true },
   { label: 'Alarm Severity', field: 'AlarmSeverity', sortAble: true },
-  { label: 'Alarm Mode', field: 'alarmMode', sortAble: true },
+  { label: 'Alarm Mode', field: 'alarmMode', sortAble: false },
+  { label: 'Device Assigned to Controller', field: 'controller', sortAble: false},
+  { label: 'Device Mapped to Floorplan', field: 'isAssigned', sortAble: false },
 ];
 
 const SKELETON_ROWS = 5;
@@ -67,8 +70,8 @@ const DevicesList = () => {
 
     // Pagination State
     const { deviceMeta } = useSelector((state: RootState) => state.deviceReducer);
-    const page = deviceFilter.page;
-    const rowsPerPage = deviceFilter.limit;
+    const page = deviceFilter.page ?? 1;
+    const rowsPerPage = deviceFilter.limit ?? 5;
     const orderBy = deviceFilter.sortBy;
     const order = deviceFilter.sortOrder;
 
@@ -222,7 +225,7 @@ const DevicesList = () => {
                         <Typography variant="h6"></Typography>
                       </TableCell>
                       {columns.map((col) => (
-                        <TableCell key={col.label}>
+                        <TableCell key={col.label} align={col.field === 'controller' || col.field === 'isAssigned' ? 'center' : 'left'}>
                           {col.sortAble && col.field ? (
                             <TableSortLabel
                               active={orderBy === col.field}
@@ -280,6 +283,22 @@ const DevicesList = () => {
                                 <TableCell>{device.deviceType}</TableCell>
                                 <TableCell>{device.alarmSeverity}</TableCell>
                                 <TableCell>{device.alarmMode}</TableCell>
+                                <TableCell align="center">
+                                  <Chip 
+                                    label={device.channelId ? 'Yes' : 'No'} 
+                                    color={device.channelId ? 'success' : 'default'} 
+                                    size="small" 
+                                    sx={{ fontWeight: 600 }} 
+                                  />
+                                </TableCell>
+                                <TableCell align="center">
+                                  <Chip 
+                                    label={device.isAssigned ? 'Yes' : 'No'} 
+                                    color={device.isAssigned ? 'success' : 'default'} 
+                                    size="small" 
+                                    sx={{ fontWeight: 600 }} 
+                                  />
+                                </TableCell>
                                 <TableCell
                                   sx={{
                                     position: 'sticky',

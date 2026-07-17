@@ -15,7 +15,7 @@ import {
   Switch,
   Box,
 } from '@mui/material';
-import { IconPencil, IconPlus } from '@tabler/icons-react';
+import { IconPencil, IconPlus, IconSettings } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import React, { useState } from 'react';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
@@ -31,9 +31,10 @@ import { toastError } from 'src/utils/errors';
 interface FormType {
     type?: 'add' | 'edit';
     device?: deviceType;
+    trigger?: 'pencil' | 'gear';
 }
 
-const AddEditDevices = ({ type = 'add', device }: FormType) => {
+const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) => {
     const [open, setOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState<deviceType>({
@@ -167,7 +168,7 @@ const AddEditDevices = ({ type = 'add', device }: FormType) => {
             {type === 'edit' && (
                 <Tooltip title="Edit Device">
                   <IconButton color="primary" size="small" onClick={handleClickOpen}>
-                    <IconPencil size={20} />
+                    {trigger === 'gear' ? <IconSettings size={20} /> : <IconPencil size={20} />}
                   </IconButton>
                 </Tooltip>
             )}

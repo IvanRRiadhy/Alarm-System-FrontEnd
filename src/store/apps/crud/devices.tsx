@@ -52,6 +52,7 @@ export interface deviceType {
     battery?: string,
     isOnline?: string,
     lastSeen?: string,
+    isAssigned?: string,
 };
 
 interface StateType {

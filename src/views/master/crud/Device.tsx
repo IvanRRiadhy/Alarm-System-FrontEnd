@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import DevicesList from 'src/components/master/device/Devices/DevicesList';
 import AddEditDevices from 'src/components/master/device/Devices/AddEditDevices';
 import DeviceFilter from 'src/components/master/device/Devices/DeviceFilter';
+import DeviceSearch from 'src/components/master/device/Devices/DeviceSearch';
 
 interface cardType {
   icon?: string;
@@ -95,6 +96,7 @@ const Device = () => {
             title="Device List" 
             codeModel={[
               <DeviceFilter key="filter" />,
+              <DeviceSearch key="search"/>,
               <AddEditDevices type='add' key="add-device-trigger" />
             ]}
           >

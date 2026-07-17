@@ -15,6 +15,7 @@ import DeveloperBoardRoundedIcon from '@mui/icons-material/DeveloperBoardRounded
 import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
 import { AcknowledgeDialog } from './QuickActionsComponent/Acknowledge';
 import { ControllerControlDialog } from './QuickActionsComponent/ControllerControl';
+import { useQueryClient } from '@tanstack/react-query';
 
 const actions = [
   {
@@ -51,8 +52,25 @@ const actions = [
 
 const QuickAccess = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [ackDialogOpen, setAckDialogOpen] = useState(false);
   const [ctrlDialogOpen, setCtrlDialogOpen] = useState(false);
+
+  const handleRefetchSummary = async () => {
+    window.dispatchEvent(new Event('app:refetch-summary-start'));
+    const startTime = Date.now();
+    try {
+      await queryClient.refetchQueries({ queryKey: ['dashboard-summary'] });
+    } catch (e) {
+      console.error(e);
+    }
+    const elapsed = Date.now() - startTime;
+    const remaining = 500 - elapsed;
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remaining));
+    }
+    window.dispatchEvent(new Event('app:refetch-summary-end'));
+  };
 
   const handleActionClick = (title: string) => {
     if (title === 'Investigate') {
@@ -63,6 +81,8 @@ const QuickAccess = () => {
       setCtrlDialogOpen(true);
     } else if (title === 'Acknowledge') {
       setAckDialogOpen(true);
+    } else if (title === 'Refresh Data') {
+      handleRefetchSummary();
     }
   };
 
