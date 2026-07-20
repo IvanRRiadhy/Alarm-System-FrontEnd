@@ -236,6 +236,28 @@ const Modern = () => {
     return alarmEventList;
   }, [alarmEventList]);
 
+  const buildingAlarms = useMemo(() => {
+    const map: Record<string, { severity: string; status: string; id: number | string }> = {};
+    for (const event of alarmEventList) {
+      const status = event.statusAlarm?.toLowerCase();
+      const isTriggered = status === 'triggered' || status === 'on' || status === 'active';
+      if (isTriggered && event.buildingId) {
+        const current = map[event.buildingId];
+        const sevPriority: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+        const newPriority = sevPriority[(event.severity || '').toLowerCase()] || 0;
+        const oldPriority = current ? (sevPriority[current.severity.toLowerCase()] || 0) : 0;
+        if (newPriority > oldPriority) {
+          map[event.buildingId] = {
+            severity: event.severity || 'Low',
+            status: event.statusAlarm || 'active',
+            id: event.id
+          };
+        }
+      }
+    }
+    return map;
+  }, [alarmEventList]);
+
   const filteredSuperAdminEvents = useMemo(() => {
     return events.filter((evt) => {
       const sev = (evt.severity || '').toLowerCase();
@@ -406,28 +428,75 @@ const Modern = () => {
                     pb: 1,
                   }}
                 >
-                  {buildings.map((building) => (
-                    <Box
-                      key={building.id}
-                      onClick={() => handleBuildingClick(building.id)}
-                      sx={{
-                        position: 'relative',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        height: '110px',
-                        cursor: 'pointer',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        transition: 'all 0.25s ease',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          borderColor: '#3B82F6',
-                          boxShadow: '0 8px 16px rgba(0,0,0,0.5)',
-                          '& .building-img': {
-                            transform: 'scale(1.1)',
+                  {buildings.map((building) => {
+                    const buildingAlarm = buildingAlarms[building.id];
+                    const hasAlarm = !!buildingAlarm;
+                    const isHighOrCritical = hasAlarm && (buildingAlarm.severity.toLowerCase() === 'critical' || buildingAlarm.severity.toLowerCase() === 'high');
+                    const isMediumOrLow = hasAlarm && (buildingAlarm.severity.toLowerCase() === 'medium' || buildingAlarm.severity.toLowerCase() === 'low');
+                    
+                    return (
+                      <Box
+                        key={`${building.id}-${buildingAlarm?.id || 'none'}`}
+                        onClick={() => handleBuildingClick(building.id)}
+                        sx={{
+                          position: 'relative',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          height: '110px',
+                          cursor: 'pointer',
+                          border: isHighOrCritical
+                            ? '1px solid #EF4444'
+                            : isMediumOrLow
+                            ? '1px solid #F59E0B'
+                            : '1px solid rgba(255,255,255,0.08)',
+                          transition: 'all 0.25s ease',
+                          animation: isHighOrCritical
+                            ? 'breathe-red-border 2s infinite'
+                            : isMediumOrLow
+                            ? 'blink-once-border 1.5s ease-out 1'
+                            : 'none',
+                          '@keyframes breathe-red-border': {
+                            '0%': {
+                              boxShadow: '0 0 4px rgba(239, 68, 68, 0.2)',
+                              borderColor: 'rgba(239, 68, 68, 0.4)',
+                            },
+                            '50%': {
+                              boxShadow: '0 0 16px rgba(239, 68, 68, 0.8)',
+                              borderColor: 'rgba(239, 68, 68, 1)',
+                            },
+                            '100%': {
+                              boxShadow: '0 0 4px rgba(239, 68, 68, 0.2)',
+                              borderColor: 'rgba(239, 68, 68, 0.4)',
+                            },
                           },
-                        },
-                      }}
-                    >
+                          '@keyframes blink-once-border': {
+                            '0%': {
+                              boxShadow: 'none',
+                              borderColor: 'rgba(255,255,255,0.08)',
+                            },
+                            '25%': {
+                              boxShadow: '0 0 12px rgba(245, 158, 11, 0.8)',
+                              borderColor: 'rgba(245, 158, 11, 1)',
+                            },
+                            '100%': {
+                              boxShadow: 'none',
+                              borderColor: 'rgba(255,255,255,0.08)',
+                            },
+                          },
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            borderColor: isHighOrCritical ? '#EF4444' : isMediumOrLow ? '#F59E0B' : '#3B82F6',
+                            boxShadow: isHighOrCritical 
+                              ? '0 8px 24px rgba(239, 68, 68, 0.5)' 
+                              : isMediumOrLow 
+                              ? '0 8px 24px rgba(245, 158, 11, 0.4)' 
+                              : '0 8px 16px rgba(0,0,0,0.5)',
+                            '& .building-img': {
+                              transform: 'scale(1.1)',
+                            },
+                          },
+                        }}
+                      >
                       <Box
                         className="building-img"
                         component="img"
@@ -466,7 +535,8 @@ const Modern = () => {
                         </Typography>
                       </Box>
                     </Box>
-                  ))}
+                    );
+                  })}
                 </Box>
               )}
             </Box>

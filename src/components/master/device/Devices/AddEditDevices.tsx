@@ -79,7 +79,7 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
       // Conditional validation if device is a CCTV camera
       if (formData.deviceType === 'CctvCamera') {
         if (!formData.ipAddress?.trim()) errors.ipAddress = 'IP Address is required for CCTV';
-        if (!formData.port?.trim()) errors.port = 'Port is required for CCTV';
+        if (formData.port === undefined || formData.port === null || String(formData.port).trim() === '') errors.port = 'Port is required for CCTV';
         if (!formData.username?.trim()) errors.username = 'Username is required for CCTV';
         if (!formData.password?.trim()) errors.password = 'Password is required for CCTV';
         if (!formData.rtspUrl?.trim()) errors.rtspUrl = 'RTSP URL is required for CCTV';
@@ -340,6 +340,7 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
                                         <MenuItem value="CctvCamera">CCTV (Camera)</MenuItem>
                                         <MenuItem value="DoorLock">Door Lock</MenuItem>
                                         <MenuItem value="Siren">Siren</MenuItem>
+                                         <MenuItem value="Buzzer">Buzzer</MenuItem>
                                         <MenuItem value="StrobeLight">Strobe Light</MenuItem>
                                         <MenuItem value="PanicButton">Panic Button</MenuItem>
                                     </CustomTextField>

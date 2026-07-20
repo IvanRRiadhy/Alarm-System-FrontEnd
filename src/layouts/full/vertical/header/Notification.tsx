@@ -24,6 +24,7 @@ import { AppDispatch, RootState, useDispatch, useSelector } from 'src/store/Stor
 import { EventItem } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
 import { MarkAlarmEventSeen, MarkAllAlarmEventsSeen } from 'src/store/apps/crud/alarmEvent';
 import { uniqueId } from 'lodash';
+import { audioManager } from 'src/utils/audioManager';
 
 type BubbleData = {
   id: string;
@@ -112,12 +113,6 @@ const Notifications = () => {
     return { top: baseTop + index * spacing, left: rect.right - 350 };
   };
 
-  const notificationAudio = useMemo(() => {
-    const audio = new Audio('/sfx/AlarmNotification/Calm-Warning.wav');
-    audio.volume = 0.6;
-    return audio;
-  }, []);
-
   // Handle new alarms posted by postMessage
   useEffect(() => {
     const onNewAlarm = (e: MessageEvent) => {
@@ -152,10 +147,7 @@ const Notifications = () => {
       setBellKey((prev) => prev + 1);
 
       // Play Sound
-      notificationAudio.currentTime = 0;
-      notificationAudio.play().catch((err) => {
-        console.warn('Audio playback prevented:', err);
-      });
+      audioManager.playNotification('/sfx/AlarmNotification/Calm-Warning.wav', 0.6);
 
       // auto-hide timer
       const timerId = window.setTimeout(() => {
@@ -170,7 +162,7 @@ const Notifications = () => {
       window.removeEventListener('message', onNewAlarm);
       Object.values(hideTimers.current).forEach((t) => window.clearTimeout(t));
     };
-  }, [notificationAudio]);
+  }, []);
 
   const bubbleVariants = {
     hidden: { opacity: 0, y: 25, scale: 0.98 },

@@ -50,12 +50,15 @@ const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
         case 'postponed':
             return 'warning';
+        case 'dispatched':
+            return 'info';
         case 'done':
         case 'resolved':
         case 'noaction':
             return 'success';
         case 'in progress':
         case 'acknowledged':
+        case 'investigationcompleted':
             return 'info';
         case 'cancelled':
             return 'error';
@@ -71,6 +74,7 @@ const InvestigationTable = ({
     investigations: AlarmInvestigationType[];
     onOpenAttachments: (attachments: AttachmentsType[]) => void;
 }) => {
+    console.log("Investigations: ", investigations)
     return (
         <Table size="small">
             <TableHead>
@@ -108,23 +112,49 @@ const InvestigationTable = ({
                                     size="small"
                                 />
                             </TableCell>
-                            <TableCell align="right">
-                                <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1}>
-                                    <Tooltip title="See Attachments">
-                                        <span>
-                                            <IconButton
-                                                color="primary"
-                                                size="small"
-                                                onClick={() => onOpenAttachments(inv.attachments || [])}
-                                                disabled={!inv.attachments || inv.attachments.length === 0}
-                                            >
-                                                <IconPaperclip size={18} />
-                                            </IconButton>
-                                        </span>
-                                    </Tooltip>
-                                    <InvestigationUpdate device={inv} />
-                                </Box>
-                            </TableCell>
+                             <TableCell align="right">
+                                 <Box display="flex" justifyContent="flex-end" alignItems="center" gap={1}>
+                                     <Tooltip title="See Attachments">
+                                         <span>
+                                             <IconButton
+                                                 color="primary"
+                                                 size="small"
+                                                 onClick={() => onOpenAttachments(inv.attachments || [])}
+                                                 disabled={!inv.attachments || inv.attachments.length === 0}
+                                             >
+                                                 <IconPaperclip size={18} />
+                                             </IconButton>
+                                         </span>
+                                     </Tooltip>
+                                     {(() => {
+                                         const statusLower = inv.status?.toLowerCase();
+                                         const isDispatchedOrCompleted = statusLower === 'dispatched' || statusLower === 'investigationcompleted';
+                                         
+                                         if (isDispatchedOrCompleted) {
+                                             const dispatchedPersonnelList = inv.dispatchedPersonnelIds?.map((id, index) => {
+                                                 const detail = inv.dispatchedPersonnelDetails?.find((d) => d.personnelId === id);
+                                                 console.log("Personnel: ",detail)
+                                                 return {
+                                                     id,
+                                                     hasSubmitted: !!(detail?.completedAt || detail?.result)
+                                                 };
+                                             }) || [];
+                                             const hasUnsubmittedPersonnel = dispatchedPersonnelList.some((p) => !p.hasSubmitted);
+                                             console.log("dispatched Personnel", dispatchedPersonnelList)
+                                             return (
+                                                 <>
+                                                     {hasUnsubmittedPersonnel && (
+                                                         <InvestigationUpdate device={inv} mode="submitResult" />
+                                                     )}
+                                                     <InvestigationUpdate device={inv} mode="resolve" />
+                                                 </>
+                                             );
+                                         }
+                                         
+                                         return <InvestigationUpdate device={inv} mode="default" />;
+                                     })()}
+                                 </Box>
+                             </TableCell>
                         </TableRow>
                     ))
                 )}
@@ -260,11 +290,11 @@ const AlarmInvestigationList = () => {
                     <TableCell>
                         <Skeleton variant="text" width={80} height={22} />
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                         <Skeleton variant="text" width={100} height={22} />
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
-                        <Skeleton variant="text" width={50} height={22} />
+                        <Skeleton variant="text" width={80} height={22} />
                     </TableCell>
                     <TableCell
                         sx={{
@@ -360,9 +390,14 @@ const AlarmInvestigationList = () => {
                                             const mappedForUpdate: AlarmInvestigationType = latestInvestigation || {
                                                 id: caseItem.id,
                                                 alarmCaseId: caseItem.id, 
-                                                personnelId: '',
                                                 personnelName: '',
+                                                dispatchedPersonnelIds: [],
+                                                dispatchedPersonnelNames: [],
                                                 status: caseItem.investigationStatus,
+                                                acknowledgedNote: null,
+                                                dispatchedNote: null,
+                                                postponedNote: null,
+                                                resolvedNote: null,
                                                 note: '',
                                                 result: '',
                                                 postponedUntil: null,
@@ -371,7 +406,7 @@ const AlarmInvestigationList = () => {
                                                 waitingAt: null,
                                                 acceptedAt: null,
                                                 arrivedAt: null,
-                                                doneInvestigatedAt: null,
+                                                investigationCompletedAt: null,
                                                 doneAt: null,
                                                 noActionAt: null,
                                                 postponedAt: null,

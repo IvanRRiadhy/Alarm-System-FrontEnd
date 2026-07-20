@@ -84,16 +84,23 @@ const InvestigateList = () => {
   const [selectedItem, setSelectedItem] = useState<investigateType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeAttachmentIndex, setActiveAttachmentIndex] = useState(0);
+  const [selectedPersonnelId, setSelectedPersonnelId] = useState<string>('');
 
   const handleItemClick = (item: investigateType) => {
     setSelectedItem(item);
     setDialogOpen(true);
+    if (item.dispatchedPersonnelIds && item.dispatchedPersonnelIds.length > 0) {
+      setSelectedPersonnelId(item.dispatchedPersonnelIds[0]);
+    } else {
+      setSelectedPersonnelId('');
+    }
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedItem(null);
     setActiveAttachmentIndex(0);
+    setSelectedPersonnelId('');
   };
 
   // local controls for search and sorting
@@ -674,6 +681,165 @@ const InvestigateList = () => {
                         </Box>
                       </Box>
                     )}
+                  </Box>
+                </Grid>
+              )}
+
+              {/* Section 6.5: Dispatched Personnel Results */}
+              {selectedItem.dispatchedPersonnelIds && selectedItem.dispatchedPersonnelIds.length > 0 && (
+                <Grid size={12}>
+                  <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom color="primary.main">
+                      Dispatched Personnel Submissions
+                    </Typography>
+                    <Divider sx={{ my: 1, borderColor: 'rgba(255,255,255,0.05)' }} />
+
+                    <Box sx={{ mb: 3, maxWidth: 300 }}>
+                      <CustomFormLabel sx={{ mt: 1 }}>Select Dispatched Personnel:</CustomFormLabel>
+                      <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        value={selectedPersonnelId}
+                        onChange={(e) => setSelectedPersonnelId(e.target.value)}
+                        slotProps={{
+                          select: {
+                            sx: {
+                              color: '#F8FAFC',
+                              bgcolor: '#1E293B',
+                              borderColor: 'rgba(255,255,255,0.08)',
+                            }
+                          }
+                        }}
+                      >
+                        {selectedItem.dispatchedPersonnelIds.map((id, index) => {
+                          const name = selectedItem.dispatchedPersonnelNames?.[index] || `Personnel ${id}`;
+                          return (
+                            <MenuItem key={id} value={id}>
+                              {name}
+                            </MenuItem>
+                          );
+                        })}
+                      </TextField>
+                    </Box>
+
+                    {(() => {
+                      const detail = selectedItem.dispatchedPersonnelDetails?.find(
+                        (d) => d.personnelId === selectedPersonnelId
+                      );
+
+                      if (!detail) {
+                        return (
+                          <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                            No submission record found for this personnel.
+                          </Typography>
+                        );
+                      }
+
+                      return (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            <Box>
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                Status
+                              </Typography>
+                              <Chip
+                                label={detail.completedAt ? 'Completed' : 'Pending'}
+                                size="small"
+                                color={detail.completedAt ? 'success' : 'warning'}
+                                sx={{ fontWeight: 700, borderRadius: '6px', mt: 0.5 }}
+                              />
+                            </Box>
+                            {detail.completedAt && (
+                              <Box>
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  Completed At
+                                </Typography>
+                                <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5 }}>
+                                  {formatDateString(detail.completedAt)}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 500 }}>
+                              Result / Findings
+                            </Typography>
+                            <Box sx={{ p: 1.5, mt: 0.5, bgcolor: '#1E293B', borderRadius: 1, borderLeft: '4px solid #10B981' }}>
+                              <Typography variant="body2">{detail.result || 'No result description provided.'}</Typography>
+                            </Box>
+                          </Box>
+
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 500 }}>
+                              Notes
+                            </Typography>
+                            <Box sx={{ p: 1.5, mt: 0.5, bgcolor: '#1E293B', borderRadius: 1, borderLeft: '4px solid #0EA5E9' }}>
+                              <Typography variant="body2">{detail.note || 'No notes provided.'}</Typography>
+                            </Box>
+                          </Box>
+
+                          {detail.attachments && detail.attachments.length > 0 && (
+                            <Box sx={{ mt: 1 }}>
+                              <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 500, mb: 1 }}>
+                                Attachments ({detail.attachments.length})
+                              </Typography>
+                              <Grid container spacing={2}>
+                                {detail.attachments.map((att, idx) => {
+                                  const isImage = att.fileType?.toLowerCase().startsWith('image/') ||
+                                    /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(att.fileUrl || '');
+                                  return (
+                                    <Grid key={idx} size={{ xs: 6, sm: 4, md: 3 }}>
+                                      <Box
+                                        sx={{
+                                          border: '1px solid rgba(255,255,255,0.08)',
+                                          borderRadius: 1,
+                                          p: 1,
+                                          bgcolor: '#0F172A',
+                                          textAlign: 'center',
+                                          height: '100%',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          justifyContent: 'space-between',
+                                          gap: 1
+                                        }}
+                                      >
+                                        {isImage ? (
+                                          <Box
+                                            component="img"
+                                            src={att.fileUrl}
+                                            alt={`Attachment ${idx + 1}`}
+                                            sx={{ width: '100%', height: 100, objectFit: 'contain', borderRadius: 0.5 }}
+                                          />
+                                        ) : (
+                                          <Box sx={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Typography variant="caption" color="text.secondary">
+                                              Non-Image File
+                                            </Typography>
+                                          </Box>
+                                        )}
+                                        <Button
+                                          variant="outlined"
+                                          size="small"
+                                          href={att.fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          fullWidth
+                                          sx={{ mt: 'auto', py: 0.5, fontSize: '0.75rem', borderColor: 'rgba(255,255,255,0.1)', color: '#F8FAFC' }}
+                                        >
+                                          Open File
+                                        </Button>
+                                      </Box>
+                                    </Grid>
+                                  );
+                                })}
+                              </Grid>
+                            </Box>
+                          )}
+                        </Box>
+                      );
+                    })()}
                   </Box>
                 </Grid>
               )}

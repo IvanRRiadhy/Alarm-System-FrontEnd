@@ -18,6 +18,7 @@ import { useAlarmEventList } from 'src/hooks/useAlarmEvent';
 import { mapAlarmEventToEventItem } from 'src/utils/alarmMessageMapper';
 import AlarmPopup from 'src/utils/AlarmPopup';
 import { useQueryClient } from '@tanstack/react-query';
+import { audioManager } from 'src/utils/audioManager';
 
 const MainWrapper = styled('div')(() => ({
   display: 'flex',
@@ -42,6 +43,40 @@ const FullLayout: FC = () => {
   const queryClient = useQueryClient();
   const [criticalAlarm, setCriticalAlarm] = useState<AlarmEvent | null>(null);
   const [isRefetching, setIsRefetching] = useState(false);
+  const [isCritical, setIsCritical] = useState(false);
+  const alarmEventList = useSelector((state: RootState) => state.alarmEventReducer.alarmEventList);
+
+  useEffect(() => {
+    const role = localStorage.getItem('role');
+    const selectedSiteId = localStorage.getItem('selectedSiteId');
+    const isAdmin = role?.toLowerCase() === 'admin';
+    const isSuperAdminWithSite = role?.toLowerCase() === 'superadmin' && !!selectedSiteId;
+    
+    if (isAdmin || isSuperAdminWithSite) {
+      const hasCritical = alarmEventList.some((event) => {
+        const status = event.statusAlarm?.toLowerCase();
+        const isTriggered = status === 'triggered' || status === 'on' || status === 'active';
+        const isCriticalSev = event.severity?.toLowerCase() === 'critical';
+        const matchesSite = selectedSiteId ? event.siteId === selectedSiteId : true;
+        console.log("IsTriggered", isTriggered, "isCritial", isCritical, "matchesSite", matchesSite, status)
+        return isTriggered && isCriticalSev && matchesSite;
+      });
+      setIsCritical(hasCritical);
+    } else {
+      setIsCritical(false);
+    }
+  }, [alarmEventList]);
+
+  useEffect(() => {
+    if (isCritical) {
+      audioManager.requestLoop('FullLayout', '/alarm-sfx/alarm_slow.mp3');
+    } else {
+      audioManager.releaseLoop('FullLayout');
+    }
+    return () => {
+      audioManager.releaseLoop('FullLayout');
+    };
+  }, [isCritical]);
 
   useEffect(() => {
     const handleStart = () => setIsRefetching(true);
@@ -82,16 +117,21 @@ const FullLayout: FC = () => {
       const sev = (message.severity || '').toLowerCase();
       const isOnDashboard = window.location.pathname.includes('/dashboards/');
       const role = localStorage.getItem('role');
+      if(message.statusAlarm.toLowerCase() === "alarm_trigger") {
       if (sev === 'critical') {
         // toast.error(`CRITICAL ALARM: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
-        if(message.triggered) setCriticalAlarm(message);
+        // if(message.triggered) 
+          setCriticalAlarm(message);
       } else if (sev === 'high' && role?.toLowerCase() === "admin") {
         // toast.error(`Alarm: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
-        if(message.triggered) setCriticalAlarm(message);
+        // if(message.triggered) 
+          setCriticalAlarm(message);
 
       } else {
         // toast.success(`Info: ${message.message} (Device: ${message.deviceName || message.deviceId})`);
       }
+      }
+
 
       // Post message for Notification.tsx to trigger bubble and bell animation
       window.postMessage(
@@ -116,7 +156,30 @@ const FullLayout: FC = () => {
     <>
       <LoadingBar />
       <MainWrapper className={customizer.activeMode === 'dark' ? 'darkbg mainwrapper' : 'mainwrapper'} >
-
+        {isCritical && (
+          <Box
+            sx={{
+              pointerEvents: 'none',
+              position: 'fixed',
+              zIndex: 9999,
+              inset: '-10px',
+              background: `
+        radial-gradient(
+          ellipse farthest-corner at center,
+          rgba(255,255,255,0.0) 40%,
+          rgba(255,0,0,0.15) 65%,
+          rgba(130, 0, 0, 0.45) 100%
+        )
+      `,
+              animation: 'evac-breathe-opacity 3s ease-in-out infinite',
+              '@keyframes evac-breathe-opacity': {
+                '0%': { opacity: 1 },
+                '50%': { opacity: 0.3 },
+                '100%': { opacity: 1 },
+              },
+            }}
+          />
+        )}
         {/* ------------------------------------------- */}
         {/* Sidebar */}
         {/* ------------------------------------------- */}

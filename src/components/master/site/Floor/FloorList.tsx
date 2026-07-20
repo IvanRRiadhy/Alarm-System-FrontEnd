@@ -92,7 +92,7 @@ const FloorplanTable = ({
                       size="small"
                       onClick={() => {
                         dispatch(SelectFloorplan(floorplan));
-                        navigate('/master/floorplan', { state: { expandFloorplanId: floorplan.id, floorplanName: floorplan.name } });
+                        navigate('/master/site/floorplan', { state: { expandFloorplanId: floorplan.id, floorplanName: floorplan.name } });
                       }}
                     >
                       <IconExternalLink size={18} />

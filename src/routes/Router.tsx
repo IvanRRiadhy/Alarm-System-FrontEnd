@@ -12,6 +12,7 @@ const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')))
 const ModernDash = Loadable(lazy(() => import('../views/dashboard/Modern')));
 const EcommerceDash = Loadable(lazy(() => import('../views/dashboard/Ecommerce')));
 const MonitoringDash = Loadable(lazy(() => import('../views/dashboard/Monitoring')));
+const CameraMonitorDash = Loadable(lazy(() => import('../views/dashboard/CameraMonitor')));
 
 /* ****Apps***** */
 // const Blog = Loadable(lazy(() => import('../views/apps/blog/Blog')));
@@ -210,6 +211,7 @@ const Router = [
       { path: '/dashboards/modern', exact: true, element: <ModernDash /> },
       { path: '/dashboards/ecommerce', exact: true, element: <EcommerceDash /> },
       { path: '/dashboards/monitoring', exact: true, element: <MonitoringDash /> },
+      { path: '/dashboards/camera-monitor', exact: true, element: <CameraMonitorDash /> },
       { path: '/apps/contacts', element: <Contacts /> },
       // { path: '/apps/blog/posts', element: <Blog /> },
       // { path: '/frontend-pages/blog/detail/:id', element: <BlogDetail /> },

@@ -18,7 +18,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
-import { IconPencil, IconX, IconUpload, IconTrash, IconPaperclip, IconChevronLeft } from '@tabler/icons-react';
+import { IconPencil, IconX, IconUpload, IconTrash, IconPaperclip, IconChevronLeft, IconClipboardCheck, IconCircleCheck } from '@tabler/icons-react';
 import { toast } from 'react-hot-toast';
 import CustomFormLabel from 'src/components/forms/theme-elements/CustomFormLabel';
 import CustomTextField from 'src/components/forms/theme-elements/CustomTextField';
@@ -28,6 +28,7 @@ import {
   useResolveInvestigation,
   usePostponeInvestigation,
   useCreateAlarmInvestigation,
+  usePersonnelSubmitResult,
 } from 'src/hooks/useAlarmInvestigation';
 import { usePersonnelLookup } from 'src/hooks/usePersonnel';
 import { useUploadCDN } from 'src/hooks/useCDN';
@@ -37,11 +38,17 @@ import CustomAutocomplete from 'src/components/shared/CustomAutocomplete';
 
 interface InvestigationUpdateProps {
   device: AlarmInvestigationType;
+  mode?: 'submitResult' | 'resolve' | 'default';
 }
 
-const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => {
+const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device, mode = 'default' }) => {
   // Hide the Update Button for investigations that are done or resolved
   if (device.status === 'Done' || device.status === 'Resolved') {
+    return null;
+  }
+
+  // Hide the default update button when status is Dispatched or InvestigationCompleted (they use split actions)
+  if (mode === 'default' && (device.status === 'Dispatched' || device.status === 'InvestigationCompleted')) {
     return null;
   }
 
@@ -57,7 +64,8 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   };
 
   const [formData, setFormData] = useState({
-    personnelIds: (device.personnelId ? [device.personnelId] : []) as string[],
+    personnelIds: (device.dispatchedPersonnelIds || []) as string[],
+    personnelId: '',
     note: device.note || '',
     result: device.result || '',
     isNoAction: false,
@@ -67,6 +75,17 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
 
   const { data: personnelResponse } = usePersonnelLookup({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc', search:'' });
   const personnelList = personnelResponse?.data || [];
+
+  const dispatchedPersonnelList = device.dispatchedPersonnelIds?.map((id, index) => {
+    const detail = device.dispatchedPersonnelDetails?.find((d) => d.personnelId === id);
+    return {
+      id,
+      name: device.dispatchedPersonnelNames?.[index] || `Personnel ${id}`,
+      hasSubmitted: !!(detail?.completedAt || detail?.result),
+    };
+  }) || [];
+
+  const availablePersonnel = dispatchedPersonnelList.filter((p) => !p.hasSubmitted);
 
   const uploadMutation = useUploadCDN();
 
@@ -79,7 +98,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   const dispatchMutation = useDispatchInvestigation(device.id, formData.personnelIds);
   const resolveMutation = useResolveInvestigation(device.id, {
     note: formData.note,
-    result: formData.result,
+    // result: formData.result,
     isNoAction: formData.isNoAction,
     attachments: formData.attachments,
   });
@@ -87,11 +106,18 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
     postponedUntil: formData.postponedUntil ? dayjs(formData.postponedUntil).toISOString() : '',
     note: formData.note,
   });
+  const submitResultMutation = usePersonnelSubmitResult(device.id, {
+    personnelId: formData.personnelId || '',
+    result: formData.result,
+    note: formData.note,
+    attachments: formData.attachments,
+  });
 
   useEffect(() => {
     if (open) {
       setFormData({
-        personnelIds: device.personnelId ? [device.personnelId] : [],
+        personnelIds: device.dispatchedPersonnelIds || [],
+        personnelId: '',
         note: device.note || '',
         result: device.result || '',
         isNoAction: false,
@@ -232,17 +258,48 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
     }
   };
 
+  const handleSubmitResult = async () => {
+    if (!formData.personnelId) {
+      toast.error('Please select personnel.');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await submitResultMutation.mutateAsync();
+      toast.success('Personnel result submitted successfully!');
+      handleClose();
+    } catch (error) {
+      console.error('Error submitting personnel result:', error);
+      toast.error('Failed to submit personnel result.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   let tooltipTitle = "Update Investigation";
-  if (!device.status) {
-    tooltipTitle = "Investigate";
-  } else if (device.status === 'Acknowledged') {
-    tooltipTitle = "Dispatch Personnel";
-  } else if (device.status === 'Dispatched') {
-    tooltipTitle = "Resolve Case";
+  let icon = <IconPencil size={20} />;
+  let buttonColor: "primary" | "secondary" | "success" | "error" | "info" | "warning" | "inherit" | "default" = "primary";
+
+  if (mode === 'submitResult') {
+    tooltipTitle = "Personnel Submit Result";
+    icon = <IconClipboardCheck size={20} />;
+    buttonColor = "info";
+  } else if (mode === 'resolve') {
+    tooltipTitle = "Resolve Alarm";
+    icon = <IconCircleCheck size={20} />;
+    buttonColor = "success";
+  } else {
+    if (!device.status) {
+      tooltipTitle = "Investigate";
+      buttonColor = "primary";
+    } else if (device.status === 'Acknowledged') {
+      tooltipTitle = "Dispatch Personnel";
+      buttonColor = "primary";
+    }
   }
 
   const handleActionClick = async () => {
-    if (!device.status) {
+    if (!device.status && mode === 'default') {
       try {
         setIsSaving(true);
         await createInvestigationMutation.mutateAsync();
@@ -261,8 +318,8 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
   return (
     <>
       <Tooltip title={tooltipTitle}>
-        <IconButton onClick={handleActionClick} color="primary" size="small" disabled={isSaving}>
-          {isSaving && !open ? <CircularProgress size={20} /> : <IconPencil size={20} />}
+        <IconButton onClick={handleActionClick} color={buttonColor} size="small" disabled={isSaving}>
+          {isSaving && !open ? <CircularProgress size={20} /> : icon}
         </IconButton>
       </Tooltip>
 
@@ -347,19 +404,24 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
                 </Grid>
               )}
 
-              {device.status === 'Dispatched' && (
+              {mode === 'submitResult' && (
                 <>
                   <Grid size={12}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isNoAction}
-                          onChange={handleCheckboxChange}
-                          name="isNoAction"
-                          color="primary"
-                        />
-                      }
-                      label="No Action Required (False Alarm)"
+                    <CustomFormLabel htmlFor="personnelId">Select Personnel</CustomFormLabel>
+                    <CustomAutocomplete<{ id: string; name: string; hasSubmitted: boolean }>
+                      multiple={false}
+                      options={dispatchedPersonnelList}
+                      value={dispatchedPersonnelList.find((p) => p.id === formData.personnelId) || null}
+                      onChange={(val) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          personnelId: val?.id ?? '',
+                        }));
+                      }}
+                      getOptionLabel={(option) => option ? `${option.name}${option.hasSubmitted ? ' (submitted)' : ''}` : ''}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      getOptionDisabled={(option) => option.hasSubmitted}
+                      placeholder="Select Personnel"
                     />
                   </Grid>
 
@@ -376,6 +438,102 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
                       onChange={handleInputChange}
                     />
                   </Grid>
+
+                  <Grid size={12}>
+                    <CustomFormLabel htmlFor="note">Notes</CustomFormLabel>
+                    <CustomTextField
+                      id="note"
+                      name="note"
+                      multiline
+                      rows={2}
+                      fullWidth
+                      placeholder="Additional notes..."
+                      value={formData.note}
+                      onChange={handleInputChange}
+                    />
+                  </Grid>
+
+                  <Grid size={12}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+                      <CustomFormLabel>Attachments (Photos/Files)</CustomFormLabel>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        size="small"
+                        startIcon={isUploading ? <CircularProgress size={16} /> : <IconUpload size={16} />}
+                        disabled={isUploading}
+                      >
+                        {isUploading ? 'Uploading...' : 'Upload'}
+                        <input type="file" hidden onChange={handleFileUpload} />
+                      </Button>
+                    </Box>
+
+                    <Stack gap={1} mt={1}>
+                      {formData.attachments.map((att, idx) => (
+                        <Box
+                          key={idx}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          p={1.5}
+                          border="1px solid"
+                          borderColor="divider"
+                          borderRadius="8px"
+                        >
+                          <Box display="flex" alignItems="center" gap={1} overflow="hidden">
+                            <IconPaperclip size={18} style={{ flexShrink: 0 }} />
+                            <Typography
+                              variant="body2"
+                              noWrap
+                              sx={{ maxWidth: '350px' }}
+                              title={att.fileUrl}
+                            >
+                              {att.fileUrl.split('/').pop() || 'Attachment'}
+                            </Typography>
+                          </Box>
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => handleRemoveAttachment(idx)}
+                          >
+                            <IconTrash size={16} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Grid>
+                </>
+              )}
+
+              {mode === 'resolve' && (
+                <>
+                  <Grid size={12}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.isNoAction}
+                          onChange={handleCheckboxChange}
+                          name="isNoAction"
+                          color="primary"
+                        />
+                      }
+                      label="No Action Required (False Alarm)"
+                    />
+                  </Grid>
+
+                  {/* <Grid size={12}>
+                    <CustomFormLabel htmlFor="result">Investigation Result / Findings</CustomFormLabel>
+                    <CustomTextField
+                      id="result"
+                      name="result"
+                      multiline
+                      rows={3}
+                      fullWidth
+                      placeholder="Enter investigation details and findings..."
+                      value={formData.result}
+                      onChange={handleInputChange}
+                    />
+                  </Grid> */}
 
                   <Grid size={12}>
                     <CustomFormLabel htmlFor="note">Resolution Note</CustomFormLabel>
@@ -486,52 +644,23 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
               <Box sx={{ flexGrow: 1 }} />
 
               {/* Stage Specific Buttons */}
-              {device.status === 'Idle' && (
+              {mode === 'submitResult' && (
                 <Button
                   variant="contained"
-                  color="warning"
-                  onClick={handleAcknowledge}
-                  disabled={isSaving}
+                  color="info"
+                  onClick={handleSubmitResult}
+                  disabled={isSaving || !formData.personnelId}
                   sx={{
                     px: 3,
                     fontWeight: 'bold',
-                    boxShadow: '0px 4px 10px rgba(245, 158, 11, 0.3)',
-                    '&:hover': {
-                      backgroundColor: 'warning.dark',
-                    }
+                    boxShadow: '0px 4px 10px rgba(2, 136, 209, 0.3)',
                   }}
                 >
-                  {isSaving ? 'Acknowledging...' : 'Acknowledge'}
+                  {isSaving ? 'Submitting...' : 'Submit Result'}
                 </Button>
               )}
 
-              {device.status === 'Acknowledged' && (
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={() => setShowPostponeForm(true)}
-                    disabled={isSaving}
-                  >
-                    Postpone
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleDispatch}
-                    disabled={isSaving || formData.personnelIds.length === 0}
-                    sx={{
-                      px: 3,
-                      fontWeight: 'bold',
-                      boxShadow: '0px 4px 10px rgba(25, 118, 210, 0.3)',
-                    }}
-                  >
-                    {isSaving ? 'Dispatching...' : 'Dispatch'}
-                  </Button>
-                </Stack>
-              )}
-
-              {device.status === 'Dispatched' && (
+              {mode === 'resolve' && (
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="contained"
@@ -561,27 +690,76 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device }) => 
                 </Stack>
               )}
 
-              {device.status === 'Postponed' && (
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="contained"
-                    color="warning"
-                    onClick={handleAcknowledge}
-                    disabled={isSaving}
-                    sx={{ fontWeight: 'bold' }}
-                  >
-                    {isSaving ? 'Acknowledging...' : 'Acknowledge'}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleDispatch}
-                    disabled={isSaving || formData.personnelIds.length === 0}
-                    sx={{ fontWeight: 'bold' }}
-                  >
-                    {isSaving ? 'Dispatching...' : 'Dispatch'}
-                  </Button>
-                </Stack>
+              {mode === 'default' && (
+                <>
+                  {device.status === 'Idle' && (
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      onClick={handleAcknowledge}
+                      disabled={isSaving}
+                      sx={{
+                        px: 3,
+                        fontWeight: 'bold',
+                        boxShadow: '0px 4px 10px rgba(245, 158, 11, 0.3)',
+                        '&:hover': {
+                          backgroundColor: 'warning.dark',
+                        }
+                      }}
+                    >
+                      {isSaving ? 'Acknowledging...' : 'Acknowledge'}
+                    </Button>
+                  )}
+
+                  {device.status === 'Acknowledged' && (
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => setShowPostponeForm(true)}
+                        disabled={isSaving}
+                      >
+                        Postpone
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleDispatch}
+                        disabled={isSaving || formData.personnelIds.length === 0}
+                        sx={{
+                          px: 3,
+                          fontWeight: 'bold',
+                          boxShadow: '0px 4px 10px rgba(25, 118, 210, 0.3)',
+                        }}
+                      >
+                        {isSaving ? 'Dispatching...' : 'Dispatch'}
+                      </Button>
+                    </Stack>
+                  )}
+
+                  {device.status === 'Postponed' && (
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="contained"
+                        color="warning"
+                        onClick={handleAcknowledge}
+                        disabled={isSaving}
+                        sx={{ fontWeight: 'bold' }}
+                      >
+                        {isSaving ? 'Acknowledging...' : 'Acknowledge'}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleDispatch}
+                        disabled={isSaving || formData.personnelIds.length === 0}
+                        sx={{ fontWeight: 'bold' }}
+                      >
+                        {isSaving ? 'Dispatching...' : 'Dispatch'}
+                      </Button>
+                    </Stack>
+                  )}
+                </>
               )}
             </>
           )}

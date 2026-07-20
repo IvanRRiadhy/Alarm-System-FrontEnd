@@ -1,6 +1,7 @@
 export interface RuntimeConfig {
   API_BASE_URL: string;
   API_ENGINE_URL: string;
+  CCTV_WS_URL: string;
   MQTT_URL: string;
   NTFY_URL: string;
   CDN_URL: string;

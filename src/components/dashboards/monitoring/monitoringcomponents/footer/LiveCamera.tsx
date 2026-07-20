@@ -18,6 +18,7 @@ import { useQuery, useQueries } from '@tanstack/react-query';
 import axiosServices, { BASE_URL } from 'src/utils/axios';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import UniversalVideoPlayer from 'src/utils/UniversalPlayer';
+import { getConfig } from 'src/config';
 
 interface LiveCameraProps {
   selectedDevice?: DeviceMappingType | null;
@@ -56,14 +57,11 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
   const isCCTV = selectedDevice?.deviceType === 'CctvCamera';
 
   const getEngineWsUrl = (baseUrl: string) => {
-    if (!baseUrl) return 'ws://localhost:8282';
     try {
-      const parsedUrl = new URL(baseUrl.includes('//') ? baseUrl : `//${baseUrl}`);
-      // return `ws://${parsedUrl.hostname}:8283`;
-      return "ws://localhost:8282"
+      return getConfig().CCTV_WS_URL || 'ws://192.168.1.175:8282';
     } catch (e) {
-      console.error("Error parsing BASE_URL for engineWsUrl:", e);
-      return 'ws://localhost:8282';
+      console.error("Error getting CCTV_WS_URL:", e);
+      return 'ws://192.168.1.175:8282';
     }
   };
 
@@ -342,6 +340,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
           <>
             {activeLoop.map((device, index) => {
               const deviceRtspUrl = (deviceQueries[index]?.data as any)?.rtspUrl || '';
+              const deviceName = device.label;
               const isCurrent = currentIndex === index;
               return (
                 <Box
@@ -415,9 +414,9 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
                           fontFamily: 'monospace',
                           letterSpacing: '0.2px',
                         }}
-                        title={deviceRtspUrl}
+                        // title={deviceRtspUrl}
                       >
-                        RTSP: {deviceRtspUrl}
+                        CCTV: {deviceName}
                       </Typography>
                     </Box>
                   )}

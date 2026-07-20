@@ -44,6 +44,7 @@ export function useInfiniteInvestigateList(filter: GetFilter, limit: number = 10
       if (response.data && response.data.meta) {
         dispatch(UpdateMeta(response.data.meta));
       }
+      console.log("Investigate", response.data.data)
       return response.data;
     },
     initialPageParam: 1,

@@ -131,15 +131,22 @@ export function mapAlarmEventToEventItem(event: AlarmEvent, alarmRules: any[] = 
 
   const { icon, color } = getEventIconAndColor(event.deviceType || event.message);
 
+  // let statusAlarm = event.statusAlarm;
+  // if (event.statusEvents && typeof event.statusEvents === 'object') {
+  //   const eventType = event.statusEvents.event_type || event.statusEvents.eventType;
+  //   if (eventType === 'TRIGGER') {
+  //     statusAlarm = 'ON';
+  //   } else if (eventType === 'RELEASE') {
+  //     statusAlarm = 'OFF';
+  //   }
+  // }
   let statusAlarm = event.statusAlarm;
-  if (event.statusEvents && typeof event.statusEvents === 'object') {
-    const eventType = event.statusEvents.event_type || event.statusEvents.eventType;
-    if (eventType === 'TRIGGER') {
-      statusAlarm = 'ON';
-    } else if (eventType === 'RELEASE') {
-      statusAlarm = 'OFF';
-    }
-  }
+  // if(event.triggered) {
+  //   statusAlarm = "ON";
+  // } else if(event.restored) {
+  //   statusAlarm = "RESTORED";
+  // }
+
 
   // 1. Map InputDevice
   let inputDevice: any = null;
@@ -208,8 +215,11 @@ export function mapAlarmEventToEventItem(event: AlarmEvent, alarmRules: any[] = 
     controllerId: event.controllerId,
     controllerName: event.controllerName,
     buildingId: event.buildingId,
+    buildingName: event.buildingName,
     floorId: event.floorId,
+    floorName: event.floorName,
     siteId: event.siteId,
+    siteName: event.siteName,
     inputDevice,
     outputDevices,
     streamDevices,

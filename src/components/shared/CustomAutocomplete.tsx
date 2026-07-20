@@ -31,6 +31,7 @@ export type CustomAutocompleteProps<T> = {
   renderOption?: any;
   sx?: SxProps<Theme>;
   filterSelectedOptions?: boolean;
+  getOptionDisabled?: (option: T) => boolean;
 } & (SingleSelectProps<T> | MultiSelectProps<T>);
 
 export default function CustomAutocomplete<T>(props: CustomAutocompleteProps<T>) {
@@ -49,6 +50,7 @@ export default function CustomAutocomplete<T>(props: CustomAutocompleteProps<T>)
     renderOption,
     sx,
     filterSelectedOptions,
+    getOptionDisabled,
   } = props;
   return (
     <Autocomplete
@@ -61,6 +63,7 @@ export default function CustomAutocomplete<T>(props: CustomAutocompleteProps<T>)
       onChange={(_, newVal) => props.onChange(newVal as any)}
       getOptionLabel={getOptionLabel}
       isOptionEqualToValue={isOptionEqualToValue}
+      getOptionDisabled={getOptionDisabled}
       renderOption={renderOption}
       renderTags={props.multiple ? props.renderTags : undefined}
       filterSelectedOptions={filterSelectedOptions}

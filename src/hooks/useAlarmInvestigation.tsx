@@ -22,11 +22,18 @@ export interface AlarmInvestigationCreatePayload {
     note: string;
 }
 
+export interface AlarmInvestigationPersonnelResultPayload {
+    personnelId: string;
+    result: string;
+    note: string;
+    attachments: AttachmentsType[];
+}
+
 export interface AlarmInvestigationResolvePayload {
     // personnelId: string;
     note?: string;
     // status: string;
-    result?: string;
+    // result?: string;
     isNoAction: boolean;
     // postponedUntil: string;
     attachments: AttachmentsType[];
@@ -131,6 +138,20 @@ export function usePostponeInvestigation(id: string, body: AlarmInvestigationPos
     return useMutation({
         mutationFn: async () => {
             const response = await axiosServices.put(`${API_URL}/${id}/postpone`, body);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["alarm-investigation-list"] });
+            queryClient.invalidateQueries({ queryKey: ["alarm-case-list"] });
+        },
+    });
+}
+
+export function usePersonnelSubmitResult(id: string, body: AlarmInvestigationPersonnelResultPayload) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const response = await axiosServices.put(`${API_URL}/${id}/submit-result`, body);
             return response.data;
         },
         onSuccess: () => {

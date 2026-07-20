@@ -11,10 +11,11 @@ import {
 import { IconX } from '@tabler/icons-react';
 import { useCreateAlarmInvestigation } from 'src/hooks/useAlarmInvestigation';
 import { AlarmEvent } from 'src/store/apps/crud/alarmEvent';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { audioManager } from 'src/utils/audioManager';
 
 interface AlarmPopupProps {
   alarm: AlarmEvent | null;
@@ -22,9 +23,14 @@ interface AlarmPopupProps {
 }
 
 const AlarmPopup: React.FC<AlarmPopupProps> = ({ alarm, onClose }) => {
-  const theme = useTheme();
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
+
+  React.useEffect(() => {
+    if (alarm) {
+      audioManager.playNotification('/alarm-sfx/alarm_triple.mp3');
+    }
+  }, [alarm]);
 
   const createMutation = useCreateAlarmInvestigation({
     AlarmCaseId: alarm?.alarmCaseId ? String(alarm.alarmCaseId) : '',

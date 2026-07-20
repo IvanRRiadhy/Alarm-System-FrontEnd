@@ -35,6 +35,8 @@ export type GetFilter = {
     HasInvestigation?: boolean;
 }
 
+import { DispatchedPersonnelDataType } from './alarmInvestigation';
+
 export type investigateType = {
     caseId: string;
     caseNumber: string;
@@ -74,6 +76,7 @@ export type investigateType = {
     investigationResult: string | null;
     investigationNote: string | null;
     attachments: InvestigateAttachmentType[];
+    dispatchedPersonnelDetails?: DispatchedPersonnelDataType[];
 };
 
 interface StateType {

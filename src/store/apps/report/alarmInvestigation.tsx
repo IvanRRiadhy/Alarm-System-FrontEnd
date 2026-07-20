@@ -12,6 +12,15 @@
         // siteId?: string;
     };
 
+    export interface DispatchedPersonnelDataType {
+        personnelId: string;
+        personnelName: string;
+        result: string | null;
+        note: string | null;
+        completedAt: string | null;
+        attachments: AttachmentsType[];
+    }
+
     export interface AttachmentsType {
         fileType: string;
         fileUrl: string;
@@ -20,18 +29,24 @@
     export interface AlarmInvestigationType {
         id: string;
         alarmCaseId: string;
-        personnelId: string;
+        // personnelId: string;
         personnelName: string;
+        dispatchedPersonnelIds: string[];
+        dispatchedPersonnelNames: string[];
         status: string;
-        note: string;
-        result: string;
+        acknowledgedNote: string | null;
+        dispatchedNote: string | null;
+        postponedNote: string | null;
+        resolvedNote: string | null;
+        note: string | null;
+        result: string | null;
         postponedUntil: string | null;
         acknowledgedAt: string | null;
         dispatchedAt: string | null;
         waitingAt: string | null;
         acceptedAt: string | null;
         arrivedAt: string | null;
-        doneInvestigatedAt: string | null;
+        investigationCompletedAt: string | null;
         doneAt: string | null;
         noActionAt: string | null;
         postponedAt: string | null;
@@ -39,6 +54,7 @@
         createdBy: string;
         updatedAt: string;
         attachments?: AttachmentsType[];
+        dispatchedPersonnelDetails?: DispatchedPersonnelDataType[];
     }
 
     interface StateType {

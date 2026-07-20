@@ -27,11 +27,12 @@ import {
   IconMapPin,
   IconArrowLeft,
 } from '@tabler/icons-react';
-import { Stage, Layer, Image as KonvaImage, Rect, Text, Group, Circle, Line } from 'react-konva';
+import { Stage, Layer, Image as KonvaImage, Rect, Text, Group, Circle, Line, Arc } from 'react-konva';
 import Konva from 'konva';
 import SiteSelector from './SiteSelector';
 import { useLocation } from 'react-router';
 import { useDeviceMappingList } from 'src/hooks/useDeviceMapping';
+import { audioManager } from 'src/utils/audioManager';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import { useAreaList } from 'src/hooks/useArea';
 import { FloorplanType } from 'src/store/apps/crud/floorplan';
@@ -58,7 +59,7 @@ const getMarkerColor = (type: string, status: string) => {
   if (t.includes('motionsensor')) return '#F59E0B';
   if (t.includes('doorsensor')) return '#38BDF8';
   if (t.includes('glassbreaksensor')) return '#8B5CF6';
-  if (t.includes('beamsensor')) return '#06B6D4';
+  // if (t.includes('beamsensor')) return '#06B6D4';
   if (t.includes('vibrationsensor')) return '#10B981';
   if (t.includes('cctvcamera')) return '#22C55E';
   if (t.includes('doorlock')) return '#6366F1';
@@ -73,7 +74,7 @@ const getDeviceInitials = (type: string) => {
   if (t.includes('motionsensor')) return 'MOT';
   if (t.includes('doorsensor')) return 'DOR';
   if (t.includes('glassbreaksensor')) return 'GLS';
-  if (t.includes('beamsensor')) return 'BEM';
+  // if (t.includes('beamsensor')) return 'BEM';
   if (t.includes('vibrationsensor')) return 'VIB';
   if (t.includes('cctvcamera')) return 'CAM';
   if (t.includes('doorlock')) return 'LCK';
@@ -83,11 +84,76 @@ const getDeviceInitials = (type: string) => {
   return 'OTH'; // Other
 };
 
+const namedColorsMap: Record<string, string> = {
+  orange: '#f97316',
+  pink: '#ec4899',
+  red: '#ef4444',
+  blue: '#3b82f6',
+  green: '#10b981',
+  yellow: '#eab308',
+  purple: '#8b5cf6',
+  grey: '#64748b',
+  gray: '#64748b',
+  white: '#ffffff',
+  black: '#000000',
+};
+
+const getHexColor = (colorStr: string): string => {
+  if (!colorStr) return '#ff4d4f';
+  const normalized = colorStr.trim().toLowerCase();
+  if (namedColorsMap[normalized]) {
+    return namedColorsMap[normalized];
+  }
+  return colorStr;
+};
+
+const hexToRgb = (hex: string) => {
+  let c = hex.replace('#', '').trim();
+  if (c.length === 3) {
+    c = c.split('').map(char => char + char).join('');
+  }
+  if (c.length !== 6) return { r: 255, g: 77, b: 79 };
+  const num = parseInt(c, 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+};
+
+const safeLighten = (colorStr: string, coefficient: number): string => {
+  try {
+    const hex = getHexColor(colorStr);
+    const rgb = hexToRgb(hex);
+    const r = Math.round(rgb.r + (255 - rgb.r) * coefficient);
+    const g = Math.round(rgb.g + (255 - rgb.g) * coefficient);
+    const b = Math.round(rgb.b + (255 - rgb.b) * coefficient);
+    return `rgb(${r}, ${g}, ${b})`;
+  } catch (e) {
+    console.error("Error in safeLighten:", e);
+    return 'rgb(255, 255, 255)';
+  }
+};
+
+const safeDarken = (colorStr: string, coefficient: number): string => {
+  try {
+    const hex = getHexColor(colorStr);
+    const rgb = hexToRgb(hex);
+    const r = Math.round(rgb.r * (1 - coefficient));
+    const g = Math.round(rgb.g * (1 - coefficient));
+    const b = Math.round(rgb.b * (1 - coefficient));
+    return `rgb(${r}, ${g}, ${b})`;
+  } catch (e) {
+    console.error("Error in safeDarken:", e);
+    return 'rgb(0, 0, 0)';
+  }
+};
+
 const legendItems = [
   { label: 'Motion Sensor', type: 'MotionSensor' },
   { label: 'Door Sensor', type: 'DoorSensor' },
   { label: 'Glass Break Sensor', type: 'GlassBreakSensor' },
-  { label: 'Beam Sensor', type: 'BeamSensor' },
+  // { label: 'Beam Sensor', type: 'BeamSensor' },
   { label: 'Vibration Sensor', type: 'VibrationSensor' },
   { label: 'CCTV Camera', type: 'CctvCamera' },
   { label: 'Door Lock', type: 'DoorLock' },
@@ -247,10 +313,34 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     return undefined;
   };
 
+  const getActiveOutput = (mapping: DeviceMappingType) => {
+    if (!alarmEvents || alarmEvents.length === 0) return null;
+    
+    // Find any event where this output device is active
+    for (const evt of alarmEvents) {
+      if (evt.outputDevices && Array.isArray(evt.outputDevices)) {
+        const match = evt.outputDevices.find(
+          (out: any) =>
+            (mapping.deviceId && out.deviceId === mapping.deviceId) ||
+            out.deviceId === mapping.id ||
+            out.deviceName === mapping.deviceName ||
+            out.deviceName === mapping.label
+        );
+        if (match && match.status === 'active') {
+          return {
+            event: evt,
+            output: match,
+          };
+        }
+      }
+    }
+    return null;
+  };
+
   const getSeverityColor = (severity?: string) => {
     const s = (severity || '').toLowerCase();
     if (s === 'low') return '#EAB308';
-    if (s === 'medium') return '#F97316 ';
+    if (s === 'medium') return '#F97316';
     if (s === 'high') return '#EF4444';
     if (s === 'critical') return '#991B1B';
     return '#EF4444';
@@ -392,6 +482,17 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     const activeAlarm = getActiveAlarm(mapping.id, mapping.deviceId);
     return activeAlarm && activeAlarm.severity?.toLowerCase() === 'critical';
   });
+
+  useEffect(() => {
+    if (hasCriticalAlarm) {
+      audioManager.requestLoop('FloorplanView', '/alarm-sfx/alarm_slow.mp3');
+    } else {
+      audioManager.releaseLoop('FloorplanView');
+    }
+    return () => {
+      audioManager.releaseLoop('FloorplanView');
+    };
+  }, [hasCriticalAlarm]);
 
   const { data: areaResponse } = useAreaList(
     selectedFloorplan?.id
@@ -726,7 +827,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                 const siteCases = alarmCases.filter((c) => c.siteId === site.id);
                 const activeCases = siteCases.filter((c) => {
                   const s = c.investigationStatus?.toLowerCase();
-                  return s !== 'done' && s !== 'resolved';
+                  return s !== 'done' && s !== 'investigationcompleted';
                 });
 
                 let status: 'normal' | 'alarm' | 'trouble' = 'normal';
@@ -784,7 +885,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                         <br />
                         Region : {site.region}
                         <br />
-                        Active Alarm : {count}
+                        Active Cases : {count}
                         <br />
                         Status : {status === 'alarm' ? 'alarm' : status === 'trouble' ? 'trouble' : 'normal'}
                         
@@ -854,162 +955,410 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
             </Layer>
 
             {/* Areas Layer */}
-            {areas.length > 0 && (
-              <Layer>
-                {areas.map((area) => {
-                  const fitScale = baseSize.width / image.width;
-                  const points =
-                    area.areaNodes?.flatMap((node) => [
-                      node.x_px * fitScale,
-                      node.y_px * fitScale,
-                    ]) || [];
-                  const color = area.colorArea || '#FF4D4F';
-                    // console.log("Areas", areas)
+            {areas.length > 0 && (() => {
+              const selectedDevice = mappings.find((m) => m.id === selectedDeviceId);
+              const selectedAreaId = selectedDevice?.areaId;
+
+              return (
+                <Layer>
+                  {areas.map((area) => {
+                    const fitScale = baseSize.width / image.width;
+                    const points =
+                      area.areaNodes?.flatMap((node) => [
+                        node.x_px * fitScale,
+                        node.y_px * fitScale,
+                      ]) || [];
+                    const color = getHexColor(area.colorArea || '#FF4D4F');
+                    const isAreaSelected = selectedAreaId && String(area.id) === String(selectedAreaId);
+
+                    // Check if any devices in this area have an active alarm
+                    const areaMappings = mappings.filter((m) => String(m.areaId) === String(area.id));
+                    const areaAlarms = areaMappings
+                      .map((m) => getActiveAlarm(m.id, m.deviceId))
+                      .filter((a) => !!a);
+                    const hasAreaAlarm = areaAlarms.length > 0;
+
+                    const highestSeverityAlarm = areaAlarms.reduce((highest, current) => {
+                      if (!highest) return current;
+                      if (!current) return highest;
+                      const severityRank = { critical: 4, high: 3, medium: 2, low: 1 };
+                      const rCurrent = severityRank[current.severity?.toLowerCase() as 'critical' | 'high' | 'medium' | 'low'] || 1;
+                      const rHighest = severityRank[highest.severity?.toLowerCase() as 'critical' | 'high' | 'medium' | 'low'] || 1;
+                      return rCurrent > rHighest ? current : highest;
+                    }, areaAlarms[0]);
+
+                    const alarmColor = highestSeverityAlarm
+                      ? getSeverityColor(highestSeverityAlarm.severity)
+                      : '#EF4444';
+
+                    const lineStrokeColor = hasAreaAlarm
+                      ? alarmColor
+                      : (isAreaSelected ? safeLighten(color, 0.2) : safeDarken(color, 0.4));
+
+                    const lineFillColor = hasAreaAlarm
+                      ? safeLighten(alarmColor, 0.6)
+                      : (isAreaSelected ? safeLighten(color, 0.5) : safeLighten(color, 0.75));
+
+                    const textFillColor = hasAreaAlarm
+                      ? alarmColor
+                      : (isAreaSelected ? "#60A5FA" : safeDarken(color, 0.5));
+
+                    const textStroke = isAreaSelected || hasAreaAlarm ? "#0b0f19" : undefined;
+                    const textStrokeWidth = isAreaSelected || hasAreaAlarm ? 3 : 0;
+
+                    const centerX = area.areaNodes && area.areaNodes.length > 0
+                      ? (area.areaNodes.reduce((acc, curr) => acc + curr.x_px, 0) / area.areaNodes.length) * fitScale
+                      : 0;
+                    const centerY = area.areaNodes && area.areaNodes.length > 0
+                      ? (area.areaNodes.reduce((acc, curr) => acc + curr.y_px, 0) / area.areaNodes.length) * fitScale
+                      : 0;
+
+                    return (
+                      <Group key={area.id}>
+                        {/* Main area polygon */}
+                        <Line
+                          points={points}
+                          stroke={lineStrokeColor}
+                          strokeWidth={isAreaSelected || hasAreaAlarm ? 4 : 2}
+                          lineJoin="round"
+                          lineCap="round"
+                          closed
+                          fill={lineFillColor}
+                          opacity={isAreaSelected || hasAreaAlarm ? 0.75 : 0.55}
+                        />
+
+                        {/* Ripple animation outline */}
+                        {hasAreaAlarm && (
+                          <Line
+                            points={points}
+                            stroke={alarmColor}
+                            strokeWidth={2 + (pulseValue - 0.8) * 16}
+                            opacity={Math.max(0, 1.8 - pulseValue) * 0.45}
+                            lineJoin="round"
+                            lineCap="round"
+                            closed
+                          />
+                        )}
+
+                        {/* Area Name Text */}
+                        {area.areaNodes && area.areaNodes.length > 0 && (
+                          <Text
+                            text={area.name}
+                            x={centerX}
+                            y={centerY}
+                            offsetX={50}
+                            offsetY={6}
+                            width={100}
+                            align="center"
+                            fontSize={isAreaSelected || hasAreaAlarm ? 14.5 : 12}
+                            fontStyle="bold"
+                            fill={textFillColor}
+                            stroke={textStroke}
+                            strokeWidth={textStrokeWidth}
+                            fillAfterStrokeEnabled={true}
+                            scaleX={1 / stageScale}
+                            scaleY={1 / stageScale}
+                            shadowColor="rgba(0,0,0,0.5)"
+                            shadowBlur={isAreaSelected || hasAreaAlarm ? 4 : 0}
+                            shadowOffset={isAreaSelected || hasAreaAlarm ? { x: 0, y: 1 } : { x: 0, y: 0 }}
+                          />
+                        )}
+                      </Group>
+                    );
+                  })}
+                </Layer>
+              );
+            })()}
+
+            {/* Device markers layer */}
+            <Layer>
+              {(() => {
+                const sortedMappings = [...mappings].sort((a, b) => {
+                  const activeAlarmA = getActiveAlarm(a.id, a.deviceId) || getActiveOutput(a)?.event;
+                  const isAlarmA = (a.deviceStatus || '').toLowerCase().includes('alarm') ||
+                                   (a.deviceStatus || '').toLowerCase().includes('active') ||
+                                   !!activeAlarmA;
+
+                  const activeAlarmB = getActiveAlarm(b.id, b.deviceId) || getActiveOutput(b)?.event;
+                  const isAlarmB = (b.deviceStatus || '').toLowerCase().includes('alarm') ||
+                                   (b.deviceStatus || '').toLowerCase().includes('active') ||
+                                   !!activeAlarmB;
+
+                  if (isAlarmA && !isAlarmB) return 1;
+                  if (!isAlarmA && isAlarmB) return -1;
+
+                  const isSelectedA = selectedDeviceId === a.id;
+                  const isSelectedB = selectedDeviceId === b.id;
+                  if (isSelectedA && !isSelectedB) return 1;
+                  if (!isSelectedA && isSelectedB) return -1;
+
+                  return 0;
+                });
+
+                return sortedMappings.map((mapping) => {
+                  const x = (mapping.posPxX / 100) * baseSize.width;
+                  const y = (mapping.posPxY / 100) * baseSize.height;
+
+                  // Detect active output relay and retrieve associated alarm info
+                  const activeOutputInfo = getActiveOutput(mapping);
+                  const isOutputActive = !!activeOutputInfo;
+                  const alarmSeverity = activeOutputInfo?.event?.severity;
+                  const activeOutputColor = activeOutputInfo ? getSeverityColor(alarmSeverity) : null;
+
+                  const color = activeOutputColor || getMarkerColor(mapping.deviceType, mapping.deviceStatus);
+                  const isAlarm = (mapping.deviceStatus || '').toLowerCase().includes('alarm') ||
+                                  (mapping.deviceStatus || '').toLowerCase().includes('active') ||
+                                  isOutputActive;
+
+                  const isSelected = selectedDeviceId === mapping.id;
+                  const activeAlarm = getActiveAlarm(mapping.id, mapping.deviceId) || activeOutputInfo?.event;
+                  const isBlinking = !!activeAlarm;
+                  const blinkColor = activeAlarm ? getSeverityColor(activeAlarm.severity) : '#EF4444';
+                  const alarmColor = blinkColor;
+
+                  const deviceTypeLower = (mapping.deviceType || '').toLowerCase();
+                  
+                  const isSirenActive = isOutputActive && (
+                    deviceTypeLower.includes('siren') || 
+                    deviceTypeLower.includes('buzzer') || 
+                    deviceTypeLower.includes('bell')
+                  );
+                  
+                  const isLockActive = isOutputActive && deviceTypeLower.includes('doorlock');
+                  
+                  const isStrobeActive = isOutputActive && deviceTypeLower.includes('strobelight');
+
                   return (
-                    <Group key={area.id}>
-                      <Line
-                        points={points}
-                        stroke={darken(color, 0.4)}
-                        strokeWidth={2}
-                        lineJoin="round"
-                        lineCap="round"
-                        closed
-                        fill={lighten(color, 0.75)}
-                        opacity={0.55}
+                    <Group
+                      key={mapping.id}
+                      x={x}
+                      y={y}
+                      onClick={() => onSelectDevice?.(mapping)}
+                      onTouchEnd={() => onSelectDevice?.(mapping)}
+                      onMouseEnter={(e: any) => {
+                        const container = e.target.getStage()?.container();
+                        if (container) container.style.cursor = 'pointer';
+                      }}
+                      onMouseLeave={(e: any) => {
+                        const container = e.target.getStage()?.container();
+                        if (container) container.style.cursor = stageScale > 1 ? 'grab' : 'default';
+                      }}
+                    >
+                      {/* Pulsing alarm ring */}
+                      {isBlinking && !isOutputActive && (
+                        <Circle
+                          radius={(isSelected ? 30.5 : 25) * pulseValue}
+                          fill={blinkColor}
+                          opacity={Math.max(0, 1.8 - pulseValue) * 0.65}
+                          stroke={blinkColor}
+                          strokeWidth={1.5}
+                        />
+                      )}
+
+                      {/* Ring indicator for alarms */}
+                      {isAlarm && (
+                        <Circle
+                          radius={16}
+                          stroke={color}
+                          strokeWidth={2}
+                          dash={[4, 2]}
+                          shadowColor={color}
+                          shadowBlur={10}
+                        />
+                      )}
+
+                      {/* Highlight ring for selected device */}
+                      {isSelected && (
+                        <Circle
+                          radius={16.5}
+                          stroke="#60A5FA"
+                          strokeWidth={2}
+                          shadowColor="#60A5FA"
+                          shadowBlur={8}
+                        />
+                      )}
+
+                      {/* Sound waves on both sides for Siren / Buzzer / Bell */}
+                      {isSirenActive && (
+                        <>
+                          {/* Right side waves */}
+                          {pulseValue > 0.9 && (
+                            <Arc
+                              x={0}
+                              y={0}
+                              angle={60}
+                              rotation={-30}
+                              innerRadius={15}
+                              outerRadius={15}
+                              stroke={alarmColor}
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          {pulseValue > 1.1 && (
+                            <Arc
+                              x={0}
+                              y={0}
+                              angle={60}
+                              rotation={-30}
+                              innerRadius={21}
+                              outerRadius={21}
+                              stroke={alarmColor}
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          {pulseValue > 1.3 && (
+                            <Arc
+                              x={0}
+                              y={0}
+                              angle={60}
+                              rotation={-30}
+                              innerRadius={27}
+                              outerRadius={27}
+                              stroke={alarmColor}
+                              strokeWidth={1.5}
+                            />
+                          )}
+
+                          {/* Left side waves */}
+                          {pulseValue > 0.9 && (
+                            <Arc
+                              x={0}
+                              y={0}
+                              angle={60}
+                              rotation={150}
+                              innerRadius={15}
+                              outerRadius={15}
+                              stroke={alarmColor}
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          {pulseValue > 1.1 && (
+                            <Arc
+                              x={0}
+                              y={0}
+                              angle={60}
+                              rotation={150}
+                              innerRadius={21}
+                              outerRadius={21}
+                              stroke={alarmColor}
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          {pulseValue > 1.3 && (
+                            <Arc
+                              x={0}
+                              y={0}
+                              angle={60}
+                              rotation={150}
+                              innerRadius={27}
+                              outerRadius={27}
+                              stroke={alarmColor}
+                              strokeWidth={1.5}
+                            />
+                          )}
+                        </>
+                      )}
+
+                      {/* Strobe Light scanner beam */}
+                      {isStrobeActive && (() => {
+                        const beamAngle = ((pulseValue - 0.8) / 0.8) * 360;
+                        return (
+                          <>
+                            {/* Scanner wedge */}
+                            <Arc
+                              x={0}
+                              y={0}
+                              angle={360}
+                              rotation={beamAngle - 360}
+                              innerRadius={0}
+                              outerRadius={35}
+                              fill={alarmColor}
+                              opacity={0.2}
+                            />
+                            {/* Leading beam line */}
+                            <Line
+                              points={[0, 0, 35, 0]}
+                              stroke={alarmColor}
+                              strokeWidth={1.5}
+                              rotation={beamAngle}
+                            />
+                          </>
+                        );
+                      })()}
+
+                      {/* Main Dot */}
+                      <Circle
+                        radius={isSelected ? 13.5 : 11}
+                        fill={color}
+                        stroke={isSelected ? "#60A5FA" : "#ffffff"}
+                        strokeWidth={isSelected ? 2 : 1.5}
+                        shadowColor="rgba(0,0,0,0.4)"
+                        shadowBlur={4}
+                        shadowOffset={{ x: 0, y: 2 }}
                       />
-                      {/* Area Name Text */}
-                      {area.areaNodes && area.areaNodes.length > 0 && (
+
+                      {/* Lock Icon inside Dot for active DoorLock, otherwise initials text */}
+                      {isLockActive ? (
+                        <Group>
+                          {/* Shackle */}
+                          <Group>
+                            <Rect
+                              x={-3.5}
+                              y={isSelected ? -8 : -7}
+                              width={7}
+                              height={6}
+                              stroke="#ffffff"
+                              strokeWidth={1.5}
+                              cornerRadius={[3.5, 3.5, 0, 0]}
+                            />
+                            {/* Lock Body */}
+                            <Rect
+                              x={-5}
+                              y={isSelected ? -3 : -2}
+                              width={10}
+                              height={8}
+                              fill="#ffffff"
+                              cornerRadius={1}
+                            />
+                          </Group>
+                        </Group>
+                      ) : (
+                        /* Initials Text inside Dot */
                         <Text
-                          text={area.name}
-                          x={
-                            (area.areaNodes.reduce((acc, curr) => acc + curr.x_px, 0) /
-                              area.areaNodes.length) *
-                              fitScale -
-                            50
-                          }
-                          y={
-                            (area.areaNodes.reduce((acc, curr) => acc + curr.y_px, 0) /
-                              area.areaNodes.length) *
-                              fitScale -
-                            6
-                          }
-                          width={100}
-                          align="center"
-                          fontSize={10}
+                          text={getDeviceInitials(mapping.deviceType)}
+                          x={isSelected ? -18 : -15}
+                          y={isSelected ? -5 : -4}
+                          width={isSelected ? 36 : 30}
+                          fontSize={isSelected ? 9.5 : 8}
                           fontStyle="bold"
-                          fill={darken(color, 0.5)}
+                          fill="#ffffff"
+                          align="center"
+                        />
+                      )}
+
+                      {/* Label below marker */}
+                      {(mapping.label || mapping.deviceName) && (
+                        <Text
+                          text={mapping.label || mapping.deviceName || ''}
+                          x={0}
+                          y={isSelected ? 17 : 14}
+                          offsetX={40}
+                          width={80}
+                          fontSize={isSelected ? 12.5 : 10}
+                          fontStyle="bold"
+                          fill={isSelected ? "#60A5FA" : "#E2E8F0"}
+                          stroke="#0b0f19"
+                          strokeWidth={3}
+                          fillAfterStrokeEnabled={true}
+                          align="center"
+                          scaleX={1 / stageScale}
+                          scaleY={1 / stageScale}
                         />
                       )}
                     </Group>
                   );
-                })}
-              </Layer>
-            )}
-
-            {/* Device markers layer */}
-            <Layer>
-              {mappings.map((mapping) => {
-                const x = (mapping.posPxX / 100) * baseSize.width;
-                const y = (mapping.posPxY / 100) * baseSize.height;
-                const color = getMarkerColor(mapping.deviceType, mapping.deviceStatus);
-                const isAlarm = (mapping.deviceStatus || '').toLowerCase().includes('alarm') ||
-                                (mapping.deviceStatus || '').toLowerCase().includes('active');
-                const isSelected = selectedDeviceId === mapping.id;
-                const activeAlarm = getActiveAlarm(mapping.id, mapping.deviceId);
-                const isBlinking = !!activeAlarm;
-                const blinkColor = activeAlarm ? getSeverityColor(activeAlarm.severity) : '#EF4444';
-                // if(isBlinking) console.log("ActiveAlarm: ", activeAlarm)
-                return (
-                  <Group
-                    key={mapping.id}
-                    x={x}
-                    y={y}
-                    onClick={() => onSelectDevice?.(mapping)}
-                    onTouchEnd={() => onSelectDevice?.(mapping)}
-                    onMouseEnter={(e: any) => {
-                      const container = e.target.getStage()?.container();
-                      if (container) container.style.cursor = 'pointer';
-                    }}
-                    onMouseLeave={(e: any) => {
-                      const container = e.target.getStage()?.container();
-                      if (container) container.style.cursor = stageScale > 1 ? 'grab' : 'default';
-                    }}
-                  >
-                    {/* Pulsing alarm ring */}
-                    {isBlinking && (
-                      <Circle
-                        radius={(isSelected ? 30.5 : 25) * pulseValue}
-                        fill={blinkColor}
-                        opacity={Math.max(0, 1.8 - pulseValue) * 0.65}
-                        stroke={blinkColor}
-                        strokeWidth={1.5}
-                      />
-                    )}
-
-                    {/* Ring indicator for alarms */}
-                    {isAlarm && (
-                      <Circle
-                        radius={16}
-                        stroke={color}
-                        strokeWidth={2}
-                        dash={[4, 2]}
-                        shadowColor={color}
-                        shadowBlur={10}
-                      />
-                    )}
-
-                    {/* Highlight ring for selected device */}
-                    {isSelected && (
-                      <Circle
-                        radius={16.5}
-                        stroke="#60A5FA"
-                        strokeWidth={2}
-                        shadowColor="#60A5FA"
-                        shadowBlur={8}
-                      />
-                    )}
-
-                    {/* Main Dot */}
-                    <Circle
-                      radius={isSelected ? 13.5 : 11}
-                      fill={color}
-                      stroke={isSelected ? "#60A5FA" : "#ffffff"}
-                      strokeWidth={isSelected ? 2 : 1.5}
-                      shadowColor="rgba(0,0,0,0.4)"
-                      shadowBlur={4}
-                      shadowOffset={{ x: 0, y: 2 }}
-                    />
-
-                    {/* Initials Text inside Dot */}
-                    <Text
-                      text={getDeviceInitials(mapping.deviceType)}
-                      x={isSelected ? -18 : -15}
-                      y={isSelected ? -5 : -4}
-                      width={isSelected ? 36 : 30}
-                      fontSize={isSelected ? 9.5 : 8}
-                      fontStyle="bold"
-                      fill="#ffffff"
-                      align="center"
-                    />
-
-                    {/* Label below marker */}
-                    {(mapping.label || mapping.deviceName) && (
-                      <Text
-                        text={mapping.label || mapping.deviceName || ''}
-                        x={-40}
-                        y={isSelected ? 17 : 14}
-                        width={80}
-                        fontSize={isSelected ? 10.5 : 9}
-                        fontStyle="bold"
-                        fill={isSelected ? "#60A5FA" : "#E2E8F0"}
-                        align="center"
-                        scaleX={1 / stageScale}
-                        scaleY={1 / stageScale}
-                      />
-                    )}
-                  </Group>
-                );
-              })}
+                });
+              })()}
             </Layer>
           </Stage>
         ) : (

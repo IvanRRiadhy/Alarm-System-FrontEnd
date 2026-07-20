@@ -25,6 +25,7 @@ import {
   useAcknowledgeInvestigation,
   useDispatchInvestigation,
   useResolveInvestigation,
+  usePersonnelSubmitResult,
 } from 'src/hooks/useAlarmInvestigation';
 import { usePersonnelLookup } from 'src/hooks/usePersonnel';
 import { useUploadCDN } from 'src/hooks/useCDN';
@@ -77,15 +78,49 @@ const InvestigationRow = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<AttachmentsType | null>(null);
 
+  const [personnelId, setPersonnelId] = useState('');
+  const [activeAction, setActiveAction] = useState<'submitResult' | 'resolve'>('submitResult');
+
   const uploadMutation = useUploadCDN();
   const acknowledgeMutation = useAcknowledgeInvestigation(inv.id);
   const dispatchMutation = useDispatchInvestigation(inv.id, personnelIds);
   const resolveMutation = useResolveInvestigation(inv.id, {
-    result,
     note,
     isNoAction,
     attachments,
   });
+
+  const submitResultMutation = usePersonnelSubmitResult(inv.id, {
+    personnelId,
+    result,
+    note,
+    attachments,
+  });
+
+  const handleSubmitResult = async () => {
+    if (!personnelId) {
+      toast.error('Please select personnel.');
+      return;
+    }
+    if (!result.trim()) {
+      toast.error('Please enter result / findings.');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await submitResultMutation.mutateAsync();
+      toast.success('Personnel result submitted successfully!');
+      setPersonnelId('');
+      setResult('');
+      setNote('');
+      setAttachments([]);
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to submit personnel result.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -246,111 +281,226 @@ const InvestigationRow = ({
           </Stack>
         )}
 
-        {status === 'Dispatched' && (
-          <Stack spacing={1.5}>
-            <Typography variant="body2" color="text.secondary">
-              Investigation ongoing. Enter findings to resolve case.
-            </Typography>
-            <TextField
-              placeholder="Result / Findings..."
-              size="small"
-              multiline
-              rows={2}
-              fullWidth
-              value={result}
-              onChange={(e) => setResult(e.target.value)}
-              slotProps={{
-                input: {
-                  style: { color: '#F8FAFC', backgroundColor: '#0F172A', fontSize: 12 },
-                },
-              }}
-            />
-            <TextField
-              placeholder="Additional Notes..."
-              size="small"
-              fullWidth
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              slotProps={{
-                input: {
-                  style: { color: '#F8FAFC', backgroundColor: '#0F172A', fontSize: 12 },
-                },
-              }}
-            />
-            
-            {/* Attachment Upload Button */}
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Button
-                variant="outlined"
-                component="label"
-                size="small"
-                disabled={isUploading || isSaving}
-                startIcon={isUploading ? <CircularProgress size={16} color="inherit" /> : <IconPaperclip size={16} />}
-                sx={{
-                  color: '#F8FAFC',
-                  borderColor: 'rgba(255,255,255,0.08)',
-                  textTransform: 'none',
-                  fontSize: 11,
-                  py: 0.75,
-                  '&:hover': { borderColor: 'rgba(255,255,255,0.2)' }
-                }}
-              >
-                {isUploading ? 'Uploading...' : 'Upload File / Photo'}
-                <input type="file" hidden onChange={handleFileUpload} />
-              </Button>
-            </Stack>
+        {(() => {
+          const statusLower = status.toLowerCase();
+          const isDispatchedOrCompleted = statusLower === 'dispatched' || statusLower === 'investigationcompleted';
+          
+          if (!isDispatchedOrCompleted) return null;
 
-            {/* Uploaded Attachments Chips */}
-            {attachments.length > 0 && (
-              <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-                {attachments.map((att, idx) => (
-                  <Chip
-                    key={idx}
-                    label={att.fileType ? att.fileType.split('/')[1] || att.fileType : 'file'}
-                    onClick={() => setPreviewAttachment(att)}
-                    onDelete={() => handleRemoveAttachment(idx)}
+          const dispatchedPersonnelList = inv.dispatchedPersonnelIds?.map((id, index) => {
+            const detail = inv.dispatchedPersonnelDetails?.find((d) => d.personnelId === id);
+            return {
+              id,
+              name: inv.dispatchedPersonnelNames?.[index] || `Personnel ${id}`,
+              hasSubmitted: !!(detail?.completedAt || detail?.result),
+            };
+          }) || [];
+
+          const hasUnsubmittedPersonnel = dispatchedPersonnelList.some((p) => !p.hasSubmitted);
+          const currentAction = hasUnsubmittedPersonnel ? activeAction : 'resolve';
+
+          return (
+            <Stack spacing={1.5}>
+              <Typography variant="body2" color="text.secondary">
+                Investigation ongoing. Select action below:
+              </Typography>
+
+              {hasUnsubmittedPersonnel && (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant={currentAction === 'submitResult' ? 'contained' : 'outlined'}
                     size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={{
-                      cursor: 'pointer',
-                      fontSize: 10,
-                      fontWeight: 600,
-                      borderColor: 'rgba(59, 130, 246, 0.4)',
-                      '&:hover': {
-                        bgcolor: 'rgba(59, 130, 246, 0.1)',
-                      }
+                    onClick={() => {
+                      setActiveAction('submitResult');
+                      setResult('');
+                      setNote('');
+                      setAttachments([]);
+                    }}
+                    sx={{ textTransform: 'none', fontSize: 11 }}
+                  >
+                    Submit Personnel Result
+                  </Button>
+                  <Button
+                    variant={currentAction === 'resolve' ? 'contained' : 'outlined'}
+                    size="small"
+                    onClick={() => {
+                      setActiveAction('resolve');
+                      setResult('');
+                      setNote('');
+                      setAttachments([]);
+                    }}
+                    sx={{ textTransform: 'none', fontSize: 11 }}
+                  >
+                    Resolve Case
+                  </Button>
+                </Stack>
+              )}
+
+              {currentAction === 'submitResult' ? (
+                <>
+                  <Box>
+                    <CustomAutocomplete<{ id: string; name: string; hasSubmitted: boolean }>
+                      id={`personnel-submit-select-${inv.id}`}
+                      multiple={false}
+                      options={dispatchedPersonnelList}
+                      value={dispatchedPersonnelList.find((p) => p.id === personnelId) || null}
+                      onChange={(val) => {
+                        setPersonnelId(val?.id ?? '');
+                      }}
+                      getOptionLabel={(option) => option ? `${option.name}${option.hasSubmitted ? ' (submitted)' : ''}` : ''}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      getOptionDisabled={(option) => option.hasSubmitted}
+                      placeholder="Select Personnel"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: '#0F172A',
+                          color: '#F8FAFC',
+                          fontSize: 12,
+                          borderRadius: 1.5,
+                          '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' },
+                          '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
+                          '&.Mui-focused fieldset': { borderColor: '#3B82F6' },
+                        },
+                      }}
+                    />
+                  </Box>
+                  <TextField
+                    placeholder="Result / Findings..."
+                    size="small"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    value={result}
+                    onChange={(e) => setResult(e.target.value)}
+                    slotProps={{
+                      input: {
+                        style: { color: '#F8FAFC', backgroundColor: '#0F172A', fontSize: 12 },
+                      },
                     }}
                   />
-                ))}
-              </Stack>
-            )}
-
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isNoAction}
-                    onChange={(e) => setIsNoAction(e.target.checked)}
-                    color="primary"
+                  <TextField
+                    placeholder="Additional Notes..."
                     size="small"
-                    sx={{ color: 'rgba(255,255,255,0.3)' }}
+                    fullWidth
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    slotProps={{
+                      input: {
+                        style: { color: '#F8FAFC', backgroundColor: '#0F172A', fontSize: 12 },
+                      },
+                    }}
                   />
-                }
-                label={<Typography variant="caption" color="text.secondary">No Action (False Alarm)</Typography>}
-              />
-              <Button
-                variant="contained"
-                color="success"
-                size="small"
-                onClick={handleResolve}
-                disabled={isSaving || !result.trim()}
-              >
-                {isSaving ? <CircularProgress size={16} color="inherit" /> : 'Resolve'}
-              </Button>
+                </>
+              ) : (
+                <>
+                  <TextField
+                    placeholder="Resolution Notes..."
+                    size="small"
+                    multiline
+                    rows={2}
+                    fullWidth
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    slotProps={{
+                      input: {
+                        style: { color: '#F8FAFC', backgroundColor: '#0F172A', fontSize: 12 },
+                      },
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Attachment Upload Button */}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button
+                  variant="outlined"
+                  component="label"
+                  size="small"
+                  disabled={isUploading || isSaving}
+                  startIcon={isUploading ? <CircularProgress size={16} color="inherit" /> : <IconPaperclip size={16} />}
+                  sx={{
+                    color: '#F8FAFC',
+                    borderColor: 'rgba(255,255,255,0.08)',
+                    textTransform: 'none',
+                    fontSize: 11,
+                    py: 0.75,
+                    '&:hover': { borderColor: 'rgba(255,255,255,0.2)' }
+                  }}
+                >
+                  {isUploading ? 'Uploading...' : 'Upload File / Photo'}
+                  <input type="file" hidden onChange={handleFileUpload} />
+                </Button>
+              </Stack>
+
+              {/* Uploaded Attachments Chips */}
+              {attachments.length > 0 && (
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+                  {attachments.map((att, idx) => (
+                    <Chip
+                      key={idx}
+                      label={att.fileType ? att.fileType.split('/')[1] || att.fileType : 'file'}
+                      onClick={() => setPreviewAttachment(att)}
+                      onDelete={() => handleRemoveAttachment(idx)}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{
+                        cursor: 'pointer',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        borderColor: 'rgba(59, 130, 246, 0.4)',
+                        '&:hover': {
+                          bgcolor: 'rgba(59, 130, 246, 0.1)',
+                        }
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
+
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                {currentAction === 'resolve' ? (
+                  <>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={isNoAction}
+                          onChange={(e) => setIsNoAction(e.target.checked)}
+                          color="primary"
+                          size="small"
+                          sx={{ color: 'rgba(255,255,255,0.3)' }}
+                        />
+                      }
+                      label={<Typography variant="caption" color="text.secondary">No Action (False Alarm)</Typography>}
+                    />
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="small"
+                      onClick={handleResolve}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? <CircularProgress size={16} color="inherit" /> : 'Resolve'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button
+                      variant="contained"
+                      color="info"
+                      size="small"
+                      onClick={handleSubmitResult}
+                      disabled={isSaving || !personnelId || !result.trim()}
+                    >
+                      {isSaving ? <CircularProgress size={16} color="inherit" /> : 'Submit Result'}
+                    </Button>
+                  </>
+                )}
+              </Stack>
             </Stack>
-          </Stack>
-        )}
+          );
+        })()}
       </CardContent>
 
       {/* Preview Dialog */}

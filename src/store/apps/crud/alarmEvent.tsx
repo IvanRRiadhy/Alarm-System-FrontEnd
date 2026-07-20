@@ -28,6 +28,7 @@ export interface AlarmEvent {
   buildingName: string | null;
   floorName: string | null;
   triggered: boolean;
+  restored: boolean;
   statusEvents?: any;
 }
 

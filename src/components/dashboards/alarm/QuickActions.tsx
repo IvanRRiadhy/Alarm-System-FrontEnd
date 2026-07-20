@@ -83,6 +83,8 @@ const QuickAccess = () => {
       setAckDialogOpen(true);
     } else if (title === 'Refresh Data') {
       handleRefetchSummary();
+    }else if (title === 'Live Camera') {
+      navigate('/dashboards/camera-monitor');
     }
   };
 

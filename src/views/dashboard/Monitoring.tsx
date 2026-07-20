@@ -125,7 +125,10 @@ const Monitoring = () => {
         color: event.iconColor || '#3B82F6',
         severity: event.severity,
         site: event.site,
+        building: event.buildingName,
+        floor: event.floorName,
         area: event.area,
+
         deviceName: event.deviceName || matchingDevice.deviceName,
         deviceType: matchingDevice.deviceType,
         description: `${event.title} terdeteksi di area ${event.area || 'pengawasan'}.`,
@@ -189,7 +192,7 @@ const Monitoring = () => {
             <EventSidebar
               events={events}
               onSelectEvent={handleSelectEvent}
-              selectedEventId={selectedLog ? Number(selectedLog.id) : null}
+              selectedEventId={selectedLog ? selectedLog.id : null}
               currentFloorplanId={selectedFloorplan?.id}
             />
           </Box>

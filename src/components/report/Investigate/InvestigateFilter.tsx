@@ -38,7 +38,7 @@ const statusOptions = [
   { value: 'arrived', label: 'Arrived' },
   { value: 'postponed', label: 'Postponed' },
   { value: 'noAction', label: 'No Action' },
-  { value: 'doneInvestigated', label: 'Done Investigated' },
+  { value: 'investigationCompleted', label: 'Investigation Completed' },
   { value: 'done', label: 'Done' },
 ];
 
