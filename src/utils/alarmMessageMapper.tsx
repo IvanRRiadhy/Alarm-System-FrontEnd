@@ -1,10 +1,11 @@
-import { EventItem, getEventIconAndColor } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
+import { EventItem, IoDeviceItem, getEventIconAndColor } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
 import { controllerType } from 'src/store/apps/crud/controller';
 import { channelType } from 'src/store/apps/crud/channel';
 import { deviceType } from 'src/store/apps/crud/devices';
 import { DeviceMappingType } from 'src/store/apps/crud/deviceMapping';
 import type { Severity } from 'src/components/dashboards/monitoring/monitoringcomponents/sidebar/EventSidebar';
 import { AlarmEvent } from 'src/store/apps/crud/alarmEvent';
+import { AlarmCaseType, AlarmCaseOutputType } from 'src/store/apps/crud/alarmCase';
 
 // ── MQTT Message Types ──────────────────────────────────────────────────
 
@@ -223,5 +224,103 @@ export function mapAlarmEventToEventItem(event: AlarmEvent, alarmRules: any[] = 
     inputDevice,
     outputDevices,
     streamDevices,
+  };
+}
+
+// ── AlarmCase → EventItem Mapper ────────────────────────────────────────
+
+/**
+ * Maps an AlarmCaseType (from /api/alarm-cases) to an EventItem for the sidebar.
+ * 
+ * - Input device ON/OFF: based on alarmCase.isCleared (false = active, true = nonActive)
+ * - Output devices: mapped from alarmCase.outputs with isCleared logic
+ * - Area info: areaName, floorplanName, floorName, buildingName, siteName
+ */
+export function mapAlarmCaseToEventItem(alarmCase: AlarmCaseType): EventItem {
+  // Generate numeric ID from case ID
+  let hash = 5381;
+  for (let i = 0; i < alarmCase.id.length; i++) {
+    hash = (hash * 33) ^ alarmCase.id.charCodeAt(i);
+  }
+  const numericId = Math.abs(hash);
+
+  // Format time from triggeredAt
+  const dateObj = new Date(alarmCase.triggeredAt);
+  let timeStr = '';
+  if (!isNaN(dateObj.getTime())) {
+    const datePart = dateObj.toLocaleDateString('en-GB');
+    const timePart = dateObj.toLocaleTimeString('it-IT');
+    timeStr = `${datePart} ${timePart}`;
+  }
+
+  // Severity mapping
+  let severity: Severity = 'Low';
+  const sevLower = (alarmCase.severity || '').toLowerCase();
+  if (sevLower === 'critical') severity = 'Critical';
+  else if (sevLower === 'high') severity = 'High';
+  else if (sevLower === 'medium') severity = 'Medium';
+
+  const { icon, color } = getEventIconAndColor(alarmCase.deviceType || alarmCase.deviceName);
+
+  // Status alarm based on isCleared
+  const statusAlarm = !alarmCase.isCleared ? 'alarm_trigger' : 'alarm_restore';
+
+  // Input device: ON if not cleared
+  const inputDevice: IoDeviceItem = {
+    deviceId: alarmCase.deviceId || '',
+    deviceName: alarmCase.deviceName || '',
+    deviceType: alarmCase.deviceType || '',
+    status: !alarmCase.isCleared ? 'active' : 'nonActive',
+  };
+
+  // Output devices from case outputs
+  const outputDevices: IoDeviceItem[] = (alarmCase.outputs || []).map((output: AlarmCaseOutputType) => ({
+    deviceId: output.outputDeviceId || output.id || '',
+    deviceName: output.deviceName || '',
+    deviceType: output.deviceType || 'Siren',
+    status: !output.isCleared ? 'active' as const : 'nonActive' as const,
+  }));
+
+  // Build area display string
+  const areaParts = [
+    alarmCase.areaName,
+    alarmCase.floorplanName,
+    alarmCase.floorName,
+    alarmCase.buildingName,
+  ].filter(Boolean);
+  const areaDisplay = areaParts.length > 0 ? areaParts.join(' • ') : alarmCase.siteRegion || 'Unknown Area';
+
+  // Title: use caseNumber or device info
+  const title = `${alarmCase.deviceName || 'Alarm'} - ${alarmCase.deviceType || 'Unknown'}`;
+
+  return {
+    id: numericId,
+    time: timeStr,
+    title,
+    site: alarmCase.siteName || 'Unknown Site',
+    severity,
+    area: areaDisplay,
+    icon,
+    iconColor: color,
+    deviceId: alarmCase.deviceId,
+    deviceName: alarmCase.deviceName,
+    floorplanId: alarmCase.floorplanId,
+    statusAlarm,
+    rawId: alarmCase.id,
+    createdAt: alarmCase.triggeredAt,
+    alarmCaseId: alarmCase.id,
+    controllerId: alarmCase.controllerId,
+    controllerName: alarmCase.controllerName,
+    buildingId: alarmCase.buildingId,
+    buildingName: alarmCase.buildingName,
+    floorId: alarmCase.floorId,
+    floorName: alarmCase.floorName,
+    siteId: alarmCase.siteId,
+    siteName: alarmCase.siteName,
+    areaName: alarmCase.areaName,
+    floorplanName: alarmCase.floorplanName,
+    inputDevice,
+    outputDevices,
+    streamDevices: [],
   };
 }

@@ -12,10 +12,10 @@ import ScrollToTop from '../../components/shared/ScrollToTop';
 import LoadingBar from '../../LoadingBar';
 import { Toaster } from 'react-hot-toast';
 import { startMQTTclient } from 'src/utils/MQTT';
-import { AddAlarmEvent, AlarmEvent } from 'src/store/apps/crud/alarmEvent';
+import { AddAlarmEvent, SetAlarmEvents, AlarmEvent } from 'src/store/apps/crud/alarmEvent';
 import toast from 'react-hot-toast';
-import { useAlarmEventList } from 'src/hooks/useAlarmEvent';
-import { mapAlarmEventToEventItem } from 'src/utils/alarmMessageMapper';
+import { useAlarmCaseList } from 'src/hooks/useAlarmCase';
+import { mapAlarmEventToEventItem, mapAlarmCaseToEventItem } from 'src/utils/alarmMessageMapper';
 import AlarmPopup from 'src/utils/AlarmPopup';
 import { useQueryClient } from '@tanstack/react-query';
 import { audioManager } from 'src/utils/audioManager';
@@ -55,7 +55,7 @@ const FullLayout: FC = () => {
     if (isAdmin || isSuperAdminWithSite) {
       const hasCritical = alarmEventList.some((event) => {
         const status = event.statusAlarm?.toLowerCase();
-        const isTriggered = status === 'triggered' || status === 'on' || status === 'active';
+        const isTriggered = status === 'triggered' || status === 'on' || status === 'active' || status === 'alarm_trigger';
         const isCriticalSev = event.severity?.toLowerCase() === 'critical';
         const matchesSite = selectedSiteId ? event.siteId === selectedSiteId : true;
         console.log("IsTriggered", isTriggered, "isCritial", isCritical, "matchesSite", matchesSite, status)
@@ -91,7 +91,20 @@ const FullLayout: FC = () => {
     };
   }, []);
 
-  useAlarmEventList({ page: 1, limit: 100 });
+  // Fetch alarm cases on startup instead of alarm events
+  const { data: alarmCaseResponse } = useAlarmCaseList({ page: 1, limit: 100, sortBy: 'triggeredAt', sortOrder: 'desc' });
+  const [hasInitializedEvents, setHasInitializedEvents] = useState(false);
+
+  // Map fetched alarm cases to EventItem[] and dispatch to Redux
+  useEffect(() => {
+    if (hasInitializedEvents) return;
+    const cases = alarmCaseResponse?.data || [];
+    if (cases.length > 0) {
+      const mapped = cases.map((c) => mapAlarmCaseToEventItem(c));
+      dispatch(SetAlarmEvents(mapped));
+      setHasInitializedEvents(true);
+    }
+  }, [alarmCaseResponse, dispatch, hasInitializedEvents]);
   useEffect(() => {
     console.log('[MQTT] Connected to global event/alarm subscription');
     

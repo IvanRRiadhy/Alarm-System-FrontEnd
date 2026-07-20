@@ -270,18 +270,36 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     
     if (deviceEvents.length === 0) return undefined;
     
-    const newestEvent = deviceEvents.reduce((latest, current) => {
+    // Group by alarmCaseId and keep only the newest event per case
+    const newestPerCase: Record<string, typeof deviceEvents[0]> = {};
+    for (const evt of deviceEvents) {
+      const caseKey = evt.alarmCaseId || evt.rawId || String(evt.id);
+      const existing = newestPerCase[caseKey];
+      if (!existing) {
+        newestPerCase[caseKey] = evt;
+      } else {
+        const existingTime = existing.createdAt ? new Date(existing.createdAt).getTime() : 0;
+        const evtTime = evt.createdAt ? new Date(evt.createdAt).getTime() : 0;
+        if (evtTime > existingTime) {
+          newestPerCase[caseKey] = evt;
+        }
+      }
+    }
+
+    // From the deduplicated events, find the newest overall
+    const deduped = Object.values(newestPerCase);
+    const newestEvent = deduped.reduce((latest, current) => {
       const latestTime = latest.createdAt ? new Date(latest.createdAt).getTime() : 0;
       const currentTime = current.createdAt ? new Date(current.createdAt).getTime() : 0;
       return currentTime > latestTime ? current : latest;
-    }, deviceEvents[0]);
+    }, deduped[0]);
     
     if (newestEvent) {
       // Check if it's the input device and is active
       const isInputMatch = (deviceId && newestEvent.deviceId === deviceId) || newestEvent.deviceId === mappingId || (newestEvent.inputDevice && newestEvent.inputDevice.deviceId === deviceId);
       if (isInputMatch) {
         const statusAlarmVal = newestEvent.statusAlarm?.toLowerCase();
-        if (statusAlarmVal === 'on' || statusAlarmVal === 'active') {
+        if (statusAlarmVal === 'on' || statusAlarmVal === 'active' || statusAlarmVal === 'alarm_trigger' || statusAlarmVal === 'triggered') {
           return newestEvent;
         }
         if (newestEvent.inputDevice && newestEvent.inputDevice.status === 'active') {
@@ -316,7 +334,9 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
   const getActiveOutput = (mapping: DeviceMappingType) => {
     if (!alarmEvents || alarmEvents.length === 0) return null;
     
-    // Find any event where this output device is active
+    // Find the NEWEST event that references this output device, then check if active
+    let newestMatch: { event: typeof alarmEvents[0]; output: any; time: number } | null = null;
+    
     for (const evt of alarmEvents) {
       if (evt.outputDevices && Array.isArray(evt.outputDevices)) {
         const match = evt.outputDevices.find(
@@ -326,13 +346,18 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
             out.deviceName === mapping.deviceName ||
             out.deviceName === mapping.label
         );
-        if (match && match.status === 'active') {
-          return {
-            event: evt,
-            output: match,
-          };
+        if (match) {
+          const evtTime = evt.createdAt ? new Date(evt.createdAt).getTime() : 0;
+          if (!newestMatch || evtTime > newestMatch.time) {
+            newestMatch = { event: evt, output: match, time: evtTime };
+          }
         }
       }
+    }
+    
+    // Only return if the newest event still has this output as active
+    if (newestMatch && newestMatch.output.status === 'active') {
+      return { event: newestMatch.event, output: newestMatch.output };
     }
     return null;
   };
@@ -1128,6 +1153,12 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                   
                   const isStrobeActive = isOutputActive && deviceTypeLower.includes('strobelight');
 
+                  const isOutputDevice = deviceTypeLower.includes('siren') || 
+                                         deviceTypeLower.includes('buzzer') || 
+                                         deviceTypeLower.includes('bell') ||
+                                         deviceTypeLower.includes('doorlock') ||
+                                         deviceTypeLower.includes('strobelight');
+
                   return (
                     <Group
                       key={mapping.id}
@@ -1145,7 +1176,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
                       }}
                     >
                       {/* Pulsing alarm ring */}
-                      {isBlinking && !isOutputActive && (
+                      {isBlinking && !isOutputActive && !isOutputDevice && (
                         <Circle
                           radius={(isSelected ? 30.5 : 25) * pulseValue}
                           fill={blinkColor}

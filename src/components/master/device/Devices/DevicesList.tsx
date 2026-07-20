@@ -177,6 +177,12 @@ const DevicesList = () => {
             <TableCell>
               <Skeleton variant="text" width={80} height={22} />
             </TableCell>
+            <TableCell>
+              <Skeleton variant="text" width={80} height={22} />
+            </TableCell>
+            <TableCell>
+              <Skeleton variant="text" width={80} height={22} />
+            </TableCell>
             <TableCell
               sx={{
                 position: 'sticky',

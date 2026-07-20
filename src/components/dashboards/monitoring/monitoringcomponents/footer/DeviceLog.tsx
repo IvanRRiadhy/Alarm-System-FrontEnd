@@ -25,6 +25,10 @@ interface LogEntry {
   deviceName: string;
   deviceType: string;
   description: string;
+  building?: string | null;
+  floor?: string | null;
+  statusAlarm?: string;
+  alarmCaseId?: string | null;
 }
 
 const logEntries: LogEntry[] = [
@@ -132,6 +136,28 @@ export const matchEventToDevice = (event: EventItem, device: DeviceMappingType):
     return true;
   }
 
+  // 3. Output devices match
+  if (event.outputDevices && Array.isArray(event.outputDevices)) {
+    const hasOutputMatch = event.outputDevices.some(
+      (out: any) =>
+        out.deviceId === device.id ||
+        out.deviceId === device.deviceId ||
+        (out.deviceName && out.deviceName.toLowerCase() === device.deviceName.toLowerCase())
+    );
+    if (hasOutputMatch) return true;
+  }
+
+  // 4. Stream/camera devices match
+  if (event.streamDevices && Array.isArray(event.streamDevices)) {
+    const hasStreamMatch = event.streamDevices.some(
+      (str: any) =>
+        str.deviceId === device.id ||
+        str.deviceId === device.deviceId ||
+        (str.deviceName && str.deviceName.toLowerCase() === device.deviceName.toLowerCase())
+    );
+    if (hasStreamMatch) return true;
+  }
+
   // 3. Fallback: match by deviceType or deviceName / label keywords with event titles
   const deviceType = (device.deviceType || '').toLowerCase();
   const deviceName = (device.deviceName || '').toLowerCase();
@@ -229,6 +255,10 @@ const DeviceLog: React.FC<DeviceLogProps> = ({ selectedDevice, events, selectedL
             deviceName: e.deviceName || selectedDevice.deviceName,
             deviceType: selectedDevice.deviceType,
             description: `${e.title} terdeteksi di area ${e.area || 'pengawasan'}.`,
+            building: e.buildingName,
+            floor: e.floorName,
+            statusAlarm: e.statusAlarm,
+            alarmCaseId: e.alarmCaseId,
           }))
       : logEntries;
   }, [selectedDevice, events]);

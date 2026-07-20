@@ -302,9 +302,9 @@ const AlarmInvestigationList = () => {
                             right: 0,
                             backgroundColor: 'background.paper',
                             zIndex: 2,
-                            width: 150,
-                            minWidth: 150,
-                            maxWidth: 150,
+                            width: 180,
+                            minWidth: 180,
+                            maxWidth: 180,
                         }}
                     >
                         <Box display="flex" gap={1}>
@@ -393,7 +393,7 @@ const AlarmInvestigationList = () => {
                                                 personnelName: '',
                                                 dispatchedPersonnelIds: [],
                                                 dispatchedPersonnelNames: [],
-                                                status: caseItem.investigationStatus,
+                                                status: caseItem.investigationStatus || 'TRIGGERED',
                                                 acknowledgedNote: null,
                                                 dispatchedNote: null,
                                                 postponedNote: null,
@@ -443,7 +443,7 @@ const AlarmInvestigationList = () => {
                                                             <Box display="flex" flexDirection="column" alignItems="flex-start" gap={0.5}>
                                                                  <Chip
                                                                      label={caseItem.investigationStatus || 'TRIGGERED'}
-                                                                     color={getStatusColor(caseItem.investigationStatus)}
+                                                                     color={getStatusColor(caseItem.investigationStatus || '')}
                                                                      size="small"
                                                                  />
                                                             </Box>
@@ -483,7 +483,7 @@ const AlarmInvestigationList = () => {
                                                     </TableRow>
                                                     {/* ACCORDION ROW */}
                                                     <TableRow>
-                                                        <TableCell colSpan={9} sx={{ p: 0, borderBottom: 0 }}>
+                                                        <TableCell colSpan={8} sx={{ p: 0, borderBottom: 0 }}>
                                                             <Collapse in={isOpen} timeout="auto" unmountOnExit>
                                                                 <Box pl={6} pr={2} pb={2}>
                                                                     <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover', my: 1 }}>

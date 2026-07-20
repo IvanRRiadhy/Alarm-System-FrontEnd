@@ -57,6 +57,8 @@ export interface EventItem {
   floorName?: string | null;
   siteId?: string;
   siteName?: string;
+  areaName?: string | null;
+  floorplanName?: string | null;
   seenStatus?: boolean;
   inputDevice?: IoDeviceItem | null;
   outputDevices?: IoDeviceItem[];
@@ -507,6 +509,8 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
           const isAlarmActive =
             latestEvent.statusAlarm?.toLowerCase() === 'on' ||
             latestEvent.statusAlarm?.toLowerCase() === 'active' ||
+            latestEvent.statusAlarm?.toLowerCase() === 'alarm_trigger' ||
+            latestEvent.statusAlarm?.toLowerCase() === 'triggered' ||
             latestEvent.inputDevice?.status === 'active';
 
           // Determine breathing animation
@@ -565,99 +569,106 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                   },
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                  <Avatar
-                    sx={{
-                      width: 34,
-                      height: 34,
-                      bgcolor: `${severityColors[latestEvent.severity] || '#3B82F6'}18`,
-                      color: severityColors[latestEvent.severity] || '#3B82F6',
-                      mt: 0.25,
-                    }}
-                  >
-                    {latestEvent.icon}
-                  </Avatar>
-
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.2 }}>
-                        {latestEvent.time}
-                      </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {/* Top Row: Time & Status Badge */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Typography sx={{ color: '#64748B', fontSize: 10, fontFamily: 'monospace' }}>
+                      {latestEvent.time}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                      {hasMultiple && (
+                        <Chip
+                          label={`${events.length} kejadian`}
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            bgcolor: 'rgba(255,255,255,0.08)',
+                            color: '#94A3B8',
+                            border: 'none',
+                          }}
+                        />
+                      )}
+                      {(latestEvent.alarmCaseId && (latestEvent.statusAlarm?.toLowerCase() === "alarm_trigger" || latestEvent.statusAlarm?.toLowerCase() === "triggered")) ? (
+                        <Chip
+                          label={latestEvent.severity === "Critical" ? latestEvent.severity.toUpperCase() : latestEvent.severity}
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            bgcolor: `${severityColors[latestEvent.severity]}20`,
+                            color: severityColors[latestEvent.severity],
+                            border: `1px solid ${severityColors[latestEvent.severity]}40`,
+                          }}
+                        />
+                      ) : (
+                        <Chip
+                          label={latestEvent.statusAlarm || 'NORMAL'}
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: 9,
+                            fontWeight: 700,
+                            bgcolor: 'rgba(255,255,255,0.05)',
+                            color: '#94A3B8',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                          }}
+                        />
+                      )}
                     </Box>
+                  </Box>
+
+                  {/* Middle Row: Icon/Avatar & Title */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                    <Avatar
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        bgcolor: `${severityColors[latestEvent.severity] || '#3B82F6'}12`,
+                        color: severityColors[latestEvent.severity] || '#3B82F6',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {latestEvent.icon}
+                    </Avatar>
                     <Typography
                       sx={{
                         color: '#F8FAFC',
-                        fontSize: 13,
+                        fontSize: 12.5,
                         fontWeight: 600,
-                        lineHeight: 1.4,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        lineHeight: 1.3,
+                        wordBreak: 'break-word',
+                        flex: 1,
                       }}
                     >
                       {latestEvent.title}
                     </Typography>
-                    <Typography sx={{ color: '#64748B', fontSize: 11, lineHeight: 1.3 }}>
-                      {latestEvent.site}
-                    </Typography>
-                    
-                    
                   </Box>
 
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-end',
-                      gap: 0.5,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {(latestEvent.alarmCaseId && latestEvent.statusAlarm?.toLowerCase() === "alarm_trigger") ? (
-                      <Chip
-                      label={latestEvent.severity === "Critical" ? latestEvent.severity.toUpperCase() : latestEvent.severity}
-                      size="small"
+                  {/* Bottom Row: Location Info */}
+                  <Box sx={{ pl: 0.25 }}>
+                    <Typography
                       sx={{
-                        height: 20,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        bgcolor: `${severityColors[latestEvent.severity]}20`,
-                        color: severityColors[latestEvent.severity],
-                        border: `1px solid ${severityColors[latestEvent.severity]}40`,
+                        color: '#94A3B8',
+                        fontSize: 10.5,
+                        lineHeight: 1.4,
+                        fontWeight: 500,
                       }}
-                    />
-                    ) : (
-                      <Chip
-                      label={latestEvent.statusAlarm}
-                      size="small"
+                    >
+                      {latestEvent.site}
+                    </Typography>
+                    <Typography
                       sx={{
-                        height: 20,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        bgcolor: `grey20`,
-                        // color: severityColors[latestEvent.severity],
-                        border: `1px solid grey40`,
+                        color: '#64748B',
+                        fontSize: 9.5,
+                        lineHeight: 1.3,
+                        mt: 0.25,
                       }}
-                    />
-                    )}
-                    <Typography sx={{ color: '#64748B', fontSize: 10 }}>
+                    >
                       {latestEvent.area}
                     </Typography>
-                    {hasMultiple && (
-                      <Chip
-                        label={`${events.length} kejadian`}
-                        size="small"
-                        sx={{
-                          mt: 0.75,
-                          height: 18,
-                          fontSize: 9.5,
-                          fontWeight: 700,
-                          bgcolor: 'rgba(255,255,255,0.08)',
-                          color: '#94A3B8',
-                          border: 'none',
-                        }}
-                      />
-                    )}
                   </Box>
                 </Box>
               </Box>
@@ -667,7 +678,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                 <Box
                   sx={{
                     bgcolor: 'rgba(0,0,0,0.15)',
-                    pl: 4,
+                    pl: 3,
                     borderLeft: '1px solid rgba(255,255,255,0.06)',
                   }}
                 >
@@ -684,48 +695,49 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                         sx={{
                           py: 1.2,
                           pr: 2,
+                          pl: 1,
                           cursor: 'pointer',
                           bgcolor: isSubSelected ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
                           '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' },
                           borderBottom: subIndex < events.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
                         }}
                       >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography sx={{ color: '#F8FAFC', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                            <Typography sx={{ color: '#F8FAFC', fontSize: 11.5, fontWeight: 500, wordBreak: 'break-word', flex: 1 }}>
                               {subEvent.title}
                             </Typography>
-                            <Typography sx={{ color: '#64748B', fontSize: 10 }}>
-                              {subEvent.time} • {subEvent.area}
-                            </Typography>
+                            {(subEvent.alarmCaseId && (subEvent.statusAlarm?.toLowerCase() === "alarm_trigger" || subEvent.statusAlarm?.toLowerCase() === "triggered")) ? (
+                              <Chip
+                                label={subEvent.severity === "Critical" ? subEvent.severity.toUpperCase() : subEvent.severity}
+                                size="small"
+                                sx={{
+                                  height: 16,
+                                  fontSize: 8,
+                                  fontWeight: 700,
+                                  bgcolor: `${severityColors[subEvent.severity]}20`,
+                                  color: severityColors[subEvent.severity],
+                                  border: `1px solid ${severityColors[subEvent.severity]}40`,
+                                }}
+                              />
+                            ) : (
+                              <Chip
+                                label={subEvent.statusAlarm || 'NORMAL'}
+                                size="small"
+                                sx={{
+                                  height: 16,
+                                  fontSize: 8,
+                                  fontWeight: 700,
+                                  bgcolor: 'rgba(255,255,255,0.05)',
+                                  color: '#94A3B8',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                }}
+                              />
+                            )}
                           </Box>
-                          {(subEvent.alarmCaseId && subEvent.statusAlarm?.toLowerCase() === "triggered") ? (
-                            <Chip
-                            label={subEvent.severity === "Critical" ? subEvent.severity.toUpperCase() : subEvent.severity}
-                            size="small"
-                            sx={{
-                              height: 20,
-                              fontSize: 10,
-                              fontWeight: 700,
-                              bgcolor: `${severityColors[subEvent.severity]}20`,
-                              color: severityColors[subEvent.severity],
-                              border: `1px solid ${severityColors[subEvent.severity]}40`,
-                            }}
-                          />
-                          ) : (
-                            <Chip
-                            label={subEvent.statusAlarm}
-                            size="small"
-                            sx={{
-                              height: 20,
-                              fontSize: 10,
-                              fontWeight: 700,
-                              bgcolor: `grey20`,
-                              // color: severityColors[latestEvent.severity],
-                              border: `1px solid grey40`,
-                            }}
-                          />
-                          )}
+                          <Typography sx={{ color: '#64748B', fontSize: 9.5 }}>
+                            {subEvent.time} • {subEvent.area}
+                          </Typography>
                         </Box>
                       </Box>
                     );
