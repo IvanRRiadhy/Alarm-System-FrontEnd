@@ -13,4 +13,7 @@ services:
       # (e.g. run git fetch, git status, and git pull) without binding the entire workspace.
       # This prevents host-container node_modules conflicts (especially when running on Windows).
       - ./.git:/app/.git
+      # Uncomment this line if you want to change runtime config (API/MQTT URLs) on the host
+      # and have it apply immediately on page refresh without rebuilding the container:
+      # - ./public/config.json:/app/dist/config.json
     restart: unless-stopped
