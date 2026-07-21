@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import { styled, Container, Box, useTheme, Backdrop, CircularProgress } from '@mui/material';
 import { useSelector, useDispatch } from 'src/store/Store';
-import { Outlet } from 'react-router';
+import { Outlet, Navigate } from 'react-router';
 import { RootState, AppDispatch } from 'src/store/Store';
 import Header from './vertical/header/Header';
 import Sidebar from './vertical/sidebar/Sidebar';
@@ -164,6 +164,11 @@ const FullLayout: FC = () => {
       }
     };
   }, [dispatch]);
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (!token) {
+    return <Navigate to="/auth/login" replace />;
+  }
 
   return (
     <>
