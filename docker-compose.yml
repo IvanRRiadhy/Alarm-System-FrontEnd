@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  alarm-frontend:
+    container_name: alarm-system-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3500:3500"
+    volumes:
+      # We bind mount only the .git folder so that the container can read and write git history
+      # (e.g. run git fetch, git status, and git pull) without binding the entire workspace.
+      # This prevents host-container node_modules conflicts (especially when running on Windows).
+      - ./.git:/app/.git
+    restart: unless-stopped
