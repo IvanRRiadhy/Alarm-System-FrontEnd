@@ -1,102 +1,114 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import React from 'react';
-import { Link } from 'react-router';
-import { Grid2 as Grid, Box, Stack, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
-import img1 from 'src/assets/images/backgrounds/login-bg.svg';
-import Logo from 'src/layouts/full/shared/logo/Logo';
+import img1 from '/images/img1.png';
 import AuthLogin from '../authForms/AuthLogin';
 
 const Login = () => (
-  <PageContainer title="Login" description="this is Login page">
-    <Grid container spacing={0} sx={{ overflowX: 'hidden' }}>
-      <Grid
+  <PageContainer title="Login" description="Login to SOC Alarm System">
+    <Box
+      sx={{
+        position: 'relative',
+        minHeight: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundImage: `url(${img1})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'left center',
+        backgroundRepeat: 'no-repeat',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to right, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.85) 100%)',
+          zIndex: 1,
+        },
+      }}
+    >
+      {/* Left half - Empty to offset the login card to the right half */}
+      <Box
         sx={{
-          position: 'relative',
-          '&:before': {
-            content: '""',
-            background: 'radial-gradient(#d2f1df, #d3d7fa, #bad8f4)',
-            backgroundSize: '400% 400%',
-            animation: 'gradient 15s ease infinite',
-            position: 'absolute',
-            height: '100%',
-            width: '100%',
-            opacity: '0.3',
-          },
+          display: { xs: 'none', lg: 'block' },
+          flex: 1,
+          zIndex: 2,
         }}
-        size={{
-          xs: 12,
-          sm: 12,
-          lg: 7,
-          xl: 8
-        }}>
-        <Box position="relative">
-          <Box px={3}>
-            <Logo />
-          </Box>
-          <Box
-            alignItems="center"
-            justifyContent="center"
-            height={'calc(100vh - 75px)'}
-            sx={{
-              display: {
-                xs: 'none',
-                lg: 'flex',
-              },
-            }}
-          >
-            <img
-              src={img1}
-              alt="bg"
-              style={{
-                width: '100%',
-                maxWidth: '500px',
+      />
+
+      {/* Right half - Centering the login card inside it */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          px: { xs: 2, lg: 0 },
+          py: 4,
+          zIndex: 2,
+        }}
+      >
+        {/* Floating Glassmorphic Login Card */}
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: '480px',
+            background: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+            p: { xs: 3, sm: 5 },
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Header section (logo, title, subtitle) */}
+          <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
+            {/* Logo */}
+            <Box mb={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+              <img 
+                src="/Logo Bionics.png" 
+                alt="Logo Bionics" 
+                style={{ height: '70px', objectFit: 'contain' }} 
+              />
+            </Box>
+            
+            {/* Title */}
+            <Typography 
+              variant="h5" 
+              fontWeight={700} 
+              color="white" 
+              sx={{ 
+                letterSpacing: '1.5px', 
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                fontSize: '1.4rem'
               }}
-            />
+            >
+              SOC ALARM SYSTEM
+            </Typography>
+            
+            {/* Subtitle */}
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#94A3B8', 
+                mt: 0.5,
+                textAlign: 'center',
+                letterSpacing: '0.5px'
+              }}
+            >
+              Secure. Monitor. Respond.
+            </Typography>
+
+            {/* Blue accent indicator */}
+            <Box sx={{ width: 40, height: 3, bgcolor: '#1D4ED8', mt: 2, borderRadius: '2px' }} />
           </Box>
+
+          <AuthLogin hideDivider />
         </Box>
-      </Grid>
-      <Grid
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        size={{
-          xs: 12,
-          sm: 12,
-          lg: 5,
-          xl: 4
-        }}>
-        <Box p={4}>
-          <AuthLogin
-            title="Welcome to Modernize"
-            subtext={
-              <Typography variant="subtitle1" mb={1}>
-                Your Admin Dashboard
-              </Typography>
-            }
-            subtitle={
-              <Stack direction="row" spacing={1} mt={3}>
-                <Typography  variant="h6" fontWeight="500">
-                  New to Modernize?
-                </Typography>
-                <Typography
-                  component={Link}
-                  to="/auth/register"
-                  fontWeight="500"
-                  color="primary.main"
-                  sx={{
-                    textDecoration: 'none',
-                  }}
-                >
-                  Create an account
-                </Typography>
-              </Stack>
-            }
-          />
-        </Box>
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   </PageContainer>
 );
 

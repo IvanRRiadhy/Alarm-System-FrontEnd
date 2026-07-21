@@ -14,7 +14,6 @@ import {
   InputAdornment,
   IconButton,
 } from '@mui/material';
-import { Link } from 'react-router';
 import { AnimatePresence, motion, MotionProps } from 'framer-motion';
 import { loginType } from 'src/types/auth/auth';
 import CustomCheckbox from '../../../components/forms/theme-elements/CustomCheckbox';
@@ -22,7 +21,7 @@ import CustomTextField from '../../../components/forms/theme-elements/CustomText
 import CustomFormLabel from '../../../components/forms/theme-elements/CustomFormLabel';
 import axiosServices from 'src/utils/axios';
 import { jwtDecode } from 'jwt-decode';
-import { IconEye, IconEyeOff } from '@tabler/icons-react';
+import { IconEye, IconEyeOff, IconUser, IconLock } from '@tabler/icons-react';
 import _ from 'lodash';
 import { baseDarkTheme, baselightTheme } from 'src/theme/DefaultColors';
 import typography from 'src/theme/Typography';
@@ -70,7 +69,7 @@ const baseMode: any = {
 const loginTheme = createTheme(_.merge({}, baseMode, baseDarkTheme));
 loginTheme.components = components(loginTheme);
 
-const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
+const AuthLogin = ({ title, subtitle, subtext, hideDivider }: loginType) => {
 
   const [direction, setDirection] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -196,19 +195,21 @@ return (
 
     {subtext}
 
-    <Box mt={3}>
-      <Divider>
-        <Typography
-          component="span"
-          color="textSecondary"
-          variant="h6"
-          fontWeight={400}
-          px={2}
-        >
-          Sign in to continue
-        </Typography>
-      </Divider>
-    </Box>
+    {!hideDivider && (
+      <Box mt={3}>
+        <Divider>
+          <Typography
+            component="span"
+            color="textSecondary"
+            variant="h6"
+            fontWeight={400}
+            px={2}
+          >
+            Sign in to continue
+          </Typography>
+        </Divider>
+      </Box>
+    )}
 
     {loginError && (
       <Typography
@@ -235,12 +236,13 @@ return (
     >
       <Stack spacing={2}>
         <Box>
-          <CustomFormLabel htmlFor="email">
+          <CustomFormLabel htmlFor="email" sx={{ color: '#E2E8F0', mt: 1, mb: 1, fontWeight: 500 }}>
             Email
           </CustomFormLabel>
 
           <CustomTextField
             id="email"
+            placeholder="Enter your email"
             fullWidth
             inputRef={usernameRef}
             value={adminCreds.email}
@@ -250,17 +252,46 @@ return (
                 email: e.target.value,
               }))
             }
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <IconUser size={18} style={{ color: '#64748B' }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                borderRadius: '8px',
+                color: '#F8FAFC',
+                '& fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.25)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
+              },
+              '& .MuiOutlinedInput-input': {
+                '&::placeholder': {
+                  color: '#64748B',
+                  opacity: 1,
+                },
+              },
+            }}
           />
         </Box>
 
         <Box>
-          <CustomFormLabel htmlFor="password">
+          <CustomFormLabel htmlFor="password" sx={{ color: '#E2E8F0', mt: 1, mb: 1, fontWeight: 500 }}>
             Password
           </CustomFormLabel>
 
           <CustomTextField
-            
             id="password"
+            placeholder="Enter your password"
             fullWidth
             type={showPassword ? "text" : "password"}
             value={adminCreds.password}
@@ -271,20 +302,48 @@ return (
               }))
             }
             InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <IconLock size={18} style={{ color: '#64748B' }} />
+                </InputAdornment>
+              ),
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
                     onClick={() => setShowPassword((p) => !p)}
                     edge="end"
+                    sx={{ color: '#64748B' }}
                   >
                     {showPassword ? (
-                      <IconEyeOff size={20} />
+                      <IconEyeOff size={18} />
                     ) : (
-                      <IconEye size={20} />
+                      <IconEye size={18} />
                     )}
                   </IconButton>
                 </InputAdornment>
               ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                borderRadius: '8px',
+                color: '#F8FAFC',
+                '& fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.25)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
+              },
+              '& .MuiOutlinedInput-input': {
+                '&::placeholder': {
+                  color: '#64748B',
+                  opacity: 1,
+                },
+              },
             }}
           />
         </Box>
@@ -302,12 +361,24 @@ return (
                   onChange={(e) =>
                     setRememberMe(e.target.checked)
                   }
+                  sx={{
+                    color: '#64748B',
+                    '&.Mui-checked': {
+                      color: 'primary.main',
+                    },
+                  }}
                 />
               }
-              label="Remember this Device"
+              label={
+                <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                  Remember this device
+                </Typography>
+              }
             />
           </FormGroup>
 
+          {/* Forgot Password is hidden to match mockup image design */}
+          {/* 
           <Typography
             component={Link}
             to="/auth/forgot-password"
@@ -319,6 +390,7 @@ return (
           >
             Forgot Password?
           </Typography>
+          */}
         </Stack>
 
         <Button
@@ -326,6 +398,19 @@ return (
           fullWidth
           size="large"
           variant="contained"
+          sx={{
+            py: 1.5,
+            fontSize: '1.05rem',
+            fontWeight: 600,
+            textTransform: 'none',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #154EC1 0%, #1D4ED8 100%)',
+              boxShadow: '0 6px 16px rgba(37, 99, 235, 0.35)',
+            },
+          }}
         >
           Sign In
         </Button>
