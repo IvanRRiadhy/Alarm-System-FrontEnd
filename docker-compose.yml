@@ -8,6 +8,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3500:3500"
+    environment:
+      # Pass your GitHub Personal Access Token (PAT) if the repository is private.
+      # This allows the container to run git fetch and git pull without prompting for credentials.
+      - GIT_TOKEN
     volumes:
       # We bind mount only the .git folder so that the container can read and write git history
       # (e.g. run git fetch, git status, and git pull) without binding the entire workspace.
