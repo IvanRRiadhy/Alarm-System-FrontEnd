@@ -14,6 +14,8 @@ import {
 
 import L from 'leaflet';
 
+import { getConfig } from 'src/config';
+
 import 'leaflet/dist/leaflet.css';
 
 export interface ActiveAlarmSite {
@@ -150,6 +152,16 @@ const bounds: [[number, number], [number, number]] = [
 ];
 
 const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite, height }) => {
+  let tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  try {
+    const config = getConfig();
+    if (config.MAP_TILE_URL) {
+      tileUrl = config.MAP_TILE_URL;
+    }
+  } catch (e) {
+    // Config not loaded yet
+  }
+
   const displaySites = activeAlarmsBySite && activeAlarmsBySite.length > 0
     ? activeAlarmsBySite.map((site) => ({
         id: site.siteId,
@@ -213,7 +225,7 @@ const SiteMap: React.FC<SiteMapProps> = ({ region, activeAlarmsBySite, height })
         >
           <TileLayer
             attribution="© OpenStreetMap"
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url={tileUrl}
           />
 
           {displaySites.map((site) => (

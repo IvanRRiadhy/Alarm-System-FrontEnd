@@ -32,6 +32,7 @@ import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { toastError } from 'src/utils/errors';
+import { getConfig } from 'src/config';
 
 interface FormType {
     type?: string;
@@ -150,6 +151,16 @@ const MapController = ({ center, zoom }: { center: [number, number]; zoom: numbe
 };
 
 const AddEditSite = ({type, site}: FormType) => {
+    let tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    try {
+      const config = getConfig();
+      if (config.MAP_TILE_URL) {
+        tileUrl = config.MAP_TILE_URL;
+      }
+    } catch (e) {
+      // Config not loaded yet
+    }
+
     const [open, setOpen] = React.useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState({
@@ -537,7 +548,7 @@ const AddEditSite = ({type, site}: FormType) => {
                                     >
                                         <TileLayer
                                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                                            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                                            url={tileUrl}
                                         />
                                         <MapController center={mapCenter} zoom={mapZoom} />
                                         <MapClickHandler 

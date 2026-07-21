@@ -8,5 +8,6 @@
     "API_KEY": "FujDuGTsyEXVwkKrtRgn52APwAVRGmPOiIRX8cffynDvIW35bJaGeH3NcH6HcSeK",
     "NTFY_TOPIC": "alarm-ntfy",
     "MQTT_USERNAME": "user",
-    "MQTT_PASSWORD": "root"
+    "MQTT_PASSWORD": "root",
+    "MAP_TILE_URL": "http://localhost:3550/styles/basic-preview/{z}/{x}/{y}.png"
   }

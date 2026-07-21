@@ -10,6 +10,7 @@ export interface RuntimeConfig {
   MQTT_PASSWORD: string;
   API_KEY: string;
   NTFY_TOPIC: string;
+  MAP_TILE_URL?: string;
 }
 
 let runtimeConfig: RuntimeConfig | null = null;

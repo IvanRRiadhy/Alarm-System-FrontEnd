@@ -123,7 +123,9 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 2. Serve static files from dist
-  let filePath = path.join(DIST_DIR, req.url === '/' ? 'index.html' : req.url);
+  // Decode URL to resolve files with spaces (%20) in the filename (e.g. "Logo Bionics.png")
+  const decodedUrl = decodeURIComponent(req.url);
+  let filePath = path.join(DIST_DIR, req.url === '/' ? 'index.html' : decodedUrl);
 
   // If path doesn't have an extension, fall back to index.html (client-side routing fallback)
   if (!path.extname(filePath)) {

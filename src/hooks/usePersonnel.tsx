@@ -87,7 +87,7 @@ export function useEditPersonnel() {
     return useMutation({
         mutationFn: async (payload: Partial<PersonnelType>) => {
             if (!payload.id) throw new Error('Missing personnel id');
-            const { id, ...filteredPayload } = payload;
+            const { id, siteName, ...filteredPayload } = payload;
             const response = await axiosServices.put(`${PERSONNEL_API_URL}${id}`, filteredPayload)
             return response.data
         },
