@@ -14,9 +14,11 @@ import {
   Chip,
   Card,
   CardContent,
+  Tooltip,
 } from '@mui/material';
 import { IconX } from '@tabler/icons-react';
 import { useControllerList, useChangeStatusController } from 'src/hooks/useController';
+import { useAlarmCaseList } from 'src/hooks/useAlarmCase';
 import { controllerType } from 'src/store/apps/crud/controller';
 import toast from 'react-hot-toast';
 import { toastError } from 'src/utils/errors';
@@ -37,10 +39,12 @@ const ControllerRow = ({
   controller,
   onChangeStatus,
   isPending,
+  hasUnclearedAlarm,
 }: {
   controller: controllerType;
   onChangeStatus: (id: string, mode: string) => void;
   isPending: boolean;
+  hasUnclearedAlarm: boolean;
 }) => {
   return (
     <Card variant="outlined" sx={{ mb: 2, bgcolor: '#1E293B', borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -82,32 +86,70 @@ const ControllerRow = ({
         <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.06)' }} />
 
         <Box display="flex" flexWrap="wrap" gap={1} justifyContent="center">
-          {['Disarmed', 'ArmedStay', 'ArmedAway', 'Acknowledge'].map((mode) => (
-            <Button
-              key={mode}
-              variant={controller.alarmMode === mode ? 'contained' : 'outlined'}
-              size="small"
-              color={
-                mode === 'Disarmed'
-                  ? 'success'
-                  : mode === 'Acknowledge'
-                  ? 'info'
-                  : 'warning'
-              }
-              onClick={() => onChangeStatus(controller.id, mode)}
-              disabled={controller.alarmMode === mode || isPending}
-              sx={{
-                fontSize: '0.75rem',
-                py: 0.5,
-                px: 1.5,
-                textTransform: 'none',
-                borderRadius: '8px',
-                fontWeight: 600,
-              }}
-            >
-              {mode}
-            </Button>
-          ))}
+          {['Disarmed', 'ArmedStay', 'ArmedAway', 'Acknowledge'].map((mode) => {
+            const isModeDisabled =
+              controller.alarmMode === mode ||
+              isPending ||
+              (hasUnclearedAlarm && (mode === 'ArmedStay' || mode === 'ArmedAway'));
+
+            if (hasUnclearedAlarm && (mode === 'ArmedStay' || mode === 'ArmedAway')) {
+              return (
+                <Tooltip
+                  key={mode}
+                  title="Can only be armed after restoring alarm devices manually"
+                  arrow
+                >
+                  <span style={{ display: 'inline-block' }}>
+                    <Button
+                      variant={controller.alarmMode === mode ? 'contained' : 'outlined'}
+                      size="small"
+                      color="warning"
+                      onClick={() => onChangeStatus(controller.id, mode)}
+                      disabled={isModeDisabled}
+                      sx={{
+                        fontSize: '0.75rem',
+                        py: 0.5,
+                        px: 1.5,
+                        textTransform: 'none',
+                        borderRadius: '8px',
+                        fontWeight: 600,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {mode}
+                    </Button>
+                  </span>
+                </Tooltip>
+              );
+            }
+
+            return (
+              <Button
+                key={mode}
+                variant={controller.alarmMode === mode ? 'contained' : 'outlined'}
+                size="small"
+                color={
+                  mode === 'Disarmed'
+                    ? 'success'
+                    : mode === 'Acknowledge'
+                    ? 'info'
+                    : 'warning'
+                }
+                onClick={() => onChangeStatus(controller.id, mode)}
+                disabled={isModeDisabled}
+                sx={{
+                  fontSize: '0.75rem',
+                  py: 0.5,
+                  px: 1.5,
+                  textTransform: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                }}
+              >
+                {mode}
+              </Button>
+            );
+          })}
         </Box>
       </CardContent>
     </Card>
@@ -118,9 +160,20 @@ export const ControllerControlDialog = ({ open, onClose }: ControllerControlDial
   const { data: controllersResponse, isLoading } = useControllerList({ page: 1, limit: 100 });
   const controllers = controllersResponse?.data || [];
 
+  const { data: alarmCaseResponse } = useAlarmCaseList({ limit: 1000 });
+  const alarmCases = alarmCaseResponse?.data || [];
+
   const changeStatusMutation = useChangeStatusController();
 
   const handleChangeStatus = async (id: string, alarmMode: string) => {
+    const unclearedAlarm = alarmCases.find(
+      (c) => c.controllerId === id && c.isCleared === false
+    );
+    if (unclearedAlarm && (alarmMode === 'ArmedStay' || alarmMode === 'ArmedAway')) {
+      toast.error('Cannot arm: Controller has active (uncleared) alarms.');
+      return;
+    }
+
     try {
       await changeStatusMutation.mutateAsync({ id, alarmMode });
       toast.success('Alarm Mode Updated');
@@ -167,14 +220,20 @@ export const ControllerControlDialog = ({ open, onClose }: ControllerControlDial
             </Typography>
           </Box>
         ) : (
-          controllers.map((controller) => (
-            <ControllerRow
-              key={controller.id}
-              controller={controller}
-              onChangeStatus={handleChangeStatus}
-              isPending={changeStatusMutation.isPending}
-            />
-          ))
+          controllers.map((controller) => {
+            const hasUnclearedAlarm = alarmCases.some(
+              (c) => c.controllerId === controller.id && c.isCleared === false
+            );
+            return (
+              <ControllerRow
+                key={controller.id}
+                controller={controller}
+                onChangeStatus={handleChangeStatus}
+                isPending={changeStatusMutation.isPending}
+                hasUnclearedAlarm={hasUnclearedAlarm}
+              />
+            );
+          })
         )}
       </DialogContent>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />

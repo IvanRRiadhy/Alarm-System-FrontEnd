@@ -34,6 +34,7 @@ import toast from 'react-hot-toast';
 import { UpdateFilter } from 'src/store/apps/crud/controller';
 import { defaultControllerFilter } from 'src/store/apps/defaultForm';
 import { useControllerList, useDeleteController, useChangeStatusController } from 'src/hooks/useController';
+import { useAlarmCaseList } from 'src/hooks/useAlarmCase';
 import { controllerType } from 'src/store/apps/crud/controller';
 import AddEditController from './AddEditController';
 import ControllerChannel from './ControllerChannel';
@@ -68,6 +69,9 @@ const ControllerList = () => {
         const controllerData = data?.data || [];
         const controllerFilteredCount = data?.meta?.totalItems || 0;
         const controllerTotalCount = data?.meta?.totalItems || 0; 
+
+        const { data: alarmCaseResponse } = useAlarmCaseList({ limit: 1000 });
+        const alarmCases = alarmCaseResponse?.data || []; 
 
           // Pagination State
           const {controllerMeta} = useSelector((state: RootState) => state.ControllerReducer)
@@ -138,6 +142,14 @@ const ControllerList = () => {
   const changeStatusMutation = useChangeStatusController();
 
   const handleChangeStatus = async (id: string, alarmMode: string) => {
+    const unclearedAlarm = alarmCases.find(
+      (c) => c.controllerId === id && c.isCleared === false
+    );
+    if (unclearedAlarm && (alarmMode === 'ArmedStay' || alarmMode === 'ArmedAway')) {
+      toast.error('Cannot arm: Controller has active (uncleared) alarms.');
+      return;
+    }
+
     try {
       await changeStatusMutation.mutateAsync({ id, alarmMode });
       toast.success('Alarm Mode Updated');
@@ -350,24 +362,63 @@ const ControllerList = () => {
                                     sx={{ fontWeight: '500' }}
                                   />
                                   <Box display="flex" flexWrap="wrap" gap={0.5} justifyContent="center" sx={{ maxWidth: 220 }}>
-                                    {['Disarmed', 'ArmedStay', 'ArmedAway', 'Acknowledge'].map((mode) => (
-                                      <Button
-                                        key={mode}
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => handleChangeStatus(controller.id, mode)}
-                                        disabled={controller.alarmMode === mode || changeStatusMutation.isPending}
-                                        sx={{
-                                          fontSize: '0.7rem',
-                                          py: 0.25,
-                                          px: 0.75,
-                                          minWidth: 'auto',
-                                          textTransform: 'none',
-                                        }}
-                                      >
-                                        {mode}
-                                      </Button>
-                                    ))}
+                                    {['Disarmed', 'ArmedStay', 'ArmedAway', 'Acknowledge'].map((mode) => {
+                                      const hasUnclearedAlarm = alarmCases.some(
+                                        (c) => c.controllerId === controller.id && c.isCleared === false
+                                      );
+                                      const isModeDisabled =
+                                        controller.alarmMode === mode ||
+                                        changeStatusMutation.isPending ||
+                                        (hasUnclearedAlarm && (mode === 'ArmedStay' || mode === 'ArmedAway'));
+
+                                      if (hasUnclearedAlarm && (mode === 'ArmedStay' || mode === 'ArmedAway')) {
+                                        return (
+                                          <Tooltip
+                                            key={mode}
+                                            title="Can only be armed after restoring alarm devices manually"
+                                            arrow
+                                          >
+                                            <span style={{ display: 'inline-block' }}>
+                                              <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => handleChangeStatus(controller.id, mode)}
+                                                disabled={isModeDisabled}
+                                                sx={{
+                                                  fontSize: '0.7rem',
+                                                  py: 0.25,
+                                                  px: 0.75,
+                                                  minWidth: 'auto',
+                                                  textTransform: 'none',
+                                                  pointerEvents: 'none',
+                                                }}
+                                              >
+                                                {mode}
+                                              </Button>
+                                            </span>
+                                          </Tooltip>
+                                        );
+                                      }
+
+                                      return (
+                                        <Button
+                                          key={mode}
+                                          variant="outlined"
+                                          size="small"
+                                          onClick={() => handleChangeStatus(controller.id, mode)}
+                                          disabled={isModeDisabled}
+                                          sx={{
+                                            fontSize: '0.7rem',
+                                            py: 0.25,
+                                            px: 0.75,
+                                            minWidth: 'auto',
+                                            textTransform: 'none',
+                                          }}
+                                        >
+                                          {mode}
+                                        </Button>
+                                      );
+                                    })}
                                   </Box>
                                 </Box>
                               </TableCell>
