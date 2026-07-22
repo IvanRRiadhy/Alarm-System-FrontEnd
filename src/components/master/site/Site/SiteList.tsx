@@ -24,9 +24,11 @@ import {
   Collapse,
   Paper,
   Tooltip,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import BlankCard from 'src/components/shared/BlankCard';
-import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload, IconUserPlus } from '@tabler/icons-react';
+import { IconTrash, IconChevronDown, IconChevronRight, IconPlus, IconExternalLink, IconDownload, IconUserPlus, IconSettings } from '@tabler/icons-react';
 import { useNavigate, useLocation } from 'react-router';
 import { RootState, AppDispatch, useSelector, useDispatch } from 'src/store/Store';
 import toast from 'react-hot-toast';
@@ -35,7 +37,7 @@ import {
   UpdateFilter,
 } from 'src/store/apps/crud/site';
 import { defaultSiteFilter } from 'src/store/apps/defaultForm';
-import { useDeleteSite, useSiteList, useAssignUser } from 'src/hooks/useSite';
+import { useDeleteSite, useSiteList, useAssignUser, useEditSiteSettings } from 'src/hooks/useSite';
 import AddEditSite from './AddEditSite';
 import { toastError } from 'src/utils/errors';
 import { BuildingType, SelectBuilding } from 'src/store/apps/crud/building';
@@ -188,12 +190,10 @@ const SiteList = () => {
 
           // Pagination State
           const {siteMeta} = useSelector((state: RootState) => state.siteReducer)
-        const page = siteFilter.page;
-        const rowsPerPage = siteFilter.limit;
-        const havePrev = siteMeta.hasPreviousPage;
-        const haveNext = siteMeta.hasNextPage;
-        const orderBy = siteFilter.sortBy;
-        const order = siteFilter.sortOrder;
+        const page = siteFilter.page ?? 1;
+        const rowsPerPage = siteFilter.limit ?? 10;
+        const orderBy = siteFilter.sortBy ?? '';
+        const order = siteFilter.sortOrder ?? 'desc';
 
           const handleChangePage = (_: unknown, newPage: number) => {
             console.log("New Page : ", newPage);
@@ -293,36 +293,70 @@ const SiteList = () => {
       }
       handleCloseDeleteBuildingDialog();
     };
-
-    // Assign User Dialog State
+        // Assign User Dialog State
     const [assignDialogOpen, setAssignDialogOpen] = useState(false);
     const [selectedSiteForAssign, setSelectedSiteForAssign] = useState<SiteType | null>(null);
     const [selectedUserForAssign, setSelectedUserForAssign] = useState<userType | null>(null);
     const assignUserMutation = useAssignUser();
 
-    const handleOpenAssignDialog = (site: SiteType) => {
+        const handleOpenAssignDialog = (site: SiteType) => {
       setSelectedSiteForAssign(site);
       setSelectedUserForAssign(null);
       setAssignDialogOpen(true);
-    };
-
-    const handleCloseAssignDialog = () => {
+        }
+            const handleCloseAssignDialog = () => {
       setAssignDialogOpen(false);
       setSelectedSiteForAssign(null);
       setSelectedUserForAssign(null);
-    };
+            }
 
-    const handleConfirmAssign = async () => {
+                const handleConfirmAssign = async () => {
       if (selectedSiteForAssign && selectedUserForAssign) {
         try {
-          await assignUserMutation.mutateAsync({
+                    await assignUserMutation.mutateAsync({
             userId: selectedUserForAssign.id,
             siteId: selectedSiteForAssign.id,
+        })
+        toast.success('User assigned successfully');
+        handleCloseAssignDialog();
+    } catch (error) {
+        toastError(error, 'Assign failed');
+        console.error(error);
+        }
+        }
+    }
+
+    // Notification Settings Dialog State
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+    const [selectedSiteForSettings, setSelectedSiteForSettings] = useState<SiteType | null>(null);
+    const [emailNotification, setEmailNotification] = useState(false);
+    const [waNotification, setWaNotification] = useState(false);
+    const editSiteSettingsMutation = useEditSiteSettings();
+
+    const handleOpenSettingsDialog = (site: SiteType) => {
+      setSelectedSiteForSettings(site);
+      setEmailNotification(Boolean(site.enableEmailNotification));
+      setWaNotification(Boolean(site.enableWaNotification));
+      setSettingsDialogOpen(true);
+    };
+
+    const handleCloseSettingsDialog = () => {
+      setSettingsDialogOpen(false);
+      setSelectedSiteForSettings(null);
+    };
+
+    const handleSaveSettings = async () => {
+      if (selectedSiteForSettings) {
+        try {
+          await editSiteSettingsMutation.mutateAsync({
+            id: selectedSiteForSettings.id,
+            enableEmailNotification: emailNotification,
+            enableWaNotification: waNotification,
           });
-          toast.success('User assigned successfully');
-          handleCloseAssignDialog();
+          toast.success('Notification settings updated successfully');
+          handleCloseSettingsDialog();
         } catch (error) {
-          toastError(error, 'Assignment failed');
+          toastError(error, 'Failed to update settings');
           console.error(error);
         }
       }
@@ -493,13 +527,26 @@ const SiteList = () => {
                                   {userRole === 'SuperAdmin' && (
                                     <Tooltip title="Assign User" arrow>
                                       <IconButton
-                                        color="primary"
+                                        color="success"
                                         size="small"
                                         onClick={() => handleOpenAssignDialog(site)}
                                       >
                                         <IconUserPlus size={20} />
                                       </IconButton>
                                     </Tooltip>
+                                    
+                                  )}
+                                  {userRole === 'SuperAdmin' && (
+                                    <Tooltip title="Notification Settings" arrow>
+                                      <IconButton
+                                        color="info"
+                                        size="small"
+                                        onClick={() => handleOpenSettingsDialog(site)}
+                                      >
+                                        <IconSettings size={20} />
+                                      </IconButton>
+                                    </Tooltip>
+                                    
                                   )}
                                   <IconButton
                                     color="error"
@@ -640,6 +687,51 @@ const SiteList = () => {
             startIcon={assignUserMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
           >
             {assignUserMutation.isPending ? 'Assigning...' : 'Assign'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Notification Settings Dialog */}
+      <Dialog open={settingsDialogOpen} onClose={handleCloseSettingsDialog} fullWidth maxWidth="xs">
+        <DialogTitle>Notification Settings</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Configure notification preferences for <strong>{selectedSiteForSettings?.name}</strong>.
+          </DialogContentText>
+          <Box display="flex" flexDirection="column" gap={1}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={emailNotification}
+                  onChange={(e) => setEmailNotification(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Email Notification"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={waNotification}
+                  onChange={(e) => setWaNotification(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="WhatsApp Notification"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseSettingsDialog} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveSettings}
+            color="primary"
+            variant="contained"
+            disabled={editSiteSettingsMutation.isPending}
+            startIcon={editSiteSettingsMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {editSiteSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
           </Button>
         </DialogActions>
       </Dialog>

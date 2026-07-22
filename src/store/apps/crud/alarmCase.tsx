@@ -120,6 +120,34 @@ export type GetFilter = {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    siteId?: string | null;
+    deviceId?: string | null;
+    severity?: string | null;
+    isCleared?: string | null;
+    buildingId?: string | null;
+    floorId?: string | null;
+    floorplanId?: string | null;
+    areaId?: string | null;
+    controllerId?: string | null;
+    deviceType?: string | null;
+};
+
+export const defaultAlarmCaseFilter: GetFilter = {
+    page: 1,
+    limit: 10,
+    search: '',
+    sortBy: 'triggeredAt',
+    sortOrder: 'desc',
+    siteId: null,
+    deviceId: null,
+    severity: null,
+    isCleared: null,
+    buildingId: null,
+    floorId: null,
+    floorplanId: null,
+    areaId: null,
+    controllerId: null,
+    deviceType: null,
 };
 
 interface StateType {
@@ -130,13 +158,7 @@ interface StateType {
 
 const initialState: StateType = {
     alarmCaseList: [],
-    alarmCaseFilter: {
-        page: 1,
-        limit: 10,
-        search: '',
-        sortBy: 'triggeredAt',
-        sortOrder: 'desc',
-    },
+    alarmCaseFilter: { ...defaultAlarmCaseFilter },
     alarmCaseMeta: {
         page: 1,
         limit: 10,

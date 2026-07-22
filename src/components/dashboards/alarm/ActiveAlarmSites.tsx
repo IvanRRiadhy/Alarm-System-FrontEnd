@@ -17,7 +17,27 @@ type ActiveAlarmSitesProps = {
 };
 
 const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite = [] }) => {
-  const isFloorplanMode = activeAlarmsBySite.length > 0 && ('floorplanName' in activeAlarmsBySite[0]);
+  const isSuperAdmin = React.useMemo(() => {
+    try {
+      const responseStr = localStorage.getItem('response');
+      const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
+      const role = loggedInUser?.role || localStorage.getItem('role') || '';
+      return role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+    } catch (e) {
+      const role = localStorage.getItem('role') || '';
+      return role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+    }
+  }, []);
+
+  const filteredSites = React.useMemo(() => {
+    if (!isSuperAdmin) return activeAlarmsBySite;
+    return activeAlarmsBySite.filter((item) => {
+      const s = (item.severity || '').toLowerCase();
+      return s !== 'low' && s !== 'medium';
+    });
+  }, [activeAlarmsBySite, isSuperAdmin]);
+
+  const isFloorplanMode = filteredSites.length > 0 && ('floorplanName' in filteredSites[0]);
 
   return (
     <Paper
@@ -71,7 +91,7 @@ const ActiveAlarmSites: React.FC<ActiveAlarmSitesProps> = ({ activeAlarmsBySite 
           </TableHead>
 
           <TableBody>
-            {activeAlarmsBySite.map((row) => {
+            {filteredSites.map((row) => {
               console.log("Severity: ", row)
               const severityLower = (row.severity || '').toLowerCase();
               let chipBg = 'rgba(56,189,248,.15)';

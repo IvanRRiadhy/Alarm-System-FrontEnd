@@ -289,7 +289,7 @@ const Modern = () => {
       color = '#EF4444';
       bg = 'rgba(239, 68, 68, 0.15)';
       shadowGlow = '0 0 12px rgba(239, 68, 68, 0.4)';
-    } else if (status === 'Trouble') {
+    } else if (status === 'Trouble' || status === 'Open Case') {
       color = '#F59E0B';
       bg = 'rgba(245, 158, 11, 0.15)';
       shadowGlow = '0 0 12px rgba(245, 158, 11, 0.3)';
@@ -308,8 +308,8 @@ const Modern = () => {
           longitude: Number(siteObj.longitude),
           status: dashboardData?.activeAlarmsByFloorplan?.some((fp: any) => fp.status?.toLowerCase() === 'alarm')
             ? 'Alarm'
-            : dashboardData?.activeAlarmsByFloorplan?.some((fp: any) => fp.status?.toLowerCase() === 'trouble')
-            ? 'Trouble'
+            : dashboardData?.activeAlarmsByFloorplan?.some((fp: any) => fp.status?.toLowerCase() === 'trouble' || fp.status?.toLowerCase() === 'open case')
+            ? 'Open Case'
             : 'Normal',
           severity: dashboardData?.activeAlarmsByFloorplan?.reduce((maxSev: string, fp: any) => {
             if (!fp.severity) return maxSev;
@@ -333,9 +333,18 @@ const Modern = () => {
       ]
     : dashboardData?.activeAlarmsBySite;
 
-  const activeAlarmsSitesData = siteId 
-    ? (dashboardData?.activeAlarmsByFloorplan || [])
-    : (dashboardData?.activeAlarmsBySite || []);
+  const activeAlarmsSitesData = useMemo(() => {
+    let list = siteId 
+      ? (dashboardData?.activeAlarmsByFloorplan || [])
+      : (dashboardData?.activeAlarmsBySite || []);
+    if (isSuperAdmin) {
+      list = list.filter((item: any) => {
+        const s = (item.severity || '').toLowerCase();
+        return s !== 'low' && s !== 'medium';
+      });
+    }
+    return list;
+  }, [siteId, dashboardData?.activeAlarmsByFloorplan, dashboardData?.activeAlarmsBySite, isSuperAdmin]);
 
   const renderStandardDashboard = () => (
     <>
@@ -576,20 +585,20 @@ const Modern = () => {
             <DeviceStatus
               deviceOnline={dashboardData?.deviceOnline}
               deviceOffline={dashboardData?.deviceOffline}
-              totalTrouble={dashboardData?.totalTrouble}
+              totalAlarmCaseOpen={dashboardData?.totalAlarmCaseOpen ?? dashboardData?.totalTrouble}
             />
             <AlarmTrend alarmTrends={dashboardData?.alarmTrends} />
           </Box>
         </Grid>
 
-        {/* Recent Events */}
+        {/* Recent Events / Open Cases */}
         <Grid
           size={{
             xs: 12,
             md: 12,
             lg: 3
           }}>
-          <RecentEvents recentEvents={dashboardData?.recentEvents} />
+          <RecentEvents recentOpenCases={dashboardData?.recentOpenCases} recentEvents={dashboardData?.recentEvents} />
         </Grid>
       </Grid>
     </>
@@ -882,7 +891,7 @@ const Modern = () => {
               <DeviceStatus
                 deviceOnline={dashboardData?.deviceOnline}
                 deviceOffline={dashboardData?.deviceOffline}
-                totalTrouble={dashboardData?.totalTrouble}
+                totalAlarmCaseOpen={dashboardData?.totalAlarmCaseOpen ?? dashboardData?.totalTrouble}
               />
               <AlarmTrend alarmTrends={dashboardData?.alarmTrends} />
             </Box>
@@ -893,7 +902,7 @@ const Modern = () => {
               md: 12,
               lg: 3
             }}>
-            <RecentEvents recentEvents={dashboardData?.recentEvents} />
+            <RecentEvents recentOpenCases={dashboardData?.recentOpenCases} recentEvents={dashboardData?.recentEvents} />
           </Grid>
         </Grid>
       </Box>

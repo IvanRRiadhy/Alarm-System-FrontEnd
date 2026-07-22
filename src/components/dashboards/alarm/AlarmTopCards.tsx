@@ -40,17 +40,20 @@ interface AlarmTopCardsProps {
     deviceOnline?: number;
     totalDevice?: number;
     totalAlarmActive?: number;
+    totalAlarmCaseOpen?: number;
     totalTrouble?: number;
     eventsToday?: number;
   };
 }
 
 const AlarmTopCards: React.FC<AlarmTopCardsProps> = ({ data }) => {
+  const openCasesCount = data?.totalAlarmCaseOpen ?? data?.totalTrouble ?? 0;
+
   const cards = [
     { title: 'TOTAL SITE', value: (data?.totalSite ?? 0).toLocaleString(), color: '#3b82f6' },
     { title: 'DEVICE ONLINE', value: (data?.deviceOnline ?? 0).toLocaleString(), color: '#22c55e' },
     { title: 'ALARM AKTIF', value: (data?.totalAlarmActive ?? 0).toLocaleString(), color: '#ef4444' },
-    { title: 'TROUBLE', value: (data?.totalTrouble ?? 0).toLocaleString(), color: '#f59e0b' },
+    { title: 'OPEN CASE', value: openCasesCount.toLocaleString(), color: '#f59e0b' },
   ];
 
   return (

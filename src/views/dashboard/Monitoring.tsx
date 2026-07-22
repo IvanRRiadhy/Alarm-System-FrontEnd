@@ -57,28 +57,36 @@ const Monitoring = () => {
     const handleSiteChange = () => {
       const currentSiteId = localStorage.getItem('selectedSiteId');
       setSiteId(currentSiteId);
-      
-      if (currentSiteId) {
-        setSearchParams({ siteId: currentSiteId }, { replace: true });
-      } else {
+      if (!currentSiteId) {
+        setSelectedFloorplan(null);
         setSearchParams({}, { replace: true });
+      } else {
+        setSearchParams({ siteId: currentSiteId }, { replace: true });
       }
     };
 
+    // On mount or when URL searchParams change:
     const urlId = searchParams.get('siteId');
-    if (urlId && urlId !== localStorage.getItem('selectedSiteId')) {
+    const storedSiteId = localStorage.getItem('selectedSiteId');
+
+    if (urlId && urlId !== storedSiteId) {
       localStorage.setItem('selectedSiteId', urlId);
       localStorage.removeItem('selectedSite');
+      setSiteId(urlId);
       window.dispatchEvent(new Event('siteChanged'));
-    } else if (!urlId && siteId) {
-      setSearchParams({ siteId }, { replace: true });
+    } else if (!urlId && storedSiteId) {
+      localStorage.removeItem('selectedSiteId');
+      localStorage.removeItem('selectedSite');
+      setSiteId(null);
+      setSelectedFloorplan(null);
+      window.dispatchEvent(new Event('siteChanged'));
     }
 
     window.addEventListener('siteChanged', handleSiteChange);
     return () => {
       window.removeEventListener('siteChanged', handleSiteChange);
     };
-  }, [searchParams, setSearchParams, siteId]);
+  }, [searchParams, setSearchParams]);
 
   // Fetch all lookup data needed for MQTT message mapping
   const { data: deviceMappingResponse } = useDeviceMappingList({ page: 1, limit: 1000, sortBy: 'name', sortOrder: 'asc', floorplanId: '' });

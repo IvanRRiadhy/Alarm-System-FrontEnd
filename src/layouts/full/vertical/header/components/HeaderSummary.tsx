@@ -17,8 +17,8 @@ const HeaderSummary = () => {
             color: '#EF4444',
         },
         {
-            label: 'Trouble',
-            value: dashboardData?.totalTrouble ?? 0,
+            label: 'Open Case',
+            value: dashboardData?.totalAlarmCaseOpen ?? dashboardData?.totalTrouble ?? 0,
             color: '#F59E0B',
         },
         {

@@ -14,10 +14,10 @@ import AppCard from 'src/components/shared/AppCard';
 import { RootState, useSelector } from 'src/store/Store';
 import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
-import DevicesList from 'src/components/master/device/Devices/DevicesList';
-import AddEditDevices from 'src/components/master/device/Devices/AddEditDevices';
 import AlarmRuleList from 'src/components/master/alarmRule/AlarmRuleList';
 import AddEditAlarmRule from 'src/components/master/alarmRule/AddEditAlarmRule';
+import AlarmRuleSearch from 'src/components/master/alarmRule/AlarmRuleSearch';
+import AlarmRuleFilter from 'src/components/master/alarmRule/AlarmRuleFilter';
 
 interface cardType {
   icon?: string;
@@ -95,6 +95,8 @@ const AlarmRule = () => {
           <ParentCard 
             title="Alarm Rule List" 
             codeModel={[
+              <AlarmRuleSearch key="search" />,
+              <AlarmRuleFilter key="filter" />,
               <AddEditAlarmRule type='add' key="add-alarm-rule-trigger" />
             ]}
           >

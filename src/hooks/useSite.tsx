@@ -60,7 +60,7 @@ export function useAddSite(){
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (payload: Partial<SiteType>) => {
-            const { id, ...filteredPayload } = payload;
+            const { id, enableEmailNotification, enableWaNotification, ...filteredPayload } = payload;
             const response = await axiosServices.post(Site_API_URL, filteredPayload)
             return response.data
         },
@@ -75,7 +75,7 @@ export function useEditSite() {
     return useMutation({
         mutationFn: async (payload: Partial<SiteType>) => {
             if (!payload.id) throw new Error('Missing site id');
-            const { id, ...filteredPayload } = payload;
+            const { id, enableEmailNotification, enableWaNotification, ...filteredPayload } = payload;
             const response = await axiosServices.put(`${Site_API_URL}${id}`, filteredPayload)
             return response.data
         },
@@ -106,6 +106,24 @@ export function useAssignUser() {
         mutationFn: async (payload: {userId: string, siteId: string}) => {
             const { userId, siteId } = payload;
             const response = await axiosServices.post(`${Site_API_URL}${siteId}/assign-users`, { userId })
+            return response.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["site-list"] })
+        }
+    })
+}
+
+export function useEditSiteSettings() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (payload: Partial<SiteType>) => {
+            if (!payload.id) throw new Error('Missing site id');
+            const { id, enableEmailNotification, enableWaNotification, ...filteredPayload } = payload;
+            const response = await axiosServices.put(`${Site_API_URL}${id}/notification-settings`, {
+                enableEmailNotification,
+                enableWaNotification,
+            })
             return response.data
         },
         onSuccess: () => {

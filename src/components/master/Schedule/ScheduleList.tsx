@@ -58,10 +58,10 @@ const ScheduleList: React.FC = () => {
   const sites = siteRes?.data || [];
 
   // Pagination & Sorting State
-  const page = scheduleFilter.page;
-  const rowsPerPage = scheduleFilter.limit;
-  const orderBy = scheduleFilter.sortBy;
-  const order = scheduleFilter.sortOrder;
+  const page = scheduleFilter.page ?? 1;
+  const rowsPerPage = scheduleFilter.limit ?? 10;
+  const orderBy = scheduleFilter.sortBy ?? '';
+  const order = scheduleFilter.sortOrder ?? 'desc';
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

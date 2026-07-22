@@ -73,8 +73,8 @@ const AlarmRuleSlice = createSlice({
         GetAlarmRule: (state, action: PayloadAction<AlarmRuleDataType[]>) => {
             state.AlarmRule = action.payload
         },
-        UpdateAlarmRuleFilter: (state, action: PayloadAction<GetFilter>) => {
-            state.alarmRuleFilter = action.payload
+        UpdateAlarmRuleFilter: (state, action: PayloadAction<Partial<GetFilter>>) => {
+            state.alarmRuleFilter = { ...state.alarmRuleFilter, ...action.payload }
         },
         SelectedAlarmRule: (state, action: PayloadAction<AlarmRuleDataType>) => {
             state.selectedAlarmRule = action.payload

@@ -340,6 +340,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ selectedDevice, deviceMappings 
           <>
             {activeLoop.map((device, index) => {
               const deviceRtspUrl = (deviceQueries[index]?.data as any)?.rtspUrl || '';
+              console.log("RTSP",deviceRtspUrl, device)
               const deviceName = device.label;
               const isCurrent = currentIndex === index;
               return (

@@ -10,6 +10,8 @@ import { RootState, useDispatch, useSelector } from 'src/store/Store';
 import { SelectedSchedule } from 'src/store/apps/crud/schedule';
 import { defaultScheduleForm } from 'src/store/apps/defaultForm';
 import { useTranslation } from 'react-i18next';
+import ScheduleSearch from 'src/components/master/Schedule/ScheduleSearch';
+import ScheduleFilter from 'src/components/master/Schedule/ScheduleFilter';
 
 interface cardType {
   icon?: string;
@@ -93,6 +95,8 @@ const Scheduler = () => {
           <ParentCard
             title="Time Table List"
             codeModel={[
+              <ScheduleSearch key="search" />,
+              <ScheduleFilter key="filter" />,
               <Button
                 key="add-btn"
                 variant="contained"

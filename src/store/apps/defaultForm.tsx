@@ -62,6 +62,7 @@ export const defaultSiteForm: SiteType = {
   region: '',
   latitude: 0,
   longitude: 0,
+  
 };
 export const defaultSiteFilter: SiteFilter = {
   page: 1,

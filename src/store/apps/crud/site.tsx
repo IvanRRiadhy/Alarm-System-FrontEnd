@@ -1,15 +1,6 @@
-import axiosServices, { BASE_URL } from "../../../utils/axios";
 import { createSlice } from "@reduxjs/toolkit";
-import { AppDispatch, dispatch } from "src/store/Store";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { defaultBuildingFilter, defaultSiteFilter } from "../defaultForm";
-import toast from "react-hot-toast";
-import { ensureMinLatency, retryUntilSuccess } from "src/utils/retry";
-
-const API_URL = '/api/sites/';
-const API_DT_URL = '/api/sites/filter/';
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+import { defaultSiteFilter } from "../defaultForm";
 
 export type metaData = {
     page: number;
@@ -25,18 +16,22 @@ export type GetFilter = {
     search?: string,
     sortBy?: string,
     sortOrder?: 'asc' | "desc",
+    region?: string,
+    timezone?: string,
 }
 
 export type SiteType = {
     id: string;
     code: string;
-    name: string;
+    name: string;   
     address: string;
     phone: string;
     timezone: string;
     region: string;
     latitude: number;
     longitude: number;
+    enableEmailNotification?: boolean;
+    enableWaNotification?: boolean;
 }
 
 export type GetSiteResponse = {

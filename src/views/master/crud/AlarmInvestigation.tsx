@@ -15,6 +15,8 @@ import { RootState, useSelector } from 'src/store/Store';
 import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
 import AlarmInvestigationList from 'src/components/master/investigations/AlarmInvestigationList';
+import CaseSearch from 'src/components/master/investigations/CaseSearch';
+import CaseFilter from 'src/components/master/investigations/CaseFilter';
 interface cardType {
   icon?: string;
   title: string;
@@ -97,6 +99,8 @@ const AlarmInvestigations = () => {
           <ParentCard 
             title="Alarm Case List" 
             codeModel={[
+              <CaseSearch key="search" />,
+              <CaseFilter key="filter" />
             ]}
           >
             <AlarmInvestigationList />

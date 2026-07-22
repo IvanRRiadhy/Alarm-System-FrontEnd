@@ -2,41 +2,41 @@ import { Box, IconButton, InputAdornment, TextField } from '@mui/material';
 import { IconSearch, IconX } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { AppDispatch, RootState, useDispatch, useSelector } from 'src/store/Store';
-import { UpdateFilter } from 'src/store/apps/crud/site';
+import { SetAlarmCaseFilter } from 'src/store/apps/crud/alarmCase';
 
-const SiteSearch = () => {
+const CaseSearch = () => {
   const dispatch: AppDispatch = useDispatch();
-  const siteFilter = useSelector(
-    (state: RootState) => state.siteReducer.siteFilter,
+  const alarmCaseFilter = useSelector(
+    (state: RootState) => state.alarmCaseReducer.alarmCaseFilter,
   );
 
   // Initialize from Redux so it doesn't clear an external filter on mount
-  const [searchValue, setSearchValue] = useState(siteFilter.search || '');
+  const [searchValue, setSearchValue] = useState(alarmCaseFilter.search || '');
 
   // Keep internal state synced if Redux changes externally (like on mount from location state)
   useEffect(() => {
-    setSearchValue(siteFilter.search || '');
-  }, [siteFilter.search]);
+    setSearchValue(alarmCaseFilter.search || '');
+  }, [alarmCaseFilter.search]);
 
   useEffect(() => {
     // Only dispatch if the local searchValue differs from Redux
-    if (searchValue.trim() !== (siteFilter.search || '')) {
+    if (searchValue.trim() !== (alarmCaseFilter.search || '')) {
       const delayDebounce = setTimeout(() => {
-        dispatch(UpdateFilter({ search: searchValue.trim() }));
+        dispatch(SetAlarmCaseFilter({ search: searchValue.trim() }));
       }, 1000);
       return () => clearTimeout(delayDebounce);
     }
-  }, [searchValue, dispatch, siteFilter.search]);
+  }, [searchValue, dispatch, alarmCaseFilter.search]);
 
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      dispatch(UpdateFilter({ search: searchValue.trim() }));
+      dispatch(SetAlarmCaseFilter({ search: searchValue.trim() }));
     }
   };
 
   const handleClearSearch = () => {
     setSearchValue('');
-    dispatch(UpdateFilter({ search: '' }));
+    dispatch(SetAlarmCaseFilter({ search: '' }));
   };
 
   return (
@@ -68,4 +68,4 @@ const SiteSearch = () => {
   );
 };
 
-export default SiteSearch;
+export default CaseSearch;

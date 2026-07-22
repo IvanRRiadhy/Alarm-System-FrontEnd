@@ -289,7 +289,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device, mode 
     icon = <IconCircleCheck size={20} />;
     buttonColor = "success";
   } else {
-    if (!device.status) {
+    if (!device.status || device.status === "TRIGGERED") {
       tooltipTitle = "Investigate";
       buttonColor = "primary";
     } else if (device.status === 'Acknowledged') {
@@ -299,7 +299,7 @@ const InvestigationUpdate: React.FC<InvestigationUpdateProps> = ({ device, mode 
   }
 
   const handleActionClick = async () => {
-    if (!device.status && mode === 'default') {
+    if ((!device.status || device.status === "TRIGGERED") && mode === 'default') {
       try {
         setIsSaving(true);
         await createInvestigationMutation.mutateAsync();

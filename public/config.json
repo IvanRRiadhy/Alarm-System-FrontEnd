@@ -1,7 +1,7 @@
   {
     "API_BASE_URL": "https://alarm.app.bio-experience.com",
     "API_ENGINE_URL": "http://192.168.1.136:3300",
-    "CCTV_WS_URL": "ws://192.168.1.175:8282",
+    "CCTV_WS_URL": "ws://192.168.1.197:8282",
     "MQTT_URL": "ws://103.193.15.67:15675",
     "ALARM_TOPIC": "people_tracking/alarm/+/+/+/+/+",
     "CDN_URL": "https://ble-cdn.app.bio-experience.com",
@@ -9,5 +9,5 @@
     "NTFY_TOPIC": "alarm-ntfy",
     "MQTT_USERNAME": "user",
     "MQTT_PASSWORD": "root",
-    "MAP_TILE_URL": "http://localhost:3550/styles/basic-preview/{z}/{x}/{y}.png"
+    "MAP_TILE_URL": "http://192.168.1.197:3550/styles/basic-preview/{z}/{x}/{y}.png"
   }

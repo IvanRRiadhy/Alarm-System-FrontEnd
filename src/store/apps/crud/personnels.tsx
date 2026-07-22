@@ -28,6 +28,10 @@ export type PersonnelType = {
     isActive: boolean;
     siteId: string;
     siteName: string;
+    createdAt?: string;
+    createdBy?: string;
+    updatedAt?: string;
+    updatedBy?: string;
 }
 
 interface StateType {

@@ -105,12 +105,12 @@ const Menuitems: MenuitemsType[] = [
     icon: IconDeviceDesktopAnalytics,
     href: '/dashboards/monitoring',
   },
-  // {
-  //   id: uniqueId(),
-  //   title: 'Camera Monitor',
-  //   icon: IconCamera,
-  //   href: '/dashboards/camera-monitor',
-  // },
+  {
+    id: uniqueId(),
+    title: 'Camera Monitor',
+    icon: IconCamera,
+    href: '/dashboards/camera-monitor',
+  },
   // {
   //   id: uniqueId(),
   //   title: 'Frontend pages',

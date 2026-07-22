@@ -10,14 +10,14 @@ import {
   CircularProgress,
 } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
-import Breadcrumb from 'src/layouts/full/shared/breadcrumb/Breadcrumb';
 import AppCard from 'src/components/shared/AppCard';
 import { RootState, useSelector } from 'src/store/Store';
 import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
 import SiteList from 'src/components/master/site/Site/SiteList';
-import { useBuildingStatus } from 'src/hooks/useBuilding';
 import AddEditSite from 'src/components/master/site/Site/AddEditSite';
+import SiteSearch from 'src/components/master/site/Site/SiteSearch';
+import SiteFilter from 'src/components/master/site/Site/SiteFilter';
 
 interface cardType {
   icon?: string;
@@ -92,7 +92,9 @@ const Site = () => {
           }}
         >
           <ParentCard title="Site List" codeModel={[
-            <AddEditSite type='add' />
+            <SiteSearch key="search" />,
+            <SiteFilter key="filter" />,
+            <AddEditSite key="add" type='add' />
             ]}>
             <SiteList />
           </ParentCard>

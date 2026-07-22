@@ -11,14 +11,17 @@ type DeviceStatusProps = {
   deviceOnline?: number;
   deviceOffline?: number;
   totalTrouble?: number;
+  totalAlarmCaseOpen?: number;
 };
 
 const DeviceStatus: React.FC<DeviceStatusProps> = ({
   deviceOnline = 0,
   deviceOffline = 0,
-  totalTrouble = 0,
+  totalTrouble,
+  totalAlarmCaseOpen,
 }) => {
-  const series = [deviceOnline, deviceOffline, totalTrouble];
+  
+  const series = [deviceOnline, deviceOffline];
 
   const total = series.reduce((a, b) => a + b, 0);
 
@@ -31,9 +34,9 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({
       },
     },
 
-    labels: ['Online', 'Offline', 'Trouble'],
+    labels: ['Online', 'Offline'],
 
-    colors: ['#22c55e', '#f59e0b', '#ef4444'],
+    colors: ['#22c55e', '#f59e0b'],
 
     legend: {
       show: false,
@@ -91,11 +94,11 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({
       label: 'Offline',
       value: deviceOffline,
     },
-    {
-      color: '#ef4444',
-      label: 'Trouble',
-      value: totalTrouble,
-    },
+      // {
+      //   color: '#ef4444',
+      //   label: 'Open Case',
+      //   value: openCasesCount,
+      // },
   ];
 
   return (

@@ -53,7 +53,13 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
   const siteData = siteResponse?.data || [];
 
   // Fetch Schedules
-  const { data: scheduleResponse } = useScheduleList({ page: 1, limit: 100 } as any);
+  const scheduleParams = useMemo(() => ({
+    page: 1,
+    limit: 100,
+    ...(formData.siteId ? { siteId: formData.siteId } : { siteId: 'none' }),
+  }), [formData.siteId]);
+
+  const { data: scheduleResponse } = useScheduleList(scheduleParams as any);
   const scheduleData = scheduleResponse?.data || [];
 
   // Fetch Devices for Input and Output sections
@@ -262,6 +268,8 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                     // inputDeviceName: '',
                     outputs: [], // Reset outputs
                     streams: [], // Reset streams
+                    scheduleTemplateId: '', // Reset schedule template
+                    scheduleTemplateName: '',
                   }));
                   setFormErrors((prev) => {
                     const next = { ...prev };
@@ -294,7 +302,7 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                 }}
                 getOptionLabel={(o) => o?.name ?? ''}
                 isOptionEqualToValue={(opt, val) => opt.id === val.id}
-
+                disabled={!formData.siteId}
               />
             </Grid>
 

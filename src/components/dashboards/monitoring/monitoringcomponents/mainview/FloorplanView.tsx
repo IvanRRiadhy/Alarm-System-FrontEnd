@@ -212,15 +212,55 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
   const dispatch: AppDispatch = useDispatch();
   const alarmEvents = useSelector((state: RootState) => state.alarmEventReducer.alarmEventList);
 
+  // Resolve user role
+  let role = '';
+  try {
+    const responseStr = localStorage.getItem('response');
+    const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
+    role = loggedInUser?.role || localStorage.getItem('role') || '';
+  } catch (e) {
+    role = localStorage.getItem('role') || '';
+  }
+  const isSuperAdmin = role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+
+  // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
+  const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
+  const { data: floorResponse } = useFloorList();
+  const { data: floorplanResponse } = useFloorplanList();
+
   const [pulseValue, setPulseValue] = useState(1);
 
   const [localSelectedFloorplan, setLocalSelectedFloorplan] = useState<FloorplanType | null>(null);
   const selectedFloorplan = propSelectedFloorplan !== undefined ? propSelectedFloorplan : localSelectedFloorplan;
-  const setSelectedFloorplan = (fp: FloorplanType | null) => {
+
+  const setFloorplanOnly = (fp: FloorplanType | null) => {
     if (onSelectFloorplan) {
       onSelectFloorplan(fp);
     } else {
       setLocalSelectedFloorplan(fp);
+    }
+  };
+
+  const setSelectedFloorplan = (fp: FloorplanType | null) => {
+    setFloorplanOnly(fp);
+
+    if (isSuperAdmin) {
+      if (fp) {
+        const sites = siteResponse?.data || [];
+        const siteObj = sites.find((s) => s.id === fp.siteId);
+        if (siteObj) {
+          localStorage.setItem('selectedSiteId', siteObj.id);
+          localStorage.setItem('selectedSite', JSON.stringify(siteObj));
+        } else {
+          const fallbackSite = { id: fp.siteId, name: fp.siteName || '' };
+          localStorage.setItem('selectedSiteId', fp.siteId);
+          localStorage.setItem('selectedSite', JSON.stringify(fallbackSite));
+        }
+      } else {
+        localStorage.removeItem('selectedSiteId');
+        localStorage.removeItem('selectedSite');
+      }
+      window.dispatchEvent(new Event('siteChanged'));
     }
   };
 
@@ -246,8 +286,8 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
     
     const deviceEvents = alarmEvents.filter((evt) => {
       // 1. Direct input match
-      const isInputMatch = (deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId || (evt.inputDevice && evt.inputDevice.deviceId === deviceId);
-      if (isInputMatch) return true;
+      // const isInputMatch = (deviceId && evt.deviceId === deviceId) || evt.deviceId === mappingId || (evt.inputDevice && evt.inputDevice.deviceId === deviceId);
+      // if (isInputMatch) return true;
 
       // 2. Output devices match
       if (evt.outputDevices && Array.isArray(evt.outputDevices)) {
@@ -372,17 +412,6 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
   };
   const location = useLocation();
 
-  // Resolve user role
-  let role = '';
-  try {
-    const responseStr = localStorage.getItem('response');
-    const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
-    role = loggedInUser?.role || localStorage.getItem('role') || '';
-  } catch (e) {
-    role = localStorage.getItem('role') || '';
-  }
-  const isSuperAdmin = role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
-
   // Fetch alarm cases if SuperAdmin (limit 1000 to get all active cases)
   const { data: alarmCaseResponse } = useAlarmCaseList(
     isSuperAdmin ? { page: 1, limit: 1000, sortBy: 'triggeredAt', sortOrder: 'desc' } : undefined
@@ -393,14 +422,54 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
   const [activePopupSiteId, setActivePopupSiteId] = useState<string | null>(null);
   const [modeEdit, setModeEdit] = useState(false);
 
-  // Fetch site, floor, and floorplan lists to auto-select the first floor of the first site
-  const { data: siteResponse } = useSiteList({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
-  const { data: floorResponse } = useFloorList();
-  const { data: floorplanResponse } = useFloorplanList();
+  // Sync selection externally changed from layout Header (e.g. via siteChanged event listener)
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    const handleSiteChangedExternal = () => {
+      const savedSiteId = localStorage.getItem('selectedSiteId');
+      if (!savedSiteId) {
+        setFloorplanOnly(null);
+      } else {
+        if (selectedFloorplan?.siteId !== savedSiteId) {
+          const floorplans = floorplanResponse?.data || [];
+          const siteFloors = (floorResponse?.data || []).filter((f) => f.siteId === savedSiteId);
+          
+          let targetFloor = siteFloors.find((f) => f.level === 0);
+          if (!targetFloor) {
+            const positiveFloors = siteFloors.filter((f) => f.level > 0).sort((a, b) => a.level - b.level);
+            if (positiveFloors.length > 0) targetFloor = positiveFloors[0];
+          }
+          if (!targetFloor && siteFloors.length > 0) {
+            const sortedFloors = [...siteFloors].sort((a, b) => a.level - b.level);
+            targetFloor = sortedFloors[0];
+          }
+          
+          let targetFloorplan = null;
+          if (targetFloor) {
+            const fps = floorplans.filter((fp) => fp.floorId === targetFloor.id);
+            if (fps.length > 0) targetFloorplan = fps[0];
+          }
+          if (!targetFloorplan) {
+            const siteFps = floorplans.filter((fp) => fp.siteId === savedSiteId);
+            if (siteFps.length > 0) targetFloorplan = siteFps[0];
+          }
+
+          if (targetFloorplan) {
+            setFloorplanOnly(targetFloorplan);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('siteChanged', handleSiteChangedExternal);
+    return () => {
+      window.removeEventListener('siteChanged', handleSiteChangedExternal);
+    };
+  }, [isSuperAdmin, selectedFloorplan, floorResponse, floorplanResponse]);
 
   useEffect(() => {
     if (selectedFloorplan) return;
-    if (isSuperAdmin) return; // Do not auto-select floorplan for SuperAdmin to show the map of Indonesia by default
 
     const sites = siteResponse?.data || [];
     const floorData = floorResponse?.data || [];
@@ -414,6 +483,38 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
           setSelectedFloorplan(match);
           return;
         }
+      }
+
+      // If SuperAdmin, check if site is already selected in Header/localStorage on page mount
+      if (isSuperAdmin) {
+        const savedSiteId = localStorage.getItem('selectedSiteId');
+        if (savedSiteId) {
+          const siteFloors = floorData.filter((f) => f.siteId === savedSiteId);
+          let targetFloor = siteFloors.find((f) => f.level === 0);
+          if (!targetFloor) {
+            const positiveFloors = siteFloors.filter((f) => f.level > 0).sort((a, b) => a.level - b.level);
+            if (positiveFloors.length > 0) targetFloor = positiveFloors[0];
+          }
+          if (!targetFloor && siteFloors.length > 0) {
+            const sortedFloors = [...siteFloors].sort((a, b) => a.level - b.level);
+            targetFloor = sortedFloors[0];
+          }
+          
+          let targetFloorplan = null;
+          if (targetFloor) {
+            const fps = floorplanData.filter((fp) => fp.floorId === targetFloor.id);
+            if (fps.length > 0) targetFloorplan = fps[0];
+          }
+          if (!targetFloorplan) {
+            const siteFps = floorplanData.filter((fp) => fp.siteId === savedSiteId);
+            if (siteFps.length > 0) targetFloorplan = siteFps[0];
+          }
+          if (targetFloorplan) {
+            setFloorplanOnly(targetFloorplan);
+            return;
+          }
+        }
+        return; // Otherwise default to showing map of Indonesia
       }
 
       const firstSite = sites[0];
@@ -454,7 +555,7 @@ const FloorplanView: React.FC<FloorplanViewProps> = ({
         setSelectedFloorplan(floorplanData[0]);
       }
     }
-  }, [siteResponse, floorResponse, floorplanResponse, selectedFloorplan]);
+  }, [siteResponse, floorResponse, floorplanResponse, selectedFloorplan, isSuperAdmin]);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);

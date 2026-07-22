@@ -110,13 +110,32 @@ const severityConfig = {
 };
 
 const ActiveAlarms: React.FC<ActiveAlarmsProps> = ({ region, recentActiveAlarms = [] }) => {
+  const isSuperAdmin = useMemo(() => {
+    try {
+      const responseStr = localStorage.getItem('response');
+      const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
+      const role = loggedInUser?.role || localStorage.getItem('role') || '';
+      return role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+    } catch (e) {
+      const role = localStorage.getItem('role') || '';
+      return role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+    }
+  }, []);
 
   const [selectedSeverity, setSelectedSeverity] = useState<
     'All' | 'Critical' | 'High' | 'Medium' | 'Low'
   >('All');
 
   const mappedAlarms = useMemo(() => {
-    return recentActiveAlarms.map((x) => {
+    let alarms = recentActiveAlarms;
+    if (isSuperAdmin) {
+      alarms = alarms.filter((x) => {
+        const s = (x.severity || '').toLowerCase();
+        return s !== 'low' && s !== 'medium';
+      });
+    }
+
+    return alarms.map((x) => {
       let timeStr = '';
       try {
         if (x.timestamp) {
@@ -143,7 +162,7 @@ const ActiveAlarms: React.FC<ActiveAlarmsProps> = ({ region, recentActiveAlarms 
         severity: sev as 'Critical' | 'High' | 'Medium' | 'Low',
       };
     });
-  }, [recentActiveAlarms]);
+  }, [recentActiveAlarms, isSuperAdmin]);
 
   const summary = useMemo(() => ({
     Critical: mappedAlarms.filter(x => x.severity === 'Critical').length,

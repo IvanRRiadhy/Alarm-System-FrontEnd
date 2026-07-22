@@ -66,8 +66,8 @@ const ScheduleSlice = createSlice({
         GetSchedule: (state, action: PayloadAction<ScheduleDataType[]>) => {
             state.schedules = action.payload
         },
-        UpdateScheduleFilter: (state, action: PayloadAction<GetFilter>) => {
-            state.scheduleFilter = action.payload
+        UpdateScheduleFilter: (state, action: PayloadAction<Partial<GetFilter>>) => {
+            state.scheduleFilter = { ...state.scheduleFilter, ...action.payload }
         },
         SelectedSchedule: (state, action: PayloadAction<ScheduleDataType>) => {
             state.selectedSchedule = action.payload

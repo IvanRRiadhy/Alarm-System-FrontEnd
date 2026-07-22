@@ -10,17 +10,14 @@ import {
   CircularProgress,
 } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
-import Breadcrumb from 'src/layouts/full/shared/breadcrumb/Breadcrumb';
 import AppCard from 'src/components/shared/AppCard';
 import { RootState, useSelector } from 'src/store/Store';
 import ParentCard from 'src/components/shared/ParentCard';
 import { useTranslation } from 'react-i18next';
 import BuildingList from 'src/components/master/site/Building/BuildingList';
 import AddEditBuilding from 'src/components/master/site/Building/AddEditBuilding';
-import BuildingImport from 'src/components/master/site/Building/BuildingImport';
-import BuildingExport from 'src/components/master/site/Building/BuildingExport';
-import { useBuildingStatus } from 'src/hooks/useBuilding';
 import BuildingSearch from 'src/components/master/site/Building/BuildingSearch';
+import BuildingFilter from 'src/components/master/site/Building/BuildingFilter';
 
 interface cardType {
   icon?: string;
@@ -96,6 +93,7 @@ const Building = () => {
         >
           <ParentCard title="Building List" codeModel={[
             <BuildingSearch key={"search"} />,
+            <BuildingFilter key="filter" />,
             // <BuildingImport key={"import"} />,
             // <BuildingExport key={"export"} />,
             <AddEditBuilding key={"add"} type="add" />

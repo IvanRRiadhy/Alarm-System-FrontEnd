@@ -18,6 +18,7 @@ import CameraAltRoundedIcon from '@mui/icons-material/CameraAltRounded';
 
 type RecentEventsProps = {
   recentEvents?: any[];
+  recentOpenCases?: any[];
 };
 
 const getEventIconAndColor = (message: string, severity: string) => {
@@ -47,8 +48,29 @@ const getEventIconAndColor = (message: string, severity: string) => {
   return { color, icon };
 };
 
-const RecentEvents: React.FC<RecentEventsProps> = ({ recentEvents = [] }) => {
-  const mappedEvents = recentEvents.map((e) => {
+const RecentEvents: React.FC<RecentEventsProps> = ({ recentEvents = [], recentOpenCases }) => {
+  const isSuperAdmin = React.useMemo(() => {
+    try {
+      const responseStr = localStorage.getItem('response');
+      const loggedInUser = responseStr ? JSON.parse(responseStr) : null;
+      const role = loggedInUser?.role || localStorage.getItem('role') || '';
+      return role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+    } catch (e) {
+      const role = localStorage.getItem('role') || '';
+      return role === 'SuperAdmin' || role?.toLowerCase() === 'superadmin';
+    }
+  }, []);
+
+  const eventsToDisplay = React.useMemo(() => {
+    const raw = recentOpenCases || recentEvents;
+    if (!isSuperAdmin) return raw;
+    return raw.filter((item) => {
+      const s = (item.severity || '').toLowerCase();
+      return s !== 'low' && s !== 'medium';
+    });
+  }, [recentOpenCases, recentEvents, isSuperAdmin]);
+
+  const mappedEvents = eventsToDisplay.map((e) => {
     let timeStr = '';
     try {
       if (e.timestamp) {
@@ -62,7 +84,7 @@ const RecentEvents: React.FC<RecentEventsProps> = ({ recentEvents = [] }) => {
     const { color, icon } = getEventIconAndColor(e.message, e.severity);
 
     return {
-      id: e.eventId || Math.random().toString(),
+      id: e.caseId || e.eventId || Math.random().toString(),
       time: timeStr,
       title: e.message || '',
       site: e.siteName || '',
@@ -96,7 +118,7 @@ const RecentEvents: React.FC<RecentEventsProps> = ({ recentEvents = [] }) => {
             fontSize: 16,
           }}
         >
-          RECENT EVENTS
+          RECENT OPEN CASES
         </Typography>
       </Box>
 
