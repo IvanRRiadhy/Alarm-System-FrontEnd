@@ -1,7 +1,6 @@
-version: '3.8'
-
 services:
   alarm-frontend:
+    image: ivanrifqi1002/alarm-system-frontend:latest
     container_name: alarm-system-frontend
     build:
       context: .

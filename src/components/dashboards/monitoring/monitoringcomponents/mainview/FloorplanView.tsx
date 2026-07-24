@@ -61,6 +61,9 @@ const getMarkerColor = (type: string, status: string) => {
   if (t.includes('glassbreaksensor')) return '#8B5CF6';
   // if (t.includes('beamsensor')) return '#06B6D4';
   if (t.includes('vibrationsensor')) return '#10B981';
+  if (t.includes('smokedetector')) return '#6b4a4aff';
+  if (t.includes('heatdetector')) return '#f55414ff';
+  if (t.includes('flamedetector')) return '#f8292dff';
   if (t.includes('cctvcamera')) return '#22C55E';
   if (t.includes('doorlock')) return '#6366F1';
   if (t.includes('siren')) return '#EF4444';
@@ -76,6 +79,9 @@ const getDeviceInitials = (type: string) => {
   if (t.includes('glassbreaksensor')) return 'GLS';
   // if (t.includes('beamsensor')) return 'BEM';
   if (t.includes('vibrationsensor')) return 'VIB';
+  if (t.includes('smokedetector')) return 'SDT';
+  if (t.includes('heatdetector')) return 'HDT';
+  if (t.includes('flamedetector')) return 'FDT';
   if (t.includes('cctvcamera')) return 'CAM';
   if (t.includes('doorlock')) return 'LCK';
   if (t.includes('siren')) return 'SRN';
@@ -155,6 +161,9 @@ const legendItems = [
   { label: 'Glass Break Sensor', type: 'GlassBreakSensor' },
   // { label: 'Beam Sensor', type: 'BeamSensor' },
   { label: 'Vibration Sensor', type: 'VibrationSensor' },
+  { label: "Smoke Detector", type: 'SmokeDetector'},
+  { label: 'Heat Detector', type: 'HeatDetector'},
+  { label: 'Flame Detector', type: 'FlameDetector'},
   { label: 'CCTV Camera', type: 'CctvCamera' },
   { label: 'Door Lock', type: 'DoorLock' },
   { label: 'Siren', type: 'Siren' },

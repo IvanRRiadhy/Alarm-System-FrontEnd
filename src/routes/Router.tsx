@@ -86,6 +86,7 @@ const Pricing = Loadable(lazy(() => import('../views/pages/pricing/Pricing')));
 const AccountSetting = Loadable(
   lazy(() => import('../views/pages/account-setting/AccountSetting')),
 );
+const UpdateProfile = Loadable(lazy(() => import('../views/pages/profile/UpdateProfile')));
 const CameraPopup = Loadable(lazy(() => import('../views/pages/CameraPopup')));
 
 // charts
@@ -331,6 +332,7 @@ const Router = [
 
       //User
       {path: '/master/user', element: <User/> },
+      {path: '/user-profile/edit', element: <UpdateProfile/> },
 
       //AlarmInvestigation
       {path: '/master/alarminvestigation', element: <AlarmInvestigations/> },

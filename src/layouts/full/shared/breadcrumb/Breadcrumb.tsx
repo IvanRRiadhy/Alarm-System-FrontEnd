@@ -80,7 +80,7 @@ const Breadcrumb = ({ subtitle, items, title, children }: BreadCrumbType) => (
           width: '100%',
         }}
       >
-        {children ? (
+        {/* {children ? (
           <Box sx={{ top: '0px', position: 'absolute' }}>{children}</Box>
         ) : (
           <>
@@ -88,7 +88,7 @@ const Breadcrumb = ({ subtitle, items, title, children }: BreadCrumbType) => (
               <img src={breadcrumbImg} alt={breadcrumbImg} width={'165px'} />
             </Box>
           </>
-        )}
+        )} */}
       </Box>
     </Grid>
   </Grid>

@@ -26,6 +26,7 @@ export type SiteType = {
     name: string;   
     address: string;
     phone: string;
+    email: string;
     timezone: string;
     region: string;
     latitude: number;

@@ -134,9 +134,10 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
     
     try {
       setIsSaving(true);
-      const { outputs, streams, ...restFormData } = formData;
+      const { outputs, streams, inputDeviceName, ...restFormData } = formData;
       const payload = {
         ...restFormData,
+        scheduleTemplateId: restFormData.scheduleTemplateId ? restFormData.scheduleTemplateId : null,
         outputDeviceIds: (outputs || []).map((d) => d.deviceId),
         streamDeviceIds: (streams || []).map((d) => d.deviceId),
       };
@@ -268,8 +269,8 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                     // inputDeviceName: '',
                     outputs: [], // Reset outputs
                     streams: [], // Reset streams
-                    scheduleTemplateId: '', // Reset schedule template
-                    scheduleTemplateName: '',
+                    scheduleTemplateId: null, // Reset schedule template
+                    scheduleTemplateName: null,
                   }));
                   setFormErrors((prev) => {
                     const next = { ...prev };
@@ -295,12 +296,12 @@ const AddEditAlarmRule = ({ type = 'add', alarmRule }: FormType) => {
                 onChange={(val) => {
                   setFormData((prev) => ({
                     ...prev,
-                    scheduleTemplateId: val?.id ?? '',
-                    scheduleTemplateName: val?.name ?? '',
+                    scheduleTemplateId: val?.id ?? null,
+                    scheduleTemplateName: val?.name ?? null,
                   }));
 
                 }}
-                getOptionLabel={(o) => o?.name ?? ''}
+                getOptionLabel={(o) => o?.name ?? null}
                 isOptionEqualToValue={(opt, val) => opt.id === val.id}
                 disabled={!formData.siteId}
               />

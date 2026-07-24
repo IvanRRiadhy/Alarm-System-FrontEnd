@@ -169,8 +169,17 @@ const handleSubmit = async (e: React.FormEvent) => {
       //   return;
       // }
 
+      try {
+        const profileRes = await axiosServices.get('/api/users/profile');
+        if (profileRes?.data) {
+          localStorage.setItem('userProfile', JSON.stringify(profileRes.data));
+        }
+      } catch (profileErr) {
+        console.error('Failed to fetch user profile after login:', profileErr);
+      }
+
       setTimeout(() => {
-        window.location.href = '/dashboards/modern'
+        window.location.href = '/dashboards/modern';
 
         console.log('decoded', jwtDecode(data.token));
       }, 300);

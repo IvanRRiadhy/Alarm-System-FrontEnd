@@ -237,6 +237,7 @@ const AddEditSite = ({type, site}: FormType) => {
           region: formData.region,
           address: formData.address,
           phone: localPhone ? `+${getDialCode(countryCode)}${localPhone}` : '',
+          email: formData.email,
           timezone: formData.timezone,
           longitude: Number(formData.longitude),
           latitude: Number(formData.latitude)
@@ -435,26 +436,44 @@ const AddEditSite = ({type, site}: FormType) => {
                             />
                         </Grid>
 
-                        {/* Phone Input */}
+                        {/* Left Column: Phone & Email */}
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            <PhoneInput
-                                value={localPhone}
-                                onChange={(val) => {
-                                    setLocalPhone(val);
-                                    setFormErrors((prev) => {
-                                        const next = { ...prev };
-                                        delete next.phone;
-                                        return next;
-                                    });
-                                }}
-                                countryCode={countryCode}
-                                onCountryCodeChange={setCountryCode}
-                                error={!!formErrors.phone}
-                                helperText={formErrors.phone}
-                            />
+                            <Box display="flex" flexDirection="column" gap={1.5}>
+                                <PhoneInput
+                                    value={localPhone}
+                                    onChange={(val) => {
+                                        setLocalPhone(val);
+                                        setFormErrors((prev) => {
+                                            const next = { ...prev };
+                                            delete next.phone;
+                                            return next;
+                                        });
+                                    }}
+                                    countryCode={countryCode}
+                                    onCountryCodeChange={setCountryCode}
+                                    error={!!formErrors.phone}
+                                    helperText={formErrors.phone}
+                                />
+
+                                <Box>
+                                    <CustomFormLabel htmlFor="email" sx={{ mt: 0 }}>Email</CustomFormLabel>
+                                    <CustomTextField
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        value={formData.email || ''}
+                                        onChange={handleInputChange}
+                                        fullWidth
+                                        variant="outlined"
+                                        placeholder="Enter Email"
+                                        error={!!formErrors.email}
+                                        helperText={formErrors.email}
+                                    />
+                                </Box>
+                            </Box>
                         </Grid>
 
-                        {/* Address Input */}
+                        {/* Right Column: Address Input */}
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <CustomFormLabel htmlFor="address">Address</CustomFormLabel>
                             <CustomTextField
@@ -463,7 +482,7 @@ const AddEditSite = ({type, site}: FormType) => {
                                 onChange={handleInputChange}
                                 fullWidth
                                 multiline
-                                rows={1}
+                                rows={4.2}
                                 variant="outlined"
                                 placeholder="Enter Address"
                                 error={!!formErrors.address}
@@ -472,7 +491,7 @@ const AddEditSite = ({type, site}: FormType) => {
                                 slotProps={{
                                     input: {
                                         endAdornment: (
-                                            <InputAdornment position="end">
+                                            <InputAdornment position="end" sx={{ alignSelf: 'flex-start', mt: 1 }}>
                                                 <IconButton 
                                                     onClick={locateAddress} 
                                                     disabled={isLocating}

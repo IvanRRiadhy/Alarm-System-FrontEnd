@@ -111,10 +111,10 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
           deviceType: formData.deviceType,
           alarmSeverity: formData.alarmSeverity,
           alarmMode: formData.alarmMode,
-          isNormalyClose: formData.isNormalyClose,
-          is24H: formData.is24H,
-          isPanic: formData.isPanic,
-          isEntry: formData.isEntry,
+          isNormalyClose: formData.deviceIO === 'Input' ? formData.isNormalyClose : null,
+          is24H: formData.deviceIO === 'Input' ? formData.is24H : null,
+          isPanic: formData.deviceIO === 'Input' ? formData.isPanic : null,
+          isEntry: formData.deviceIO === 'Input' ? formData.isEntry : null,
           deviceIO: formData.deviceIO,
           ipAddress: formData.deviceType === 'CctvCamera' ? formData.ipAddress : null,
           port: formData.deviceType === 'CctvCamera' ? formData.port : null,
@@ -337,10 +337,13 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
                                         <MenuItem value="GlassBreakSensor">Glass Break Sensor</MenuItem>
                                         {/* <MenuItem value="BeamSensor">Beam Sensor</MenuItem> */}
                                         <MenuItem value="VibrationSensor">Vibration Sensor</MenuItem>
+                                        <MenuItem value="SmokeDetector">Smoke Detector</MenuItem>
+                                        <MenuItem value="HeatDetector">Heat Detector</MenuItem>
+                                        <MenuItem value="FlameDetector">Flame Detector</MenuItem>
                                         <MenuItem value="CctvCamera">CCTV (Camera)</MenuItem>
                                         <MenuItem value="DoorLock">Door Lock</MenuItem>
                                         <MenuItem value="Siren">Siren</MenuItem>
-                                         <MenuItem value="Buzzer">Buzzer</MenuItem>
+                                        <MenuItem value="Buzzer">Buzzer</MenuItem>
                                         <MenuItem value="StrobeLight">Strobe Light</MenuItem>
                                         <MenuItem value="PanicButton">Panic Button</MenuItem>
                                     </CustomTextField>
@@ -408,7 +411,10 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
                                     height: '100%' 
                                 }}
                             >
-                                <Typography variant="h6" fontWeight={600} mb={2}>
+                                {/* Input Device Fields */}
+                                {formData.deviceIO === 'Input' && (
+                                    <> 
+                                    <Typography variant="h6" fontWeight={600} mb={2}>
                                     Setting Options
                                 </Typography>
                                 <Grid container direction="column" spacing={2}>
@@ -416,9 +422,10 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
                                         <FormControlLabel
                                             control={
                                                 <Switch
-                                                    checked={formData.isNormalyClose}
+                                                    checked={formData.isNormalyClose || false}
                                                     onChange={handleSwitchChange('isNormalyClose')}
                                                     color="primary"
+                                                    disabled={formData.deviceIO !== 'Input'}
                                                 />
                                             }
                                             label="Normally Close"
@@ -428,9 +435,10 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
                                         <FormControlLabel
                                             control={
                                                 <Switch
-                                                    checked={formData.is24H}
+                                                    checked={formData.is24H || false}
                                                     onChange={handleSwitchChange('is24H')}
                                                     color="primary"
+                                                    disabled={formData.deviceIO !== 'Input'}
                                                 />
                                             }
                                             label="24H Mode"
@@ -440,9 +448,10 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
                                         <FormControlLabel
                                             control={
                                                 <Switch
-                                                    checked={formData.isPanic}
+                                                    checked={formData.isPanic || false}
                                                     onChange={handleSwitchChange('isPanic')}
                                                     color="primary"
+                                                    disabled={formData.deviceIO !== 'Input'}
                                                 />
                                             }
                                             label="Panic Mode"
@@ -452,15 +461,20 @@ const AddEditDevices = ({ type = 'add', device, trigger = 'pencil' }: FormType) 
                                         <FormControlLabel
                                             control={
                                                 <Switch
-                                                    checked={formData.isEntry}
+                                                    checked={formData.isEntry || false}
                                                     onChange={handleSwitchChange('isEntry')}
                                                     color="primary"
+                                                    disabled={formData.deviceIO !== 'Input'}
                                                 />
                                             }
                                             label="Entry Mode"
                                         />
                                     </Grid>
                                 </Grid>
+                                    </>
+                                )
+
+                                }
 
                                 {/* CCTV Specific Fields */}
                                 {formData.deviceType === 'CctvCamera' && (

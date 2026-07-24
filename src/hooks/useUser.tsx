@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import axiosServices from 'src/utils/axios';
 import { RootState, useSelector } from 'src/store/Store';
-import { userType, GetFilter, userRegistrationType } from 'src/store/apps/crud/users';
+import { userType, GetFilter, userRegistrationType, userProfileType, userUpdateProfilePayload } from 'src/store/apps/crud/users';
 
 // -----------------------------------------------------------------------------
 // ✅ API URLs
@@ -15,6 +15,13 @@ export interface PaginatedResponse<T> {
   msg: string;
   status: number;
 }
+
+export interface SingleResponse<T> {
+  data: T;
+  msg: string;
+  status: number;
+}
+
 
 // -----------------------------------------------------------------------------
 // ✅ FETCH ALL USERS (for dropdowns, etc.)
@@ -86,3 +93,30 @@ export function useDeleteUser() {
   });
 }
 
+export function useUserProfile() {
+  return useQuery({
+    queryKey: ['user-profile'],
+    queryFn: async () => {
+      const res = await axiosServices.get<SingleResponse<userProfileType>>(`${API_URL}/profile`);
+      console.log('User Profile: ', res.data.data);
+      return res.data.data;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({ 
+    mutationFn: async (payload: userUpdateProfilePayload)  => {
+      const res = await axiosServices.put(`${API_URL}/profile`, payload);
+      console.log('Editing Result', res);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+    },
+  });
+}

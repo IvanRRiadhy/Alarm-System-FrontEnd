@@ -35,6 +35,24 @@ export type userRegistrationType = {
     profilePicture?: string,
     siteIds?: string[],
 };
+export type userProfileType = {
+    id: string;
+    username: string;
+    email: string;
+    fullName: string;
+    role: string;
+    isActive: number;
+    profilePicture: string;
+    siteIds: string[];
+};
+export type userUpdateProfilePayload = {
+    fullName: string;
+    username: string;
+    email: string;
+    profilePicture: string;
+    currentPassword: string;
+    password: string;
+}
 
 interface StateType {
     users : userType[];

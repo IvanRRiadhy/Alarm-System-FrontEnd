@@ -58,6 +58,7 @@ export const defaultSiteForm: SiteType = {
   name: '',
   address: '',
   phone: '',
+  email: '',
   timezone: 'Asia/Jakarta',
   region: '',
   latitude: 0,
@@ -261,7 +262,7 @@ export const defaultAlarmRuleForm: AlarmRuleDataType = {
   streamDeviceIds: [],
   outputDeviceIds: [],
   // outputs: [],
-  // scheduleTemplateId: '',
+  scheduleTemplateId: null,
   // scheduleTemplateName: '',
 }
 

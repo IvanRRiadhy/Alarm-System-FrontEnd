@@ -18,33 +18,24 @@ import ProfileImg from 'src/assets/images/profile/user-1.jpg';
 import unlimitedImg from 'src/assets/images/backgrounds/unlimited-bg.png';
 import axiosServices from 'src/utils/axios';
 
+import { useUserProfile } from 'src/hooks/useUser';
+
 const Profile = () => {
   const [anchorEl2, setAnchorEl2] = useState(null);
   const navigate = useNavigate();
-  const [userInfo, setUserInfo] = useState({ name: 'User', role: 'Staff' });
+  const { data: profileData } = useUserProfile();
 
-  useEffect(() => {
-    const responseStr = localStorage.getItem('response');
-    if (responseStr) {
-      try {
-        const data = JSON.parse(responseStr);
-        setUserInfo({
-          name: data?.fullName || data?.username || localStorage.getItem('fullName') || 'User',
-          role: data?.role || localStorage.getItem('role') || 'Staff',
-        });
-      } catch (e) {
-        setUserInfo({
-          name: localStorage.getItem('fullName') || 'User',
-          role: localStorage.getItem('role') || 'Staff',
-        });
-      }
-    } else {
-      setUserInfo({
-        name: localStorage.getItem('fullName') || 'User',
-        role: localStorage.getItem('role') || 'Staff',
-      });
-    }
-  }, []);
+  const responseStr = localStorage.getItem('response');
+  const userProfileStr = localStorage.getItem('userProfile');
+  let fallbackData: any = {};
+  try {
+    fallbackData = userProfileStr ? JSON.parse(userProfileStr) : (responseStr ? JSON.parse(responseStr) : {});
+  } catch (e) {}
+
+  const name = profileData?.fullName || profileData?.username || fallbackData?.fullName || fallbackData?.username || localStorage.getItem('fullName') || 'User';
+  const email = profileData?.email || fallbackData?.email || '';
+  const role = profileData?.role || fallbackData?.role || localStorage.getItem('role') || 'Admin';
+  const profilePicture = profileData?.profilePicture || fallbackData?.profilePicture;
 
   const handleLogout = async () => {
     try {
@@ -60,6 +51,7 @@ const Profile = () => {
       localStorage.removeItem('role');
       localStorage.removeItem('siteIds');
       localStorage.removeItem('response');
+      localStorage.removeItem('userProfile');
       localStorage.removeItem('selectedSiteId');
       localStorage.removeItem('selectedSite');
       navigate('/auth/login');
@@ -89,6 +81,7 @@ const Profile = () => {
         onClick={handleClick2}
       >
         <Avatar
+          src={profilePicture || undefined}
           sx={{
             width: 35,
             height: 35,
@@ -96,15 +89,17 @@ const Profile = () => {
             color: '#4ea5ff',
           }}
         >
-          <svg
-            width={20}
-            height={20}
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <circle cx="12" cy="8.5" r="3.5" />
-            <path d="M12 13.5c-3.8 0-6.5 2-6.5 4.5v1.2c0 .4.3.8.8.8h11.4c.5 0 .8-.4.8-.8v-1.2c0-2.5-2.7-4.5-6.5-4.5z" />
-          </svg>
+          {!profilePicture && (
+            <svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <circle cx="12" cy="8.5" r="3.5" />
+              <path d="M12 13.5c-3.8 0-6.5 2-6.5 4.5v1.2c0 .4.3.8.8.8h11.4c.5 0 .8-.4.8-.8v-1.2c0-2.5-2.7-4.5-6.5-4.5z" />
+            </svg>
+          )}
         </Avatar>
       </IconButton>
       {/* ------------------------------------------- */}
@@ -128,6 +123,7 @@ const Profile = () => {
         <Typography variant="h5">User Profile</Typography>
         <Stack direction="row" py={3} spacing={2} alignItems="center">
           <Avatar
+            src={profilePicture || undefined}
             sx={{
               width: 95,
               height: 95,
@@ -135,22 +131,30 @@ const Profile = () => {
               color: '#4ea5ff',
             }}
           >
-            <svg
-              width={52}
-              height={52}
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <circle cx="12" cy="8.5" r="3.5" />
-              <path d="M12 13.5c-3.8 0-6.5 2-6.5 4.5v1.2c0 .4.3.8.8.8h11.4c.5 0 .8-.4.8-.8v-1.2c0-2.5-2.7-4.5-6.5-4.5z" />
-            </svg>
+            {!profilePicture && (
+              <svg
+                width={52}
+                height={52}
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <circle cx="12" cy="8.5" r="3.5" />
+                <path d="M12 13.5c-3.8 0-6.5 2-6.5 4.5v1.2c0 .4.3.8.8.8h11.4c.5 0 .8-.4.8-.8v-1.2c0-2.5-2.7-4.5-6.5-4.5z" />
+              </svg>
+            )}
           </Avatar>
           <Box>
             <Typography variant="subtitle2" color="textPrimary" fontWeight={600}>
-              {userInfo.name}
+              {name}
             </Typography>
-            <Typography variant="subtitle2" color="textSecondary">
-              {userInfo.role}
+            {email && (
+              <Typography variant="subtitle2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                <IconMail size={16} />
+                {email}
+              </Typography>
+            )}
+            <Typography variant="subtitle2" color="textSecondary" mt={0.5}>
+              Role: {role}
             </Typography>
           </Box>
         </Stack>
@@ -207,11 +211,21 @@ const Profile = () => {
             </Box>
           </Box>
         ))} */}
-        <Box mt={2}>
-          <Button onClick={handleLogout} variant="outlined" color="primary" fullWidth>
+        <Stack spacing={1} mt={2}>
+          <Button
+            component={Link}
+            to="/user-profile/edit"
+            onClick={handleClose2}
+            variant="contained"
+            color="primary"
+            fullWidth
+          >
+            Edit Profile
+          </Button>
+          <Button onClick={handleLogout} variant="outlined" color="error" fullWidth>
             Logout
           </Button>
-        </Box>
+        </Stack>
       </Menu>
     </Box>
   );
